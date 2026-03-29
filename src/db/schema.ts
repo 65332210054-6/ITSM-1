@@ -14,10 +14,6 @@ export const roles = pgTable("roles", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
 
-export const rolesRelations = relations(roles, ({ many }) => ({
-  users: many(users),
-}))
-
 export const branches = pgTable("branches", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   code: text("code").notNull().unique(),
@@ -30,10 +26,6 @@ export const branches = pgTable("branches", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
 
-export const branchesRelations = relations(branches, ({ many }) => ({
-  users: many(users),
-}))
-
 export const departments = pgTable("departments", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   code: text("code").notNull().unique(),
@@ -42,10 +34,6 @@ export const departments = pgTable("departments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
-
-export const departmentsRelations = relations(departments, ({ many }) => ({
-  users: many(users),
-}))
 
 export const users = pgTable("users", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -60,37 +48,6 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
-
-export const usersRelations = relations(users, ({ one, many }) => ({
-  role: one(roles, {
-    fields: [users.roleId],
-    references: [roles.id],
-  }),
-  branch: one(branches, {
-    fields: [users.branchId],
-    references: [branches.id],
-  }),
-  department: one(departments, {
-    fields: [users.departmentId],
-    references: [departments.id],
-  }),
-  accounts: many(accounts),
-  sessions: many(sessions),
-}))
-
-export const accountsRelations = relations(accounts, ({ one }) => ({
-  user: one(users, {
-    fields: [accounts.userId],
-    references: [users.id],
-  }),
-}))
-
-export const sessionsRelations = relations(sessions, ({ one }) => ({
-  user: one(users, {
-    fields: [sessions.userId],
-    references: [users.id],
-  }),
-}))
 
 // ==========================================
 // NEXTAUTH REQUIRED TABLES
@@ -139,3 +96,50 @@ export const verificationTokens = pgTable(
     compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
   })
 )
+
+// ==========================================
+// RELATIONS
+// ==========================================
+
+export const rolesRelations = relations(roles, ({ many }) => ({
+  users: many(users),
+}))
+
+export const branchesRelations = relations(branches, ({ many }) => ({
+  users: many(users),
+}))
+
+export const departmentsRelations = relations(departments, ({ many }) => ({
+  users: many(users),
+}))
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+  role: one(roles, {
+    fields: [users.roleId],
+    references: [roles.id],
+  }),
+  branch: one(branches, {
+    fields: [users.branchId],
+    references: [branches.id],
+  }),
+  department: one(departments, {
+    fields: [users.departmentId],
+    references: [departments.id],
+  }),
+  accounts: many(accounts),
+  sessions: many(sessions),
+}))
+
+export const accountsRelations = relations(accounts, ({ one }) => ({
+  user: one(users, {
+    fields: [accounts.userId],
+    references: [users.id],
+  }),
+}))
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, {
+    fields: [sessions.userId],
+    references: [users.id],
+  }),
+}))
