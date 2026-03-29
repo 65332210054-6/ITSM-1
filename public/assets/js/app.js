@@ -80,6 +80,7 @@ const notify = {
             timer: 2000,
             showConfirmButton: false,
             borderRadius: '1.5rem',
+            heightAuto: false,
             customClass: {
                 popup: 'rounded-3xl border-0 shadow-2xl',
                 title: 'font-bold text-slate-800',
@@ -95,6 +96,7 @@ const notify = {
             confirmButtonText: 'ตกลง',
             confirmButtonColor: '#4f46e5',
             borderRadius: '1.5rem',
+            heightAuto: false,
             customClass: {
                 popup: 'rounded-3xl border-0 shadow-2xl',
                 title: 'font-bold text-slate-800',
@@ -110,6 +112,7 @@ const notify = {
             showConfirmButton: false,
             timer: 3000,
             timerProgressBar: true,
+            heightAuto: false,
             didOpen: (toast) => {
                 toast.addEventListener('mouseenter', Swal.stopTimer);
                 toast.addEventListener('mouseleave', Swal.resumeTimer);
