@@ -24,10 +24,22 @@ export async function onRequest(context) {
 
     const sql = neon(databaseUrl);
     
-    // GET Users list
+    // GET Users list and options
     if (request.method === "GET") {
+      const url = new URL(request.url);
+      const action = url.searchParams.get("action");
+
+      if (action === "getOptions") {
+        const roles = await sql`SELECT id, name FROM roles ORDER BY name`;
+        const departments = await sql`SELECT id, name FROM departments ORDER BY name`;
+        return new Response(JSON.stringify({ roles, departments }), { 
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
       const users = await sql`
-        SELECT u.id, u.name, u.email, r.name as role_name, d.name as department_name 
+        SELECT u.id, u.name, u.email, u.role_id, u.department_id, r.name as role_name, d.name as department_name 
         FROM users u 
         LEFT JOIN roles r ON u.role_id = r.id 
         LEFT JOIN departments d ON u.department_id = d.id 
@@ -41,6 +53,26 @@ export async function onRequest(context) {
           "X-Frame-Options": "DENY",
           "X-Content-Type-Options": "nosniff"
         }
+      });
+    }
+
+    // POST Update User
+    if (request.method === "POST") {
+      const { id, name, email, role_id, department_id } = await request.json();
+      
+      if (!id) {
+        return new Response(JSON.stringify({ message: "User ID is required" }), { status: 400 });
+      }
+
+      await sql`
+        UPDATE users 
+        SET name = ${name}, email = ${email}, role_id = ${role_id}, department_id = ${department_id}, updated_at = NOW() 
+        WHERE id = ${id}
+      `;
+
+      return new Response(JSON.stringify({ message: "User updated successfully" }), { 
+        status: 200,
+        headers: { "Content-Type": "application/json" }
       });
     }
 
