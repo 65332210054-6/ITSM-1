@@ -3,11 +3,11 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 // =======================
-// NEXTAUTH MODELS (Phase 1)
+// NEXTAUTH MODELS
 // =======================
 model Account {
   id                String  @id @default(cuid())
@@ -45,7 +45,7 @@ model VerificationToken {
 }
 
 // =======================
-// CORE MODELS (Phase 1)
+// SYSTEM ADMIN MODELS
 // =======================
 model User {
   id            String    @id @default(cuid())
@@ -65,12 +65,6 @@ model User {
 
   accounts      Account[]
   sessions      Session[]
-  assets        Asset[]     @relation("AssetOwner")
-  ticketsReported  Ticket[]  @relation("TicketReporter")
-  ticketsAssigned  Ticket[]  @relation("TicketTechnician")
-  borrowsRecorded  BorrowRecord[] @relation("BorrowRecorder")
-  maintenancesAssigned Maintenance[] @relation("MaintenanceTechnician")
-  authoredArticles KnowledgeArticle[] @relation("ArticleAuthor")
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -94,7 +88,6 @@ model Branch {
   isActive    Boolean  @default(true)
   isMain      Boolean  @default(false)
   users       User[]
-  assets      Asset[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -107,305 +100,4 @@ model Department {
   users       User[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-}
-
-// =======================
-// ASSET MANAGEMENT (Phase 2)
-// =======================
-
-// Constants/Enums modeled as strings in SQLite
-// Status: "ACTIVE", "BROKEN", "IN_REPAIR", "RETIRED", "MISSING"
-
-model AssetCategory {
-  id          String   @id @default(cuid())
-  name        String   @unique // e.g. Computer, Monitor, Printer, Network, General
-  description String?
-  
-  assets      Asset[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model Asset {
-  id              String   @id @default(cuid())
-  assetCode       String   @unique // Typed/scanned by user
-  name            String
-  brand           String?
-  model           String?
-  serialNumber    String?
-  status          String   @default("ACTIVE") 
-  purchaseDate    DateTime?
-  price           Float?
-  image           String?
-  
-  // Relations
-  categoryId      String
-  category        AssetCategory @relation(fields: [categoryId], references: [id])
-
-  ownerId         String?
-  owner           User?         @relation("AssetOwner", fields: [ownerId], references: [id])
-
-  branchId        String?
-  branch          Branch?       @relation(fields: [branchId], references: [id])
-
-  // Hierarchical Assets (e.g. Monitor connected to Computer)
-  parentAssetId   String?
-  parentAsset     Asset?        @relation("AssetHierarchy", fields: [parentAssetId], references: [id], onDelete: SetNull)
-  childAssets     Asset[]       @relation("AssetHierarchy")
-
-  // 1-to-1 Details Linking
-  computerDetail  ComputerDetail?
-  monitorDetail   MonitorDetail?
-  printerDetail   PrinterDetail?
-  networkDetail   NetworkDetail?
-
-  // Tickets
-  tickets         Ticket[]
-
-  // Borrow & PM (Phase 4)
-  borrows         BorrowRecord[]
-  maintenances    Maintenance[]
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-
-model ComputerDetail {
-  id              String   @id @default(cuid())
-  assetId         String   @unique
-  asset           Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  
-  cpu             String?
-  ram             String?
-  storage         String?
-  os              String?
-  type            String?  // PC, Laptop, Server
-
-  leaseContractNo String?
-  leaseStartDate  DateTime?
-  leaseEndDate    DateTime?
-  leaseCompany    String?
-  leaseCostPerMo  Float?
-}
-
-model MonitorDetail {
-  id              String   @id @default(cuid())
-  assetId         String   @unique
-  asset           Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
-
-  sizeInches      Float?
-  resolution      String?
-  panelType       String?  // IPS, VA, TN
-  ports           String?
-}
-
-model PrinterDetail {
-  id              String   @id @default(cuid())
-  assetId         String   @unique
-  asset           Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
-
-  type            String?  // Laser, Inkjet
-  colorType       String?  // Color, Monochrome
-  ipAddress       String?
-  shared          Boolean  @default(false)
-  
-  // Relation to Toner models (for Phase 3)
-  cartridgeModel  String?
-}
-
-model NetworkDetail {
-  id              String   @id @default(cuid())
-  assetId         String   @unique
-  asset           Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
-
-  type            String?  // Router, Switch, AP, Firewall
-  ipAddress       String?
-  macAddress      String?
-  portsCount      Int?
-  bandwidth       String?
-  vlan            String?
-  firmwareVersion String?
-}
-
-model SoftwareLicense {
-  id              String   @id @default(cuid())
-  name            String
-  version         String?
-  licenseKey      String?
-  type            String?  // Perpetual, Subscription
-  totalLicenses   Int      @default(1)
-  usedLicenses    Int      @default(0)
-  
-  vendor          String?
-  purchaseDate    DateTime?
-  expirationDate  DateTime?
-  price           Float?
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-
-model Domain {
-  id              String   @id @default(cuid())
-  name            String   @unique
-  registrar       String?
-  registrationDate DateTime?
-  expirationDate  DateTime?
-
-  sslType         String?
-  sslIssuer       String?
-  sslExpiration   DateTime?
-
-  hostingProvider String?
-  hostingPackage  String?
-  hostingCost     Float?
-  hostingExpiration DateTime?
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-
-// =======================
-// HELPDESK / TICKETS (Phase 3)
-// =======================
-// Status: "OPEN", "IN_PROGRESS", "WAITING_PARTS", "RESOLVED", "CLOSED"
-// Priority: "LOW", "MEDIUM", "HIGH", "CRITICAL"
-
-model Ticket {
-  id              String   @id @default(cuid())
-  jobId           String   @unique  // Auto-generated e.g. TK-2026-0001
-  title           String
-  description     String?
-  priority        String   @default("MEDIUM")
-  status          String   @default("OPEN")
-  image           String?
-
-  slaDueDate      DateTime?
-  isSlaBreached   Boolean  @default(false)
-
-  // Who reported & which asset
-  reporterId      String?
-  reporter        User?    @relation("TicketReporter", fields: [reporterId], references: [id])
-
-  assetId         String?
-  asset           Asset?   @relation(fields: [assetId], references: [id])
-
-  // Assigned technician
-  technicianId    String?
-  technician      User?    @relation("TicketTechnician", fields: [technicianId], references: [id])
-
-  // Resolution
-  rootCause       String?
-  solution        String?
-  resolvedAt      DateTime?
-
-  // Spare parts used
-  sparePartsUsed  TicketSparePart[]
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-
-model SparePart {
-  id              String   @id @default(cuid())
-  code            String   @unique
-  name            String
-  category        String?
-  brand           String?
-  model           String?
-  pricePerUnit    Float?
-  quantity        Int      @default(0)
-  minStock        Int      @default(0)
-  maxStock        Int      @default(0)
-  location        String?
-
-  ticketUsages    TicketSparePart[]
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-
-model TicketSparePart {
-  id              String   @id @default(cuid())
-  ticketId        String
-  ticket          Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  sparePartId     String
-  sparePart       SparePart @relation(fields: [sparePartId], references: [id])
-  quantity        Int      @default(1)
-  createdAt       DateTime @default(now())
-}
-
-model Cartridge {
-  id              String   @id @default(cuid())
-  model           String
-  color           String?   // Black, Cyan, Magenta, Yellow
-  type            String?   // Original, Compatible
-  price           Float?
-  quantity        Int      @default(0)
-  minStock        Int      @default(0)
-  printerModels   String?   // Comma-separated printer models
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-
-// =======================
-// BORROW/RETURN SYSTEM (Phase 4)
-// =======================
-model BorrowRecord {
-  id                String   @id @default(cuid())
-  assetId           String
-  asset             Asset    @relation(fields: [assetId], references: [id])
-  borrowerName      String   
-  borrowerDept      String?
-  borrowDate        DateTime @default(now())
-  expectedReturnDate DateTime?
-  actualReturnDate  DateTime?
-  status            String   @default("BORROWED") // "BORROWED", "RETURNED", "LATE"
-  notes             String?
-
-  recordedById      String?
-  recordedBy        User?    @relation("BorrowRecorder", fields: [recordedById], references: [id])
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-}
-
-// =======================
-// PREVENTIVE MAINTENANCE (PM) (Phase 4)
-// =======================
-model Maintenance {
-  id              String   @id @default(cuid())
-  assetId         String
-  asset           Asset    @relation(fields: [assetId], references: [id])
-  title           String
-  description     String?
-  scheduledDate   DateTime
-  completedDate   DateTime?
-  cost            Float?
-  status          String   @default("SCHEDULED") // "SCHEDULED", "COMPLETED", "CANCELLED"
-  
-  technicianId    String?
-  technician      User?    @relation("MaintenanceTechnician", fields: [technicianId], references: [id])
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-
-// =======================
-// KNOWLEDGE BASE (Phase 5)
-// =======================
-model KnowledgeArticle {
-  id              String   @id @default(cuid())
-  title           String
-  content         String
-  tags            String?  // Comma-separated tags
-  views           Int      @default(0)
-
-  authorId        String?
-  author          User?    @relation("ArticleAuthor", fields: [authorId], references: [id])
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
 }

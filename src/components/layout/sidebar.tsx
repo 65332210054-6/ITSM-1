@@ -6,41 +6,10 @@ import { LayoutDashboard, Users, Monitor, Wrench, Settings, Tags, Package, Print
 
 const navSections = [
   {
-    items: [
-      { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", roles: ["Admin", "Technician", "User"] },
-    ]
-  },
-  {
-    title: "Helpdesk",
-    items: [
-      { href: "/tickets", icon: Wrench, label: "งานแจ้งซ่อม", roles: ["Admin", "Technician", "User"] },
-      { href: "/maintenance", icon: CalendarCheck, label: "แผนซ่อมบำรุง (PM)", roles: ["Admin", "Technician"] },
-      { href: "/knowledge", icon: BookOpen, label: "ฐานความรู้ (KB)", roles: ["Admin", "Technician", "User"] },
-    ]
-  },
-  {
-    title: "Assets",
-    items: [
-      { href: "/assets", icon: Monitor, label: "ทรัพย์สินไอที", roles: ["Admin", "Technician"] },
-      { href: "/categories", icon: Tags, label: "หมวดหมู่อุปกรณ์", roles: ["Admin", "Technician"] },
-      { href: "/borrows", icon: ArrowRightLeft, label: "ยืม-คืนอุปกรณ์", roles: ["Admin", "Technician", "User"] },
-      { href: "/spare-parts", icon: Package, label: "อะไหล่ / Spare Parts", roles: ["Admin", "Technician"] },
-      { href: "/cartridges", icon: Printer, label: "ตลับหมึก / Toner", roles: ["Admin", "Technician"] },
-    ]
-  },
-  {
-    title: "Digital Assets",
-    items: [
-      { href: "/licenses", icon: FileKey, label: "Software Licenses", roles: ["Admin", "Technician"] },
-      { href: "/domains", icon: Globe, label: "Domains & Hosting", roles: ["Admin", "Technician"] },
-    ]
-  },
-  {
     title: "System",
     items: [
       { href: "/users", icon: Users, label: "จัดการผู้ใช้งาน", roles: ["Admin"] },
       { href: "/settings", icon: Settings, label: "ตั้งค่าระบบ", roles: ["Admin"] },
-      { href: "/reports", icon: FileSpreadsheet, label: "ระบบรายงาน", roles: ["Admin", "Technician"] },
     ]
   }
 ]
