@@ -1,4 +1,3 @@
-import { relations } from "drizzle-orm"
 import { pgTable, text, timestamp, boolean, primaryKey, integer } from "drizzle-orm/pg-core"
 import type { AdapterAccount } from "next-auth/adapters"
 
@@ -96,50 +95,3 @@ export const verificationTokens = pgTable(
     compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
   })
 )
-
-// ==========================================
-// RELATIONS
-// ==========================================
-
-export const rolesRelations = relations(roles, ({ many }) => ({
-  users: many(users),
-}))
-
-export const branchesRelations = relations(branches, ({ many }) => ({
-  users: many(users),
-}))
-
-export const departmentsRelations = relations(departments, ({ many }) => ({
-  users: many(users),
-}))
-
-export const usersRelations = relations(users, ({ one, many }) => ({
-  role: one(roles, {
-    fields: [users.roleId],
-    references: [roles.id],
-  }),
-  branch: one(branches, {
-    fields: [users.branchId],
-    references: [branches.id],
-  }),
-  department: one(departments, {
-    fields: [users.departmentId],
-    references: [departments.id],
-  }),
-  accounts: many(accounts),
-  sessions: many(sessions),
-}))
-
-export const accountsRelations = relations(accounts, ({ one }) => ({
-  user: one(users, {
-    fields: [accounts.userId],
-    references: [users.id],
-  }),
-}))
-
-export const sessionsRelations = relations(sessions, ({ one }) => ({
-  user: one(users, {
-    fields: [sessions.userId],
-    references: [users.id],
-  }),
-}))
