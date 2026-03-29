@@ -5,9 +5,9 @@ import { asc } from "drizzle-orm"
 import { SettingsForms } from "./settings-forms"
 
 export default async function SettingsPage() {
-  const branches = await db.query.branches.findMany({ orderBy: [asc(branchesTable.code)] })
-  const departments = await db.query.departments.findMany({ orderBy: [asc(departmentsTable.code)] })
-  const roles = await db.query.roles.findMany({ orderBy: [asc(rolesTable.name)] })
+  const branches = await db.select().from(branchesTable).orderBy(asc(branchesTable.code))
+  const departments = await db.select().from(departmentsTable).orderBy(asc(departmentsTable.code))
+  const roles = await db.select().from(rolesTable).orderBy(asc(rolesTable.name))
 
   return (
     <div className="space-y-8">

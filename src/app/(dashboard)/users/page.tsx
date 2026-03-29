@@ -1,25 +1,32 @@
 export const runtime = 'edge'
 import { db } from "@/db"
 import { users as usersTable, roles as rolesTable, branches as branchesTable, departments as departmentsTable } from "@/db/schema"
-import { desc, asc } from "drizzle-orm"
+import { desc, asc, eq } from "drizzle-orm"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { UserForm } from "./user-form"
 import { ShieldAlert, Building2, UserCircle } from "lucide-react"
 
 export default async function UsersPage() {
-  const users = await db.query.users.findMany({
-    with: {
-      role: true,
-      branch: true,
-      department: true
-    },
-    orderBy: [desc(usersTable.createdAt)]
-  })
+  const users = await db
+    .select({
+      id: usersTable.id,
+      name: usersTable.name,
+      email: usersTable.email,
+      role: { name: rolesTable.name },
+      branch: { name: branchesTable.name },
+      department: { name: departmentsTable.name },
+      createdAt: usersTable.createdAt,
+    })
+    .from(usersTable)
+    .leftJoin(rolesTable, eq(usersTable.roleId, rolesTable.id))
+    .leftJoin(branchesTable, eq(usersTable.branchId, branchesTable.id))
+    .leftJoin(departmentsTable, eq(usersTable.departmentId, departmentsTable.id))
+    .orderBy(desc(usersTable.createdAt))
 
-  const roles = await db.query.roles.findMany({ orderBy: [asc(rolesTable.name)] })
-  const branches = await db.query.branches.findMany({ orderBy: [asc(branchesTable.name)] })
-  const departments = await db.query.departments.findMany({ orderBy: [asc(departmentsTable.name)] })
+  const roles = await db.select().from(rolesTable).orderBy(asc(rolesTable.name))
+  const branches = await db.select().from(branchesTable).orderBy(asc(branchesTable.name))
+  const departments = await db.select().from(departmentsTable).orderBy(asc(departmentsTable.name))
 
   return (
     <div className="space-y-6">

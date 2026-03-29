@@ -24,7 +24,7 @@ export async function createUser(formData: FormData) {
   }
 
   try {
-    const existingUser = await db.query.users.findFirst({ where: eq(users.email, email) })
+    const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1).then(res => res[0])
     if (existingUser) return { error: "อีเมลนี้มีในระบบแล้ว" }
 
     const hashedPassword = await bcrypt.hash(password, 10)
