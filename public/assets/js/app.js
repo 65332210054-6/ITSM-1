@@ -49,6 +49,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// Security: Escape HTML to prevent XSS
+function escapeHTML(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 // API Helper
 async function apiFetch(url, options = {}) {
     const token = localStorage.getItem('token');

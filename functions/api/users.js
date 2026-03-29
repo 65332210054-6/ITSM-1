@@ -9,6 +9,19 @@ export async function onRequest(context) {
   }
 
   try {
+    // Basic Auth Check
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer session-")) {
+      return new Response(JSON.stringify({ message: "Unauthorized" }), { 
+        status: 401,
+        headers: { 
+          "Content-Type": "application/json",
+          "X-Frame-Options": "DENY",
+          "X-Content-Type-Options": "nosniff"
+        }
+      });
+    }
+
     const sql = neon(databaseUrl);
     
     // GET Users list
@@ -23,16 +36,31 @@ export async function onRequest(context) {
       
       return new Response(JSON.stringify(users), { 
         status: 200,
-        headers: { "Content-Type": "application/json" }
+        headers: { 
+          "Content-Type": "application/json",
+          "X-Frame-Options": "DENY",
+          "X-Content-Type-Options": "nosniff"
+        }
       });
     }
 
-    return new Response(JSON.stringify({ message: "Method not allowed" }), { status: 405 });
+    return new Response(JSON.stringify({ message: "Method not allowed" }), { 
+      status: 405,
+      headers: { 
+        "X-Frame-Options": "DENY",
+        "X-Content-Type-Options": "nosniff"
+      }
+    });
 
   } catch (error) {
-    return new Response(JSON.stringify({ message: "Server Error", error: error.message }), { 
+    console.error("API Error:", error);
+    return new Response(JSON.stringify({ message: "เกิดข้อผิดพลาดภายในระบบ" }), { 
       status: 500,
-      headers: { "Content-Type": "application/json" }
+      headers: { 
+        "Content-Type": "application/json",
+        "X-Frame-Options": "DENY",
+        "X-Content-Type-Options": "nosniff"
+      }
     });
   }
 }

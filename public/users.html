@@ -108,14 +108,14 @@
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3">
                                 <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600">
-                                    ${user.name.charAt(0)}
+                                    ${escapeHTML(user.name.charAt(0))}
                                 </div>
-                                <span class="text-sm font-semibold text-slate-700">${user.name}</span>
+                                <span class="text-sm font-semibold text-slate-700">${escapeHTML(user.name)}</span>
                             </div>
                         </td>
-                        <td class="px-6 py-4 text-sm text-slate-500">${user.email}</td>
-                        <td class="px-6 py-4 text-sm text-slate-600 font-medium">${user.role_name || 'User'}</td>
-                        <td class="px-6 py-4 text-sm text-slate-500">${user.department_name || '-'}</td>
+                        <td class="px-6 py-4 text-sm text-slate-500">${escapeHTML(user.email)}</td>
+                        <td class="px-6 py-4 text-sm text-slate-600 font-medium">${escapeHTML(user.role_name || 'User')}</td>
+                        <td class="px-6 py-4 text-sm text-slate-500">${escapeHTML(user.department_name || '-')}</td>
                         <td class="px-6 py-4 text-center">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
                                 ใช้งานปกติ
