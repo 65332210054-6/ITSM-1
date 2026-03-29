@@ -9,7 +9,7 @@ const globalForPrisma = globalThis as unknown as {
 const createPrismaClient = () => {
   if (process.env.NODE_ENV === "production" || process.env.DATABASE_URL?.includes("neon.tech")) {
     const neonPool = new Pool({ connectionString: process.env.DATABASE_URL })
-    const adapter = new PrismaNeon(neonPool) as any
+    const adapter = new PrismaNeon(neonPool as any) as any
     return new PrismaClient({ adapter })
   }
   
