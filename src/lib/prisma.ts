@@ -19,7 +19,7 @@ const createPrismaClient = () => {
         url: process.env.DATABASE_URL,
       },
     },
-  })
+  } as any)
 }
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient()
