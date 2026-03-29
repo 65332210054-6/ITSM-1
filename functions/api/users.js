@@ -147,7 +147,7 @@ export async function onRequest(context) {
 
   } catch (error) {
     console.error("API Error:", error);
-    return new Response(JSON.stringify({ message: "เกิดข้อผิดพลาดภายในระบบ" }), { 
+    return new Response(JSON.stringify({ message: "เกิดข้อผิดพลาดภายในระบบ: " + error.message }), { 
       status: 500,
       headers: { 
         "Content-Type": "application/json",

@@ -94,7 +94,6 @@ const notify = {
             text: message,
             timer: 2000,
             showConfirmButton: false,
-            borderRadius: '1.5rem',
             heightAuto: false,
             customClass: {
                 popup: 'rounded-3xl border-0 shadow-2xl',
@@ -110,7 +109,6 @@ const notify = {
             text: message,
             confirmButtonText: 'ตกลง',
             confirmButtonColor: '#4f46e5',
-            borderRadius: '1.5rem',
             heightAuto: false,
             customClass: {
                 popup: 'rounded-3xl border-0 shadow-2xl',
