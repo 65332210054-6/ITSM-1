@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const path = window.location.pathname;
-    const isLoginPage = path.endsWith('login.html');
+    const isLoginPage = path === '/login' || path === '/login.html' || path.endsWith('/login.html');
 
     // Authentication Guard
     if (!token && !isLoginPage) {
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Redirect to home if already logged in and visiting login page
     if (token && isLoginPage) {
-        window.location.href = '/';
+        window.location.href = '/index.html';
         return;
     }
 
