@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการผู้ใช้งาน | ITSM Admin</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.454.0/lucide.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', 'Sarabun', sans-serif; }
+    </style>
+</head>
+<body class="h-full flex overflow-hidden">
+    <!-- Sidebar (Same as index.html) -->
+    <aside class="w-64 bg-slate-900 text-white flex flex-col h-full shadow-2xl transition-all">
+        <div class="h-20 flex items-center px-6 border-b border-slate-800">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-blue-400 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/30">IT</div>
+                <div>
+                    <span class="font-bold text-base tracking-tight block leading-tight">ITSM</span>
+                    <span class="text-[10px] text-slate-400 block leading-tight font-medium">Enterprise Admin</span>
+                </div>
+            </div>
+        </div>
+        <nav class="flex-1 py-6 overflow-y-auto">
+            <div class="px-6 mb-4">
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em]">หลัก (Main)</p>
+            </div>
+            <div class="space-y-1 px-3">
+                <a href="/" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
+                    <i data-lucide="layout-dashboard" class="mr-3 h-5 w-5"></i> หน้าแรก
+                </a>
+                <a href="/users.html" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 transition-all">
+                    <i data-lucide="users" class="mr-3 h-5 w-5"></i> จัดการผู้ใช้งาน
+                </a>
+                <a href="/settings.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
+                    <i data-lucide="settings" class="mr-3 h-5 w-5"></i> ตั้งค่าระบบ
+                </a>
+            </div>
+        </nav>
+        <div class="p-6 border-t border-slate-800">
+            <div class="bg-slate-800/40 rounded-2xl p-4 border border-slate-800/50 flex items-center gap-3">
+                <div id="userAvatar" class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-bold">U</div>
+                <div class="flex-1 min-w-0">
+                    <p id="userName" class="text-xs font-bold truncate">Loading...</p>
+                    <p class="text-[10px] text-slate-500 font-medium">System Admin</p>
+                </div>
+                <button id="logoutBtn" class="text-slate-500 hover:text-red-400 transition-colors p-1"><i data-lucide="log-out" class="h-4 w-4"></i></button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-10 shadow-sm z-10">
+            <h1 class="text-xl font-bold text-slate-800 tracking-tight">จัดการผู้ใช้งาน</h1>
+            <div class="flex items-center gap-4">
+                <button class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all flex items-center gap-2">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i> เพิ่มผู้ใช้งาน
+                </button>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-x-hidden overflow-y-auto p-10 bg-slate-50/50">
+            <div class="max-w-6xl mx-auto">
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200">
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">ชื่อ-นามสกุล</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">อีเมล</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">บทบาท</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">แผนก</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">สถานะ</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody" class="divide-y divide-slate-100">
+                                <!-- Users will be loaded here -->
+                                <tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">กำลังโหลดข้อมูล...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="/assets/js/app.js"></script>
+    <script>
+        // Load Users
+        async function loadUsers() {
+            const tableBody = document.getElementById('userTableBody');
+            try {
+                const response = await apiFetch('/api/users');
+                const users = await response.json();
+                
+                if (users.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">ไม่พบข้อมูลผู้ใช้งาน</td></tr>';
+                    return;
+                }
+
+                tableBody.innerHTML = users.map(user => `
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600">
+                                    ${user.name.charAt(0)}
+                                </div>
+                                <span class="text-sm font-semibold text-slate-700">${user.name}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-500">${user.email}</td>
+                        <td class="px-6 py-4 text-sm text-slate-600 font-medium">${user.role_name || 'User'}</td>
+                        <td class="px-6 py-4 text-sm text-slate-500">${user.department_name || '-'}</td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                ใช้งานปกติ
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <button class="text-slate-400 hover:text-indigo-600 transition-colors"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+                lucide.createIcons();
+            } catch (error) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadUsers);
+    </script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แดชบอร์ด | ITSM Admin</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.454.0/lucide.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', 'Sarabun', sans-serif; }
+    </style>
+</head>
+<body class="h-full flex overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 text-white flex flex-col h-full shadow-2xl transition-all">
+        <div class="h-20 flex items-center px-6 border-b border-slate-800">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-blue-400 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/30">
+                    IT
+                </div>
+                <div>
+                    <span class="font-bold text-base tracking-tight block leading-tight">ITSM</span>
+                    <span class="text-[10px] text-slate-400 block leading-tight font-medium">Enterprise Admin</span>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 py-6 overflow-y-auto">
+            <div class="px-6 mb-4">
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em]">หลัก (Main)</p>
+            </div>
+            <div class="space-y-1 px-3">
+                <a href="/" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 transition-all active:scale-95">
+                    <i data-lucide="layout-dashboard" class="mr-3 h-5 w-5"></i>
+                    หน้าแรก
+                </a>
+                <a href="/users.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
+                    <i data-lucide="users" class="mr-3 h-5 w-5"></i>
+                    จัดการผู้ใช้งาน
+                </a>
+                <a href="/settings.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
+                    <i data-lucide="settings" class="mr-3 h-5 w-5"></i>
+                    ตั้งค่าระบบ
+                </a>
+            </div>
+        </nav>
+
+        <div class="p-6 border-t border-slate-800">
+            <div class="bg-slate-800/40 rounded-2xl p-4 border border-slate-800/50">
+                <div class="flex items-center gap-3">
+                    <div id="userAvatar" class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-bold">U</div>
+                    <div class="flex-1 min-w-0">
+                        <p id="userName" class="text-xs font-bold truncate">Loading...</p>
+                        <p id="userRole" class="text-[10px] text-slate-500 font-medium">System Admin</p>
+                    </div>
+                    <button id="logoutBtn" class="text-slate-500 hover:text-red-400 transition-colors p-1">
+                        <i data-lucide="log-out" class="h-4 w-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Header -->
+        <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-10 shadow-sm z-10">
+            <h1 id="pageTitle" class="text-xl font-bold text-slate-800 tracking-tight">แดชบอร์ดภาพรวม</h1>
+            <div class="flex items-center gap-6">
+                <div class="relative">
+                    <button class="text-slate-400 hover:text-slate-600 transition-colors relative">
+                        <i data-lucide="bell" class="h-5 w-5"></i>
+                        <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                    </button>
+                </div>
+                <div class="h-8 w-px bg-slate-200"></div>
+                <span id="currentTime" class="text-sm font-semibold text-slate-500">29 มีนาคม 2026</span>
+            </div>
+        </header>
+
+        <!-- Main Area -->
+        <main id="app" class="flex-1 overflow-x-hidden overflow-y-auto p-10 bg-slate-50/50">
+            <div class="max-w-6xl mx-auto space-y-10">
+                <!-- Welcome Card -->
+                <div class="bg-gradient-to-br from-indigo-600 to-blue-500 rounded-3xl shadow-2xl shadow-indigo-600/20 p-12 text-white relative overflow-hidden">
+                    <div class="relative z-10">
+                        <h2 class="text-4xl font-extrabold tracking-tight">ยินดีต้อนรับเข้าสู่ระบบจัดการองค์กร</h2>
+                        <p class="text-indigo-100 mt-4 text-lg font-medium opacity-90">สวัสดีคุณ <span id="welcomeName" class="text-white underline underline-offset-4 decoration-indigo-300">...</span>, คุณกำลังเข้าใช้งานในส่วนของผู้ดูแลระบบ</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
+                            <div class="p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 transition-all cursor-pointer group" onclick="window.location.href='/users.html'">
+                                <div class="flex items-center gap-4 mb-3">
+                                    <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        <i data-lucide="users" class="h-5 w-5 text-white"></i>
+                                    </div>
+                                    <h3 class="font-bold text-white text-xl">จัดการผู้ใช้งาน</h3>
+                                </div>
+                                <p class="text-indigo-50 text-sm font-medium opacity-80 leading-relaxed">เพิ่ม แก้ไข หรือระงับสิทธิ์การใช้งานของพนักงานในองค์กรได้จากที่นี่</p>
+                            </div>
+                            <div class="p-8 bg-slate-900/10 backdrop-blur-md border border-white/10 rounded-2xl hover:bg-slate-900/20 transition-all cursor-pointer group" onclick="window.location.href='/settings.html'">
+                                <div class="flex items-center gap-4 mb-3">
+                                    <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        <i data-lucide="settings" class="h-5 w-5 text-white"></i>
+                                    </div>
+                                    <h3 class="font-bold text-white text-xl">ตั้งค่าระบบ</h3>
+                                </div>
+                                <p class="text-indigo-50 text-sm font-medium opacity-80 leading-relaxed">จัดการโครงสร้างสาขา และแผนกต่างๆ ของบริษัทเพื่อความคล่องตัว</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Decorative Circle -->
+                    <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
+                </div>
+
+                <!-- Simple Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                                <i data-lucide="users" class="h-5 w-5 text-blue-600"></i>
+                            </div>
+                            <h4 class="text-sm font-bold text-slate-500">พนักงานทั้งหมด</h4>
+                        </div>
+                        <p class="text-3xl font-extrabold text-slate-900">128</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
+                                <i data-lucide="building-2" class="h-5 w-5 text-indigo-600"></i>
+                            </div>
+                            <h4 class="text-sm font-bold text-slate-500">สาขา (Branches)</h4>
+                        </div>
+                        <p class="text-3xl font-extrabold text-slate-900">4</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+                                <i data-lucide="briefcase" class="h-5 w-5 text-emerald-600"></i>
+                            </div>
+                            <h4 class="text-sm font-bold text-slate-500">แผนก (Depts)</h4>
+                        </div>
+                        <p class="text-3xl font-extrabold text-slate-900">12</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
+                                <i data-lucide="shield-check" class="h-5 w-5 text-amber-600"></i>
+                            </div>
+                            <h4 class="text-sm font-bold text-slate-500">สิทธิ์แอดมิน</h4>
+                        </div>
+                        <p class="text-3xl font-extrabold text-slate-900">3</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="/assets/js/app.js"></script>
+</body>
+</html>
