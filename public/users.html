@@ -6,6 +6,7 @@
     <title>จัดการผู้ใช้งาน | ITSM Admin</title>
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.454.0/lucide.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap');
@@ -92,7 +93,7 @@
                     </div>
                     
                     <div id="addUserBtnContainer" class="w-full md:w-auto">
-                        <button class="w-full md:w-auto bg-indigo-600 text-white px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 active:scale-95">
+                        <button onclick="openAddModal()" class="w-full md:w-auto bg-indigo-600 text-white px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 active:scale-95">
                             <i data-lucide="user-plus" class="w-5 h-5"></i> เพิ่มผู้ใช้งานใหม่
                         </button>
                     </div>
@@ -165,6 +166,121 @@
         </div>
     </div>
 
+    <!-- Add User Modal -->
+    <div id="addModal" class="fixed inset-0 bg-slate-900/50 z-[60] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <h2 class="text-xl font-bold text-slate-800 tracking-tight">เพิ่มผู้ใช้งานใหม่</h2>
+                <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <!-- Tabs -->
+            <div class="flex border-b border-slate-100">
+                <button onclick="switchAddTab('manual')" id="tabManual" class="flex-1 py-4 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 transition-all">
+                    <i data-lucide="user" class="inline-block w-4 h-4 mr-2"></i> เพิ่มทีละคน
+                </button>
+                <button onclick="switchAddTab('import')" id="tabImport" class="flex-1 py-4 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-600 transition-all">
+                    <i data-lucide="file-up" class="inline-block w-4 h-4 mr-2"></i> Import ไฟล์ CSV
+                </button>
+            </div>
+
+            <!-- Manual Form -->
+            <form id="addManualForm" class="p-8 space-y-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">ชื่อ-นามสกุล</label>
+                        <input type="text" id="addName" required class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all" placeholder="สมชาย ใจดี">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">ชื่อผู้ใช้งาน / อีเมล</label>
+                        <input type="text" id="addEmail" required class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all" placeholder="somchai.j">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">บทบาท</label>
+                        <select id="addRole" required class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all bg-white">
+                            <!-- Roles populated by JS -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">แผนก</label>
+                        <select id="addDept" class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all bg-white">
+                            <option value="">ไม่มีแผนก</option>
+                            <!-- Departments populated by JS -->
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">รหัสผ่านเริ่มต้น</label>
+                    <input type="password" id="addPassword" required class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all" placeholder="••••••••">
+                    <p class="mt-2 text-[10px] text-slate-400 font-medium italic">* ผู้ใช้ควรเปลี่ยนรหัสผ่านทันทีหลังเข้าใช้งานครั้งแรก</p>
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="closeAddModal()" class="flex-1 px-6 py-3 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all active:scale-95">ยกเลิก</button>
+                    <button type="submit" class="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all active:scale-95 flex items-center justify-center gap-2">
+                        <i data-lucide="user-plus" class="w-5 h-5"></i> เพิ่มผู้ใช้งาน
+                    </button>
+                </div>
+            </form>
+
+            <!-- Import Form -->
+            <div id="addImportSection" class="p-8 hidden space-y-6">
+                <div class="border-2 border-dashed border-slate-200 rounded-3xl p-10 text-center space-y-4 hover:border-indigo-300 transition-colors bg-slate-50/50">
+                    <div class="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 mx-auto mb-4">
+                        <i data-lucide="upload-cloud" class="w-8 h-8 text-indigo-500"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800">เลือกไฟล์ CSV เพื่อ Import</h3>
+                        <p class="text-xs text-slate-400 mt-1">ขนาดไฟล์ไม่เกิน 2MB (สูงสุด 100 รายชื่อต่อครั้ง)</p>
+                    </div>
+                    <input type="file" id="csvFileInput" accept=".csv" class="hidden">
+                    <button onclick="document.getElementById('csvFileInput').click()" class="bg-white border border-slate-200 px-6 py-3 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
+                        เลือกไฟล์จากเครื่อง
+                    </button>
+                </div>
+                
+                <div class="bg-indigo-50/50 rounded-2xl p-5 border border-indigo-100">
+                    <h4 class="text-sm font-bold text-indigo-900 flex items-center gap-2 mb-3">
+                        <i data-lucide="info" class="w-4 h-4"></i> คำแนะนำการ Import
+                    </h4>
+                    <ul class="text-xs text-indigo-700 space-y-2 leading-relaxed">
+                        <li>1. ดาวน์โหลด Template และกรอกข้อมูลให้ครบถ้วน</li>
+                        <li>2. คอลัมน์ที่จำเป็น: <span class="font-bold">name, email, role, department, password</span></li>
+                        <li>3. ชื่อบทบาทและแผนกต้องสะกดให้ตรงกับที่มีในระบบ</li>
+                    </ul>
+                    <button onclick="downloadCSVTemplate()" class="mt-4 text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group">
+                        ดาวน์โหลดไฟล์ Template <i data-lucide="download" class="w-3 h-3 group-hover:translate-y-0.5 transition-transform"></i>
+                    </button>
+                </div>
+
+                <div id="importPreview" class="hidden space-y-4">
+                    <h4 class="text-sm font-bold text-slate-800">รายการที่ตรวจพบ (<span id="importCount">0</span> รายการ)</h4>
+                    <div class="max-h-40 overflow-y-auto rounded-xl border border-slate-100 text-[10px]">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50 sticky top-0">
+                                <tr>
+                                    <th class="px-3 py-2 font-bold text-slate-500">ชื่อ</th>
+                                    <th class="px-3 py-2 font-bold text-slate-500">อีเมล</th>
+                                    <th class="px-3 py-2 font-bold text-slate-500">สถานะ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="importPreviewBody" class="divide-y divide-slate-50"></tbody>
+                        </table>
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="resetImport()" class="flex-1 px-6 py-3 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all">ยกเลิก</button>
+                        <button onclick="processBulkImport()" id="confirmImportBtn" class="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all flex items-center justify-center gap-2">
+                            ยืนยันการนำเข้า
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="/assets/js/app.js"></script>
     <script>
@@ -186,6 +302,166 @@
         // Edit Modal Logic
         const editModal = document.getElementById('editModal');
         const editForm = document.getElementById('editForm');
+        
+        // Add Modal Logic
+        const addModal = document.getElementById('addModal');
+        const addManualForm = document.getElementById('addManualForm');
+        const addImportSection = document.getElementById('addImportSection');
+        const tabManual = document.getElementById('tabManual');
+        const tabImport = document.getElementById('tabImport');
+        let rolesList = [];
+        let deptsList = [];
+        let importedData = [];
+
+        async function openAddModal() {
+            await loadOptions();
+            addModal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeAddModal() {
+            addModal.classList.add('hidden');
+            addManualForm.reset();
+            resetImport();
+        }
+
+        function switchAddTab(tab) {
+            if (tab === 'manual') {
+                addManualForm.classList.remove('hidden');
+                addImportSection.classList.add('hidden');
+                tabManual.classList.add('text-indigo-600', 'border-indigo-600');
+                tabManual.classList.remove('text-slate-400', 'border-transparent');
+                tabImport.classList.add('text-slate-400', 'border-transparent');
+                tabImport.classList.remove('text-indigo-600', 'border-indigo-600');
+            } else {
+                addManualForm.classList.add('hidden');
+                addImportSection.classList.remove('hidden');
+                tabImport.classList.add('text-indigo-600', 'border-indigo-600');
+                tabImport.classList.remove('text-slate-400', 'border-transparent');
+                tabManual.classList.add('text-slate-400', 'border-transparent');
+                tabManual.classList.remove('text-indigo-600', 'border-indigo-600');
+            }
+            lucide.createIcons();
+        }
+
+        // CSV Template Download
+        function downloadCSVTemplate() {
+            const csvContent = "name,email,role,department,password\nJohn Doe,john.d,User,IT,password123\nJane Smith,jane.s,Technician,Support,tech@123";
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "user_import_template.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // CSV File Processing
+        document.getElementById('csvFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    importedData = results.data;
+                    showImportPreview();
+                },
+                error: function(err) {
+                    notify.error('ไม่สามารถอ่านไฟล์ CSV ได้: ' + err.message);
+                }
+            });
+        });
+
+        function showImportPreview() {
+            const preview = document.getElementById('importPreview');
+            const previewBody = document.getElementById('importPreviewBody');
+            const count = document.getElementById('importCount');
+            
+            preview.classList.remove('hidden');
+            count.innerText = importedData.length;
+            
+            previewBody.innerHTML = importedData.map(row => `
+                <tr>
+                    <td class="px-3 py-2 font-medium text-slate-700">${escapeHTML(row.name || '-')}</td>
+                    <td class="px-3 py-2 text-slate-500">${escapeHTML(row.email || '-')}</td>
+                    <td class="px-3 py-2">
+                        <span class="text-emerald-500 font-bold">พร้อมนำเข้า</span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function resetImport() {
+            importedData = [];
+            document.getElementById('csvFileInput').value = '';
+            document.getElementById('importPreview').classList.add('hidden');
+        }
+
+        async function processBulkImport() {
+            const btn = document.getElementById('confirmImportBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-2"></i> กำลังนำเข้า...';
+            lucide.createIcons();
+
+            try {
+                const response = await apiFetch('/api/users?action=bulkCreate', {
+                    method: 'POST',
+                    body: JSON.stringify(importedData)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    notify.success(`นำเข้าสำเร็จ ${result.count} รายการ!`);
+                    closeAddModal();
+                    loadUsers();
+                } else {
+                    const err = await response.json();
+                    notify.error(err.message || 'เกิดข้อผิดพลาดในการนำเข้า');
+                }
+            } catch (err) {
+                notify.error('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'ยืนยันการนำเข้า';
+                lucide.createIcons();
+            }
+        }
+
+        // Manual Form Submission
+        addManualForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('addName').value;
+            const email = document.getElementById('addEmail').value;
+            const role_id = document.getElementById('addRole').value;
+            const department_id = document.getElementById('addDept').value || null;
+            const password = document.getElementById('addPassword').value;
+
+            try {
+                const response = await apiFetch('/api/users?action=create', {
+                    method: 'POST',
+                    body: JSON.stringify({ name, email, role_id, department_id, password })
+                });
+
+                if (response.ok) {
+                    notify.success('เพิ่มผู้ใช้งานสำเร็จ!');
+                    closeAddModal();
+                    loadUsers();
+                } else {
+                    const err = await response.json();
+                    notify.error(err.message || 'เกิดข้อผิดพลาด');
+                }
+            } catch (err) {
+                notify.error('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+            }
+        });
+
+        // Edit Modal Logic
+        const editModal = document.getElementById('editModal');
+        const editForm = document.getElementById('editForm');
         let optionsLoaded = false;
 
         async function loadOptions() {
@@ -193,13 +469,18 @@
             try {
                 const response = await apiFetch('/api/users?action=getOptions');
                 const { roles, departments } = await response.json();
+                rolesList = roles;
+                deptsList = departments;
                 
-                const roleSelect = document.getElementById('editRole');
-                const deptSelect = document.getElementById('editDept');
+                const roleSelects = [document.getElementById('editRole'), document.getElementById('addRole')];
+                const deptSelects = [document.getElementById('editDept'), document.getElementById('addDept')];
                 
-                roleSelect.innerHTML = roles.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
-                deptSelect.innerHTML = '<option value="">ไม่มีแผนก</option>' + 
+                const roleOptions = roles.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+                const deptOptions = '<option value="">ไม่มีแผนก</option>' + 
                     departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+                
+                roleSelects.forEach(s => s.innerHTML = roleOptions);
+                deptSelects.forEach(s => s.innerHTML = deptOptions);
                 
                 optionsLoaded = true;
             } catch (err) {

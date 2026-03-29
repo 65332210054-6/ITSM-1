@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import bcrypt from 'bcryptjs';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -56,8 +57,70 @@ export async function onRequest(context) {
       });
     }
 
-    // POST Update User
+    // POST Operations
     if (request.method === "POST") {
+      const url = new URL(request.url);
+      const action = url.searchParams.get("action");
+
+      // 1. Create Single User
+      if (action === "create") {
+        const { name, email, role_id, department_id, password } = await request.json();
+        
+        // Check if user exists
+        const existing = await sql`SELECT id FROM users WHERE email = ${email} LIMIT 1`;
+        if (existing.length > 0) {
+          return new Response(JSON.stringify({ message: "ชื่อผู้ใช้งานนี้มีอยู่ในระบบแล้ว" }), { status: 400 });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
+        await sql`
+          INSERT INTO users (name, email, role_id, department_id, password, created_at)
+          VALUES (${name}, ${email}, ${role_id}, ${department_id}, ${hashedPassword}, NOW())
+        `;
+
+        return new Response(JSON.stringify({ message: "User created successfully" }), { status: 201 });
+      }
+
+      // 2. Bulk Create (Import)
+      if (action === "bulkCreate") {
+        const usersToImport = await request.json();
+        
+        // Load roles and depts for mapping names to IDs
+        const roles = await sql`SELECT id, name FROM roles`;
+        const depts = await sql`SELECT id, name FROM departments`;
+        
+        const roleMap = Object.fromEntries(roles.map(r => [r.name.toLowerCase(), r.id]));
+        const deptMap = Object.fromEntries(depts.map(d => [d.name.toLowerCase(), d.id]));
+        const defaultRoleId = roleMap['user'] || (roles.length > 0 ? roles[0].id : null);
+
+        let successCount = 0;
+        for (const u of usersToImport) {
+          try {
+            if (!u.name || !u.email || !u.password) continue;
+
+            // Check if user exists
+            const existing = await sql`SELECT id FROM users WHERE email = ${u.email} LIMIT 1`;
+            if (existing.length > 0) continue;
+
+            const hashedPassword = await bcrypt.hash(u.password, 10);
+            const roleId = roleMap[(u.role || '').toLowerCase()] || defaultRoleId;
+            const deptId = deptMap[(u.department || '').toLowerCase()] || null;
+
+            await sql`
+              INSERT INTO users (name, email, role_id, department_id, password, created_at)
+              VALUES (${u.name}, ${u.email}, ${roleId}, ${deptId}, ${hashedPassword}, NOW())
+            `;
+            successCount++;
+          } catch (err) {
+            console.error(`Error importing user ${u.email}:`, err);
+          }
+        }
+
+        return new Response(JSON.stringify({ message: `Imported ${successCount} users`, count: successCount }), { status: 200 });
+      }
+
+      // 3. Update User (Default POST)
       const { id, name, email, role_id, department_id } = await request.json();
       
       if (!id) {
@@ -70,10 +133,7 @@ export async function onRequest(context) {
         WHERE id = ${id}
       `;
 
-      return new Response(JSON.stringify({ message: "User updated successfully" }), { 
-        status: 200,
-        headers: { "Content-Type": "application/json" }
-      });
+      return new Response(JSON.stringify({ message: "User updated successfully" }), { status: 200 });
     }
 
     return new Response(JSON.stringify({ message: "Method not allowed" }), { 
