@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import bcrypt from 'bcryptjs';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -12,7 +13,8 @@ export async function onRequest(context) {
     const databaseUrl = env.DATABASE_URL;
 
     if (!databaseUrl) {
-      return new Response(JSON.stringify({ message: "DATABASE_URL is not set" }), { status: 500 });
+      console.error("DATABASE_URL is not set");
+      return new Response(JSON.stringify({ message: "เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล" }), { status: 500 });
     }
 
     const sql = neon(databaseUrl);
@@ -26,8 +28,10 @@ export async function onRequest(context) {
 
     const user = users[0];
 
-    // Note: Simple check for now
-    if (user && user.password === password) {
+    // Secure password check using bcrypt
+    const isPasswordValid = user && await bcrypt.compare(password, user.password);
+
+    if (isPasswordValid) {
       return new Response(JSON.stringify({ 
         token: "session-" + Math.random().toString(36).substr(2),
         user: { 
@@ -42,13 +46,14 @@ export async function onRequest(context) {
       });
     }
 
-    return new Response(JSON.stringify({ message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" }), { 
+    return new Response(JSON.stringify({ message: "ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง" }), { 
       status: 401,
       headers: { "Content-Type": "application/json" }
     });
 
   } catch (error) {
-    return new Response(JSON.stringify({ message: "Server Error", error: error.message }), { 
+    console.error("Login Error:", error);
+    return new Response(JSON.stringify({ message: "เกิดข้อผิดพลาดภายในระบบ" }), { 
       status: 500,
       headers: { "Content-Type": "application/json" }
     });
