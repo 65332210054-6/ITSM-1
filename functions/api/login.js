@@ -19,7 +19,7 @@ export async function onRequest(context) {
 
     const sql = neon(databaseUrl);
     const users = await sql`
-      SELECT u.id, u.name, u.email, u.password, u.login_attempts, u.lock_until, r.name as role_name 
+      SELECT u.id, u.name, u.email, u.password, u.avatar_url, u.login_attempts, u.lock_until, r.name as role_name 
       FROM users u 
       LEFT JOIN roles r ON u.role_id = r.id 
       WHERE u.email = ${email} 
@@ -59,7 +59,8 @@ export async function onRequest(context) {
           id: user.id,
           name: user.name, 
           email: user.email,
-          role: user.role_name 
+          role: user.role_name,
+          avatar_url: user.avatar_url
         }
       }), { 
         status: 200,

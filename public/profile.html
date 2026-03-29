@@ -159,6 +159,7 @@
         // Handle Form Submit
         document.getElementById('profileForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const userObj = JSON.parse(localStorage.getItem('user') || '{}');
             const name = document.getElementById('profileName').value;
             const email = document.getElementById('profileEmail').value;
             const password = document.getElementById('profilePassword').value;
@@ -168,7 +169,7 @@
             try {
                 const response = await apiFetch('/api/profile', {
                     method: 'POST',
-                    body: JSON.stringify({ name, email, password, avatar_url: avatarUrl })
+                    body: JSON.stringify({ id: userObj.id, name, email, password, avatar_url: avatarUrl })
                 });
 
                 if (response.ok) {

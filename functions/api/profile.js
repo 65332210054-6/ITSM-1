@@ -19,7 +19,7 @@ export async function onRequest(context) {
     // or we'd need to pass the user ID in the token. 
     // Since we're using localStorage 'user' object on client, let's pass the ID in the body for this demo.
     
-    const { name, email, password, avatar_url } = await request.json();
+    const { id, name, email, password, avatar_url } = await request.json();
     const databaseUrl = env.DATABASE_URL;
 
     if (!databaseUrl) {
@@ -28,22 +28,19 @@ export async function onRequest(context) {
 
     const sql = neon(databaseUrl);
     
-    // Get current user to update (we'll use email as the identifier for now as it's unique)
-    // In a real app, you'd use the user ID from a verified JWT token.
-    
     let updateQuery;
     if (password && password.trim() !== "") {
       const hashedPassword = await bcrypt.hash(password, 10);
       await sql`
         UPDATE users 
         SET name = ${name}, email = ${email}, password = ${hashedPassword}, avatar_url = ${avatar_url}, updated_at = NOW() 
-        WHERE email = ${email}
+        WHERE id = ${id}
       `;
     } else {
       await sql`
         UPDATE users 
         SET name = ${name}, email = ${email}, avatar_url = ${avatar_url}, updated_at = NOW() 
-        WHERE email = ${email}
+        WHERE id = ${id}
       `;
     }
 
@@ -52,7 +49,7 @@ export async function onRequest(context) {
       SELECT u.id, u.name, u.email, u.avatar_url, r.name as role_name 
       FROM users u 
       LEFT JOIN roles r ON u.role_id = r.id 
-      WHERE u.email = ${email} 
+      WHERE u.id = ${id} 
       LIMIT 1
     `;
 
