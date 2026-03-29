@@ -23,14 +23,22 @@ document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
     }
 
-    // Update User UI
+    // Update Header Profile Info
     const userNameEl = document.getElementById('userName');
-    const userAvatarEl = document.getElementById('userAvatar');
     const welcomeNameEl = document.getElementById('welcomeName');
+    const userRoleEl = document.getElementById('userRole');
+    const userAvatarEl = document.getElementById('userAvatar');
 
-    if (userNameEl) userNameEl.innerText = user.name || 'Unknown User';
-    if (welcomeNameEl) welcomeNameEl.innerText = user.name || '...';
-    if (userAvatarEl) userAvatarEl.innerText = (user.name || 'U').charAt(0).toUpperCase();
+    if (userNameEl) userNameEl.innerText = user.name || 'User';
+    if (welcomeNameEl) welcomeNameEl.innerText = user.name || 'User';
+    if (userRoleEl) userRoleEl.innerText = user.role || 'System Admin';
+    if (userAvatarEl) {
+        if (user.avatar_url) {
+            userAvatarEl.innerHTML = `<img src="${user.avatar_url}" class="w-full h-full rounded-xl object-cover">`;
+        } else {
+            userAvatarEl.innerText = (user.name || 'U').charAt(0).toUpperCase();
+        }
+    }
 
     // Logout Handler
     const logoutBtn = document.getElementById('logoutBtn');

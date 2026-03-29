@@ -74,8 +74,8 @@
                         <p id="currentTime" class="text-[10px] font-semibold text-slate-500 mt-0.5">30/03/2026</p>
                     </div>
                     <div class="relative group">
-                        <button class="flex items-center gap-3 p-1 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
-                            <div id="userAvatar" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-500/20">U</div>
+                        <button onclick="window.location.href='/profile.html'" class="flex items-center gap-3 p-1 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100" title="แก้ไขข้อมูลส่วนตัว">
+                            <div id="userAvatar" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-500/20 overflow-hidden">U</div>
                         </button>
                     </div>
                     <button id="logoutBtn" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all group" title="ออกจากระบบ">
@@ -113,7 +113,7 @@
                                     <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">บทบาท</th>
                                     <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">แผนก</th>
                                     <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">สถานะ</th>
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">จัดการ</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">แก้ไข</th>
                                 </tr>
                             </thead>
                             <tbody id="userTableBody" class="divide-y divide-slate-100">
