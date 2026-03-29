@@ -284,12 +284,28 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="/assets/js/app.js"></script>
     <script>
-        // Mobile Sidebar Toggle
-        const openSidebar = document.getElementById('openSidebar');
-        const closeSidebar = document.getElementById('closeSidebar');
+        // UI Elements
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const openSidebar = document.getElementById('openSidebar');
+        const closeSidebar = document.getElementById('closeSidebar');
 
+        const editModal = document.getElementById('editModal');
+        const editForm = document.getElementById('editForm');
+        
+        const addModal = document.getElementById('addModal');
+        const addManualForm = document.getElementById('addManualForm');
+        const addImportSection = document.getElementById('addImportSection');
+        const tabManual = document.getElementById('tabManual');
+        const tabImport = document.getElementById('tabImport');
+
+        // State
+        let rolesList = [];
+        let deptsList = [];
+        let importedData = [];
+        let optionsLoaded = false;
+
+        // Mobile Sidebar Toggle
         function toggleSidebar() {
             sidebar.classList.toggle('-translate-x-full');
             sidebarOverlay.classList.toggle('hidden');
@@ -299,20 +315,32 @@
         if (closeSidebar) closeSidebar.addEventListener('click', toggleSidebar);
         if (sidebarOverlay) sidebarOverlay.addEventListener('click', toggleSidebar);
 
-        // Edit Modal Logic
-        const editModal = document.getElementById('editModal');
-        const editForm = document.getElementById('editForm');
-        
-        // Add Modal Logic
-        const addModal = document.getElementById('addModal');
-        const addManualForm = document.getElementById('addManualForm');
-        const addImportSection = document.getElementById('addImportSection');
-        const tabManual = document.getElementById('tabManual');
-        const tabImport = document.getElementById('tabImport');
-        let rolesList = [];
-        let deptsList = [];
-        let importedData = [];
+        // Options Loading
+        async function loadOptions() {
+            if (optionsLoaded) return;
+            try {
+                const response = await apiFetch('/api/users?action=getOptions');
+                const { roles, departments } = await response.json();
+                rolesList = roles;
+                deptsList = departments;
+                
+                const roleSelects = [document.getElementById('editRole'), document.getElementById('addRole')];
+                const deptSelects = [document.getElementById('editDept'), document.getElementById('addDept')];
+                
+                const roleOptions = roles.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+                const deptOptions = '<option value="">ไม่มีแผนก</option>' + 
+                    departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+                
+                roleSelects.forEach(s => s.innerHTML = roleOptions);
+                deptSelects.forEach(s => s.innerHTML = deptOptions);
+                
+                optionsLoaded = true;
+            } catch (err) {
+                console.error('Failed to load options:', err);
+            }
+        }
 
+        // Add Modal Functions
         async function openAddModal() {
             await loadOptions();
             addModal.classList.remove('hidden');
@@ -344,7 +372,35 @@
             lucide.createIcons();
         }
 
-        // CSV Template Download
+        // Manual Add User
+        addManualForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('addName').value;
+            const email = document.getElementById('addEmail').value;
+            const role_id = document.getElementById('addRole').value;
+            const department_id = document.getElementById('addDept').value || null;
+            const password = document.getElementById('addPassword').value;
+
+            try {
+                const response = await apiFetch('/api/users?action=create', {
+                    method: 'POST',
+                    body: JSON.stringify({ name, email, role_id, department_id, password })
+                });
+
+                if (response.ok) {
+                    notify.success('เพิ่มผู้ใช้งานสำเร็จ!');
+                    closeAddModal();
+                    loadUsers();
+                } else {
+                    const err = await response.json();
+                    notify.error(err.message || 'เกิดข้อผิดพลาด');
+                }
+            } catch (err) {
+                notify.error('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+            }
+        });
+
+        // Import Functions
         function downloadCSVTemplate() {
             const csvContent = "name,email,role,department,password\nJohn Doe,john.d,User,IT,password123\nJane Smith,jane.s,Technician,Support,tech@123";
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -358,7 +414,6 @@
             document.body.removeChild(link);
         }
 
-        // CSV File Processing
         document.getElementById('csvFileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -431,63 +486,7 @@
             }
         }
 
-        // Manual Form Submission
-        addManualForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('addName').value;
-            const email = document.getElementById('addEmail').value;
-            const role_id = document.getElementById('addRole').value;
-            const department_id = document.getElementById('addDept').value || null;
-            const password = document.getElementById('addPassword').value;
-
-            try {
-                const response = await apiFetch('/api/users?action=create', {
-                    method: 'POST',
-                    body: JSON.stringify({ name, email, role_id, department_id, password })
-                });
-
-                if (response.ok) {
-                    notify.success('เพิ่มผู้ใช้งานสำเร็จ!');
-                    closeAddModal();
-                    loadUsers();
-                } else {
-                    const err = await response.json();
-                    notify.error(err.message || 'เกิดข้อผิดพลาด');
-                }
-            } catch (err) {
-                notify.error('เกิดข้อผิดพลาดในการเชื่อมต่อ');
-            }
-        });
-
-        // Edit Modal Logic
-        const editModal = document.getElementById('editModal');
-        const editForm = document.getElementById('editForm');
-        let optionsLoaded = false;
-
-        async function loadOptions() {
-            if (optionsLoaded) return;
-            try {
-                const response = await apiFetch('/api/users?action=getOptions');
-                const { roles, departments } = await response.json();
-                rolesList = roles;
-                deptsList = departments;
-                
-                const roleSelects = [document.getElementById('editRole'), document.getElementById('addRole')];
-                const deptSelects = [document.getElementById('editDept'), document.getElementById('addDept')];
-                
-                const roleOptions = roles.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
-                const deptOptions = '<option value="">ไม่มีแผนก</option>' + 
-                    departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
-                
-                roleSelects.forEach(s => s.innerHTML = roleOptions);
-                deptSelects.forEach(s => s.innerHTML = deptOptions);
-                
-                optionsLoaded = true;
-            } catch (err) {
-                console.error('Failed to load options:', err);
-            }
-        }
-
+        // Edit Modal Functions
         async function openEditModal(id, name, email, roleId, deptId) {
             await loadOptions();
             document.getElementById('editUserId').value = id;
@@ -521,7 +520,7 @@
                 if (response.ok) {
                     notify.success('แก้ไขข้อมูลสำเร็จ!');
                     closeEditModal();
-                    loadUsers(); // Refresh table
+                    loadUsers();
                 } else {
                     const err = await response.json();
                     notify.error(err.message || 'เกิดข้อผิดพลาด');
@@ -531,13 +530,13 @@
             }
         });
 
-        // Load Users
+        // Data Loading
+        let allUsers = [];
         async function loadUsers() {
             const tableBody = document.getElementById('userTableBody');
             const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
             const isVisitor = currentUser.role === 'Visitor';
 
-            // Hide Add User button for Visitors
             if (isVisitor) {
                 const addBtnContainer = document.getElementById('addUserBtnContainer');
                 if (addBtnContainer) addBtnContainer.style.display = 'none';
@@ -545,50 +544,67 @@
 
             try {
                 const response = await apiFetch('/api/users');
-                const users = await response.json();
-                
-                if (users.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">ไม่พบข้อมูลผู้ใช้งาน</td></tr>';
-                    return;
-                }
-
-                tableBody.innerHTML = users.map(user => {
-                    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-                    const isVisitor = currentUser.role === 'Visitor';
-                    
-                    return `
-                        <tr class="hover:bg-slate-50/50 transition-colors">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600">
-                                        ${escapeHTML(user.name.charAt(0))}
-                                    </div>
-                                    <span class="text-sm font-semibold text-slate-700">${escapeHTML(user.name)}</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-slate-500">${escapeHTML(user.email)}</td>
-                            <td class="px-6 py-4 text-sm text-slate-600 font-medium">${escapeHTML(user.role_name || 'User')}</td>
-                            <td class="px-6 py-4 text-sm text-slate-500">${escapeHTML(user.department_name || '-')}</td>
-                            <td class="px-6 py-4 text-center">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
-                                    ใช้งานปกติ
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-right">
-                                ${isVisitor ? 
-                                    `<span class="text-slate-300 cursor-not-allowed" title="Visitor ไม่สามารถแก้ไขข้อมูลได้"><i data-lucide="lock" class="w-4 h-4 ml-auto"></i></span>` :
-                                    `<button onclick="openEditModal('${user.id}', '${escapeHTML(user.name)}', '${escapeHTML(user.email)}', '${user.role_id}', '${user.department_id || ''}')" class="text-slate-400 hover:text-indigo-600 transition-colors p-2 hover:bg-indigo-50 rounded-lg">
-                                        <i data-lucide="edit-3" class="w-4 h-4"></i>
-                                    </button>`
-                                }
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-                lucide.createIcons();
+                allUsers = await response.json();
+                renderUsers(allUsers);
             } catch (error) {
                 tableBody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
             }
+        }
+
+        function renderUsers(users) {
+            const tableBody = document.getElementById('userTableBody');
+            const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+            const isVisitor = currentUser.role === 'Visitor';
+
+            if (users.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">ไม่พบข้อมูลผู้ใช้งาน</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = users.map(user => `
+                <tr class="hover:bg-slate-50/50 transition-colors">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600">
+                                ${escapeHTML(user.name.charAt(0))}
+                            </div>
+                            <span class="text-sm font-semibold text-slate-700">${escapeHTML(user.name)}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-500">${escapeHTML(user.email)}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600 font-medium">${escapeHTML(user.role_name || 'User')}</td>
+                    <td class="px-6 py-4 text-sm text-slate-500">${escapeHTML(user.department_name || '-')}</td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                            ใช้งานปกติ
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        ${isVisitor ? 
+                            `<span class="text-slate-300 cursor-not-allowed" title="Visitor ไม่สามารถแก้ไขข้อมูลได้"><i data-lucide="lock" class="w-4 h-4 ml-auto"></i></span>` :
+                            `<button onclick="openEditModal('${user.id}', '${escapeHTML(user.name)}', '${escapeHTML(user.email)}', '${user.role_id}', '${user.department_id || ''}')" class="text-slate-400 hover:text-indigo-600 transition-colors p-2 hover:bg-indigo-50 rounded-lg">
+                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                            </button>`
+                        }
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // Search Logic
+        const searchInput = document.querySelector('input[placeholder*="ค้นหาชื่อ"]');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                const filtered = allUsers.filter(u => 
+                    u.name.toLowerCase().includes(term) || 
+                    u.email.toLowerCase().includes(term) ||
+                    (u.role_name && u.role_name.toLowerCase().includes(term)) ||
+                    (u.department_name && u.department_name.toLowerCase().includes(term))
+                );
+                renderUsers(filtered);
+            });
         }
 
         document.addEventListener('DOMContentLoaded', loadUsers);
