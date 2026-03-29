@@ -61,10 +61,11 @@ export async function onRequest(context) {
     if (request.method === "POST") {
       const url = new URL(request.url);
       const action = url.searchParams.get("action");
+      const data = await request.json();
 
       // 1. Create Single User
       if (action === "create") {
-        const { name, email, role_id, department_id, password } = await request.json();
+        const { name, email, role_id, department_id, password } = data;
         
         // Check if user exists
         const existing = await sql`SELECT id FROM users WHERE email = ${email} LIMIT 1`;
@@ -76,7 +77,7 @@ export async function onRequest(context) {
         
         await sql`
           INSERT INTO users (name, email, role_id, department_id, password, created_at)
-          VALUES (${name}, ${email}, ${role_id}, ${department_id}, ${hashedPassword}, NOW())
+          VALUES (${name}, ${email}, ${role_id}, ${department_id || null}, ${hashedPassword}, NOW())
         `;
 
         return new Response(JSON.stringify({ message: "User created successfully" }), { status: 201 });
@@ -84,7 +85,7 @@ export async function onRequest(context) {
 
       // 2. Bulk Create (Import)
       if (action === "bulkCreate") {
-        const usersToImport = await request.json();
+        const usersToImport = data;
         
         // Load roles and depts for mapping names to IDs
         const roles = await sql`SELECT id, name FROM roles`;
@@ -121,7 +122,7 @@ export async function onRequest(context) {
       }
 
       // 3. Update User (Default POST)
-      const { id, name, email, role_id, department_id } = await request.json();
+      const { id, name, email, role_id, department_id } = data;
       
       if (!id) {
         return new Response(JSON.stringify({ message: "User ID is required" }), { status: 400 });
@@ -129,7 +130,7 @@ export async function onRequest(context) {
 
       await sql`
         UPDATE users 
-        SET name = ${name}, email = ${email}, role_id = ${role_id}, department_id = ${department_id}, updated_at = NOW() 
+        SET name = ${name}, email = ${email}, role_id = ${role_id}, department_id = ${department_id || null}, updated_at = NOW() 
         WHERE id = ${id}
       `;
 
