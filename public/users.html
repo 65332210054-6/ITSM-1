@@ -130,6 +130,21 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="/assets/js/app.js"></script>
     <script>
+        // Mobile Sidebar Toggle
+        const openSidebar = document.getElementById('openSidebar');
+        const closeSidebar = document.getElementById('closeSidebar');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('-translate-x-full');
+            sidebarOverlay.classList.toggle('hidden');
+        }
+
+        if (openSidebar) openSidebar.addEventListener('click', toggleSidebar);
+        if (closeSidebar) closeSidebar.addEventListener('click', toggleSidebar);
+        if (sidebarOverlay) sidebarOverlay.addEventListener('click', toggleSidebar);
+
         // Load Users
         async function loadUsers() {
             const tableBody = document.getElementById('userTableBody');
