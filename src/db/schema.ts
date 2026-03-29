@@ -54,7 +54,7 @@ export const users = pgTable("users", {
 // ==========================================
 
 export const accounts = pgTable(
-  "account",
+  "accounts",
   {
     userId: text("userId")
       .notNull()
@@ -77,7 +77,7 @@ export const accounts = pgTable(
   })
 )
 
-export const sessions = pgTable("session", {
+export const sessions = pgTable("sessions", {
   sessionToken: text("sessionToken").primaryKey(),
   userId: text("userId")
     .notNull()
@@ -86,7 +86,7 @@ export const sessions = pgTable("session", {
 })
 
 export const verificationTokens = pgTable(
-  "verificationToken",
+  "verification_tokens",
   {
     identifier: text("identifier").notNull(),
     token: text("token").notNull(),
