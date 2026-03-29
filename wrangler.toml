@@ -1,9 +1,0 @@
-name = "itsm"
-compatibility_date = "2024-03-29"
-compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = ".vercel/output/static"
-
-[[d1_databases]]
-binding = "DB"
-database_name = "management_db"
-database_id = "b14ebd68-03e2-4f23-a691-99fb8ca3c9b2"

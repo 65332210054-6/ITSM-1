@@ -10,7 +10,6 @@ const navSections = [
       { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", roles: ["Admin", "Technician", "User"] },
     ]
   },
-  /* Phase 2: Helpdesk
   {
     title: "Helpdesk",
     items: [
@@ -19,20 +18,16 @@ const navSections = [
       { href: "/knowledge", icon: BookOpen, label: "ฐานความรู้ (KB)", roles: ["Admin", "Technician", "User"] },
     ]
   },
-  */
   {
     title: "Assets",
     items: [
       { href: "/assets", icon: Monitor, label: "ทรัพย์สินไอที", roles: ["Admin", "Technician"] },
       { href: "/categories", icon: Tags, label: "หมวดหมู่อุปกรณ์", roles: ["Admin", "Technician"] },
-      /* Phase 2: Borrows & Inventory
       { href: "/borrows", icon: ArrowRightLeft, label: "ยืม-คืนอุปกรณ์", roles: ["Admin", "Technician", "User"] },
       { href: "/spare-parts", icon: Package, label: "อะไหล่ / Spare Parts", roles: ["Admin", "Technician"] },
       { href: "/cartridges", icon: Printer, label: "ตลับหมึก / Toner", roles: ["Admin", "Technician"] },
-      */
     ]
   },
-  /* Phase 2: Digital Assets
   {
     title: "Digital Assets",
     items: [
@@ -40,13 +35,12 @@ const navSections = [
       { href: "/domains", icon: Globe, label: "Domains & Hosting", roles: ["Admin", "Technician"] },
     ]
   },
-  */
   {
     title: "System",
     items: [
       { href: "/users", icon: Users, label: "จัดการผู้ใช้งาน", roles: ["Admin"] },
       { href: "/settings", icon: Settings, label: "ตั้งค่าระบบ", roles: ["Admin"] },
-      // { href: "/reports", icon: FileSpreadsheet, label: "ระบบรายงาน", roles: ["Admin", "Technician"] },
+      { href: "/reports", icon: FileSpreadsheet, label: "ระบบรายงาน", roles: ["Admin", "Technician"] },
     ]
   }
 ]
