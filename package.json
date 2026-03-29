@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "wrangler pages dev public --compatibility-flag nodejs_compat",
-    "deploy": "wrangler pages deploy public"
+    "deploy": "wrangler pages deploy public",
+    "build": "echo 'No build step required for vanilla JS'"
   },
   "devDependencies": {
     "wrangler": "^3.109.2",
