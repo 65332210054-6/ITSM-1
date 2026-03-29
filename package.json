@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "wrangler pages dev public --compatibility-flag nodejs_compat",
+    "dev": "wrangler pages dev public --compatibility-flags nodejs_compat",
     "deploy": "wrangler pages deploy public",
     "build": "echo 'No build step required for vanilla JS'"
   },
