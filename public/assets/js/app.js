@@ -47,8 +47,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentTimeEl = document.getElementById('currentTime');
     if (currentTimeEl) {
         const now = new Date();
-        const options = { year: 'numeric', month: 'long', day: 'numeric' };
-        currentTimeEl.innerText = now.toLocaleDateString('th-TH', options);
+        const d = String(now.getDate()).padStart(2, '0');
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const y = now.getFullYear();
+        currentTimeEl.innerText = `${d}/${m}/${y}`;
     }
 });
 
