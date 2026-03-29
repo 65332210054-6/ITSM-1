@@ -18,6 +18,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    // Role-based Access Control
+    const isAdminOnlyPage = path.endsWith('users.html') || path.endsWith('settings.html');
+    if (isAdminOnlyPage && user.role !== 'Admin') {
+        window.location.href = '/index.html';
+        return;
+    }
+
     // Initialize Lucide Icons
     if (window.lucide) {
         lucide.createIcons();
@@ -59,6 +66,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const m = String(now.getMonth() + 1).padStart(2, '0');
         const y = now.getFullYear();
         currentTimeEl.innerText = `${d}/${m}/${y}`;
+    }
+
+    // Sidebar Menu Access Control
+    if (user.role !== 'Admin') {
+        const adminLinks = document.querySelectorAll('a[href="/users.html"], a[href="/settings.html"]');
+        adminLinks.forEach(link => {
+            link.style.display = 'none';
+        });
     }
 });
 
