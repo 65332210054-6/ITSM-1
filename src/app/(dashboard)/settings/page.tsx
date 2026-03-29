@@ -1,11 +1,13 @@
 export const runtime = 'edge'
-import { prisma } from "@/lib/prisma"
+import { db } from "@/db"
+import { branches as branchesTable, departments as departmentsTable, roles as rolesTable } from "@/db/schema"
+import { asc } from "drizzle-orm"
 import { SettingsForms } from "./settings-forms"
 
 export default async function SettingsPage() {
-  const branches = await prisma.branch.findMany({ orderBy: { code: 'asc' } })
-  const departments = await prisma.department.findMany({ orderBy: { code: 'asc' } })
-  const roles = await prisma.role.findMany({ orderBy: { name: 'asc' } })
+  const branches = await db.query.branches.findMany({ orderBy: [asc(branchesTable.code)] })
+  const departments = await db.query.departments.findMany({ orderBy: [asc(departmentsTable.code)] })
+  const roles = await db.query.roles.findMany({ orderBy: [asc(rolesTable.name)] })
 
   return (
     <div className="space-y-8">

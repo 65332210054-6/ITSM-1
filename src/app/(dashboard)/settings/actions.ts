@@ -1,6 +1,8 @@
 "use server"
 
-import { prisma } from "@/lib/prisma"
+import { db } from "@/db"
+import { branches, departments, roles as rolesTable } from "@/db/schema"
+import { eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { auth } from "@/auth"
 
@@ -16,13 +18,11 @@ export async function createBranch(formData: FormData) {
   if (!code || !name) return { error: "กรุณาระบุรหัสสาขาและชื่อสาขา" }
 
   try {
-    await prisma.branch.create({
-      data: { code, name, isMain }
-    })
+    await db.insert(branches).values({ code, name, isMain })
     revalidatePath("/settings")
     return { success: true }
   } catch (e: any) {
-    if (e.code === 'P2002') return { error: "รหัสสาขานี้มีอยู่แล้ว" }
+    if (e.code === '23505') return { error: "รหัสสาขานี้มีอยู่แล้ว" }
     return { error: "ไม่สามารถเพิ่มสาขาได้" }
   }
 }
@@ -39,13 +39,11 @@ export async function createDepartment(formData: FormData) {
   if (!code || !name) return { error: "กรุณาระบุรหัสแผนกและชื่อแผนก" }
 
   try {
-    await prisma.department.create({
-      data: { code, name, description }
-    })
+    await db.insert(departments).values({ code, name, description })
     revalidatePath("/settings")
     return { success: true }
   } catch (e: any) {
-    if (e.code === 'P2002') return { error: "รหัสแผนกนี้มีอยู่แล้ว" }
+    if (e.code === '23505') return { error: "รหัสแผนกนี้มีอยู่แล้ว" }
     return { error: "ไม่สามารถเพิ่มแผนกได้" }
   }
 }
@@ -63,11 +61,7 @@ export async function setupRoles() {
   ]
   
   for (const r of roles) {
-    await prisma.role.upsert({
-      where: { name: r.name },
-      update: {},
-      create: r
-    })
+    await db.insert(rolesTable).values(r).onConflictDoNothing()
   }
   return { success: true }
 }

@@ -1,6 +1,8 @@
 "use server"
 
-import { prisma } from "@/lib/prisma"
+import { db } from "@/db"
+import { users } from "@/db/schema"
+import { eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
 import { auth } from "@/auth"
@@ -22,20 +24,18 @@ export async function createUser(formData: FormData) {
   }
 
   try {
-    const existingUser = await prisma.user.findUnique({ where: { email } })
+    const existingUser = await db.query.users.findFirst({ where: eq(users.email, email) })
     if (existingUser) return { error: "อีเมลนี้มีในระบบแล้ว" }
 
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        roleId,
-        branchId,
-        departmentId
-      }
+    await db.insert(users).values({
+      name,
+      email,
+      password: hashedPassword,
+      roleId,
+      branchId,
+      departmentId
     })
 
     revalidatePath("/users")
@@ -52,7 +52,7 @@ export async function deleteUser(id: string) {
   if (roleName !== "Admin") return { error: "Permission denied. Admin only." }
 
   try {
-    await prisma.user.delete({ where: { id } })
+    await db.delete(users).where(eq(users.id, id))
     revalidatePath("/users")
     return { success: true }
   } catch (e) {

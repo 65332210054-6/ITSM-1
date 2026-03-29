@@ -9,18 +9,16 @@
     "lint": "eslint",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "tsx drizzle-structure/src/db/seed/index.ts"
+    "db:seed": "tsx src/db/seed/index.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.1",
-    "@auth/prisma-adapter": "^2.11.1",
     "@base-ui/react": "^1.3.0",
     "@neondatabase/serverless": "^1.0.2",
-    "@prisma/adapter-neon": "^7.6.0",
-    "@prisma/client": "^7.6.0",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^16.4.7",
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^1.7.0",
     "next": "16.2.1",
@@ -42,12 +40,8 @@
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
-    "prisma": "^7.6.0",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"
-  },
-  "prisma": {
-    "seed": "npx tsx prisma/seed.ts"
   }
 }

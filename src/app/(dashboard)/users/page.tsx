@@ -1,23 +1,25 @@
 export const runtime = 'edge'
-import { prisma } from "@/lib/prisma"
+import { db } from "@/db"
+import { users as usersTable, roles as rolesTable, branches as branchesTable, departments as departmentsTable } from "@/db/schema"
+import { desc, asc } from "drizzle-orm"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { UserForm } from "./user-form"
 import { ShieldAlert, Building2, UserCircle } from "lucide-react"
 
 export default async function UsersPage() {
-  const users = await prisma.user.findMany({
-    include: {
+  const users = await db.query.users.findMany({
+    with: {
       role: true,
       branch: true,
       department: true
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: [desc(usersTable.createdAt)]
   })
 
-  const roles = await prisma.role.findMany({ orderBy: { name: 'asc' } })
-  const branches = await prisma.branch.findMany({ orderBy: { name: 'asc' } })
-  const departments = await prisma.department.findMany({ orderBy: { name: 'asc' } })
+  const roles = await db.query.roles.findMany({ orderBy: [asc(rolesTable.name)] })
+  const branches = await db.query.branches.findMany({ orderBy: [asc(branchesTable.name)] })
+  const departments = await db.query.departments.findMany({ orderBy: [asc(departmentsTable.name)] })
 
   return (
     <div className="space-y-6">
