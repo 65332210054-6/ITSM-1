@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เข้าสู่ระบบ | ITSM Admin</title>
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.454.0/lucide.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap');
@@ -111,19 +112,18 @@
                     body: JSON.stringify(data)
                 });
 
-                const result = await response.json();
-
                 if (response.ok) {
-                    localStorage.setItem('user', JSON.stringify(result.user));
+                    const result = await response.json();
                     localStorage.setItem('token', result.token);
-                    window.location.href = '/';
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    notify.success('เข้าสู่ระบบสำเร็จ กำลังพาคุณไปหน้าแดชบอร์ด');
+                    setTimeout(() => window.location.href = '/', 1500);
                 } else {
-                    errorText.innerText = result.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
-                    errorMessage.classList.remove('hidden');
+                    const err = await response.json();
+                    notify.error(err.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
                 }
-            } catch (error) {
-                errorText.innerText = 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์';
-                errorMessage.classList.remove('hidden');
+            } catch (err) {
+                notify.error('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerText = 'เข้าสู่ระบบ';

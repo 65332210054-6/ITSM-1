@@ -12,6 +12,7 @@
         }
     </script>
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.454.0/lucide.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap');
@@ -244,15 +245,15 @@
                 });
 
                 if (response.ok) {
-                    alert('แก้ไขข้อมูลสำเร็จ!');
+                    notify.success('แก้ไขข้อมูลสำเร็จ!');
                     closeEditModal();
                     loadUsers(); // Refresh table
                 } else {
                     const err = await response.json();
-                    alert(err.message || 'เกิดข้อผิดพลาด');
+                    notify.error(err.message || 'เกิดข้อผิดพลาด');
                 }
             } catch (err) {
-                alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+                notify.error('เกิดข้อผิดพลาดในการเชื่อมต่อ');
             }
         });
 

@@ -70,6 +70,58 @@ function escapeHTML(str) {
     return div.innerHTML;
 }
 
+// Notifications Helper (SweetAlert2)
+const notify = {
+    success: (message) => {
+        Swal.fire({
+            icon: 'success',
+            title: 'สำเร็จ!',
+            text: message,
+            timer: 2000,
+            showConfirmButton: false,
+            borderRadius: '1.5rem',
+            customClass: {
+                popup: 'rounded-3xl border-0 shadow-2xl',
+                title: 'font-bold text-slate-800',
+                htmlContainer: 'font-medium text-slate-500'
+            }
+        });
+    },
+    error: (message) => {
+        Swal.fire({
+            icon: 'error',
+            title: 'เกิดข้อผิดพลาด!',
+            text: message,
+            confirmButtonText: 'ตกลง',
+            confirmButtonColor: '#4f46e5',
+            borderRadius: '1.5rem',
+            customClass: {
+                popup: 'rounded-3xl border-0 shadow-2xl',
+                title: 'font-bold text-slate-800',
+                htmlContainer: 'font-medium text-slate-500',
+                confirmButton: 'rounded-xl px-8 py-3 font-bold'
+            }
+        });
+    },
+    toast: (message, icon = 'success') => {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+        });
+        Toast.fire({
+            icon: icon,
+            title: message
+        });
+    }
+};
+
 // API Helper
 async function apiFetch(url, options = {}) {
     const token = localStorage.getItem('token');
