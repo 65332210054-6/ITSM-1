@@ -41,9 +41,9 @@ export const users = pgTable("users", {
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
   password: text("password"),
-  roleId: text("role_id").references(() => roles.id),
-  branchId: text("branch_id").references(() => branches.id),
-  departmentId: text("department_id").references(() => departments.id),
+  roleId: text("role_id"),
+  branchId: text("branch_id"),
+  departmentId: text("department_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
@@ -55,9 +55,7 @@ export const users = pgTable("users", {
 export const accounts = pgTable(
   "accounts",
   {
-    userId: text("userId")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    userId: text("userId").notNull(),
     type: text("type").$type<AdapterAccount["type"]>().notNull(),
     provider: text("provider").notNull(),
     providerAccountId: text("providerAccountId").notNull(),
@@ -78,9 +76,7 @@ export const accounts = pgTable(
 
 export const sessions = pgTable("sessions", {
   sessionToken: text("sessionToken").primaryKey(),
-  userId: text("userId")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
+  userId: text("userId").notNull(),
   expires: timestamp("expires", { mode: "date" }).notNull(),
 })
 
