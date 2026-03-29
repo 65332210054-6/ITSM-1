@@ -39,22 +39,29 @@
                 </a>
             </div>
         </nav>
-        <div class="p-6 border-t border-slate-800">
-            <div class="bg-slate-800/40 rounded-2xl p-4 border border-slate-800/50 flex items-center gap-3">
-                <div id="userAvatar" class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-bold">U</div>
-                <div class="flex-1 min-w-0">
-                    <p id="userName" class="text-xs font-bold truncate">Loading...</p>
-                    <p class="text-[10px] text-slate-500 font-medium">System Admin</p>
-                </div>
-                <button id="logoutBtn" class="text-slate-500 hover:text-red-400 transition-colors p-1"><i data-lucide="log-out" class="h-4 w-4"></i></button>
-            </div>
-        </div>
     </aside>
 
     <!-- Main Content -->
     <div class="flex-1 flex flex-col overflow-hidden">
         <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-10 shadow-sm z-10">
             <h1 class="text-xl font-bold text-slate-800 tracking-tight">ตั้งค่าระบบองค์กร</h1>
+            <div class="flex items-center gap-6">
+                <!-- User Profile Header Section -->
+                <div class="flex items-center gap-4">
+                    <div class="text-right hidden sm:block">
+                        <p id="userName" class="text-sm font-bold text-slate-800 leading-tight">Loading...</p>
+                        <p id="userRole" class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">System Admin</p>
+                    </div>
+                    <div class="relative group">
+                        <button class="flex items-center gap-3 p-1 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
+                            <div id="userAvatar" class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-indigo-500/20">U</div>
+                        </button>
+                    </div>
+                    <button id="logoutBtn" class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all group" title="ออกจากระบบ">
+                        <i data-lucide="log-out" class="h-5 w-5 group-hover:translate-x-0.5 transition-transform"></i>
+                    </button>
+                </div>
+            </div>
         </header>
 
         <main class="flex-1 overflow-x-hidden overflow-y-auto p-10 bg-slate-50/50">

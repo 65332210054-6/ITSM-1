@@ -45,21 +45,6 @@
                 </a>
             </div>
         </nav>
-
-        <div class="p-6 border-t border-slate-800">
-            <div class="bg-slate-800/40 rounded-2xl p-4 border border-slate-800/50">
-                <div class="flex items-center gap-3">
-                    <div id="userAvatar" class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-bold">U</div>
-                    <div class="flex-1 min-w-0">
-                        <p id="userName" class="text-xs font-bold truncate">Loading...</p>
-                        <p id="userRole" class="text-[10px] text-slate-500 font-medium">System Admin</p>
-                    </div>
-                    <button id="logoutBtn" class="text-slate-500 hover:text-red-400 transition-colors p-1">
-                        <i data-lucide="log-out" class="h-4 w-4"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
     </aside>
 
     <!-- Main Content -->
@@ -74,6 +59,24 @@
                         <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
                     </button>
                 </div>
+                <div class="h-8 w-px bg-slate-200"></div>
+                
+                <!-- User Profile Header Section -->
+                <div class="flex items-center gap-4">
+                    <div class="text-right hidden sm:block">
+                        <p id="userName" class="text-sm font-bold text-slate-800 leading-tight">Loading...</p>
+                        <p id="userRole" class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">System Admin</p>
+                    </div>
+                    <div class="relative group">
+                        <button class="flex items-center gap-3 p-1 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
+                            <div id="userAvatar" class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-indigo-500/20">U</div>
+                        </button>
+                    </div>
+                    <button id="logoutBtn" class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all group" title="ออกจากระบบ">
+                        <i data-lucide="log-out" class="h-5 w-5 group-hover:translate-x-0.5 transition-transform"></i>
+                    </button>
+                </div>
+
                 <div class="h-8 w-px bg-slate-200"></div>
                 <span id="currentTime" class="text-sm font-semibold text-slate-500">29 มีนาคม 2026</span>
             </div>
