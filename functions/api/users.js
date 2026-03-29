@@ -76,8 +76,8 @@ export async function onRequest(context) {
         const hashedPassword = await bcrypt.hash(password, 10);
         
         await sql`
-          INSERT INTO users (name, email, role_id, department_id, password, created_at)
-          VALUES (${name}, ${email}, ${role_id}, ${department_id || null}, ${hashedPassword}, NOW())
+          INSERT INTO users (name, email, role_id, department_id, password, created_at, login_attempts)
+          VALUES (${name}, ${email}, ${role_id}, ${department_id || null}, ${hashedPassword}, NOW(), 0)
         `;
 
         return new Response(JSON.stringify({ message: "User created successfully" }), { status: 201 });
@@ -109,8 +109,8 @@ export async function onRequest(context) {
             const deptId = deptMap[(u.department || '').toLowerCase()] || null;
 
             await sql`
-              INSERT INTO users (name, email, role_id, department_id, password, created_at)
-              VALUES (${u.name}, ${u.email}, ${roleId}, ${deptId}, ${hashedPassword}, NOW())
+              INSERT INTO users (name, email, role_id, department_id, password, created_at, login_attempts)
+              VALUES (${u.name}, ${u.email}, ${roleId}, ${deptId}, ${hashedPassword}, NOW(), 0)
             `;
             successCount++;
           } catch (err) {
