@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 import { LoginForm } from "./login-form"
 import { ShieldAlert } from "lucide-react"
 

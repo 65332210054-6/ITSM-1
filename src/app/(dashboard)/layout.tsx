@@ -1,4 +1,5 @@
 export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 import { Sidebar } from "@/components/layout/sidebar"
 import { Header } from "@/components/layout/header"
 import { auth } from "@/auth"

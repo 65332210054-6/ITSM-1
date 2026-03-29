@@ -1,4 +1,5 @@
 export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 import { db } from "@/db"
 import { branches as branchesTable, departments as departmentsTable, roles as rolesTable } from "@/db/schema"
 import { asc } from "drizzle-orm"

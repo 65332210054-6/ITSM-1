@@ -1,4 +1,5 @@
 export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 import { auth } from "@/auth"
 
 export default async function DashboardPage() {
