@@ -43,20 +43,12 @@ interface ChartData {
 }
 
 export function ClientCharts({
-  ticketData,
   assetData,
   assetStatusData
 }: {
-  ticketData: ChartData[]
   assetData: ChartData[]
   assetStatusData: ChartData[]
 }) {
-  const formattedTicketData = ticketData.map(d => ({
-    name: STATUS_LABELS[d.name] || d.name,
-    rawName: d.name,
-    value: d.value
-  }))
-
   const formattedAssetStatusData = assetStatusData.map(d => ({
     name: ASSET_STATUS_LABELS[d.name] || d.name,
     rawName: d.name,
@@ -64,62 +56,25 @@ export function ClientCharts({
   }))
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {/* Ticket Status Chart */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold text-slate-700">สถานะงานแจ้งซ่อม</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[260px] w-full">
-            {ticketData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={formattedTicketData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={85}
-                    paddingAngle={4}
-                    dataKey="value"
-                  >
-                    {formattedTicketData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.rawName] || COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(value: any) => [`${value} รายการ`, 'จำนวน']}
-                    contentStyle={{ borderRadius: '8px', fontSize: '12px', border: '1px solid #e2e8f0' }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: '11px' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center text-slate-400 text-sm">ไม่มีข้อมูลงานซ่อม</div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Asset Category Bar Chart */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold text-slate-700">อุปกรณ์แยกตามหมวดหมู่</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[260px] w-full">
+          <div className="h-[300px] w-full">
             {assetData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={assetData} layout="vertical" margin={{ left: 10, right: 20 }}>
+                <BarChart data={assetData} layout="vertical" margin={{ left: 10, right: 30, top: 10, bottom: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                   <XAxis type="number" tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                  <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} stroke="#94a3b8" />
+                  <YAxis dataKey="name" type="category" width={110} tick={{ fontSize: 11 }} stroke="#94a3b8" />
                   <Tooltip 
                     formatter={(value: any) => [`${value} ชิ้น`, 'จำนวน']}
-                    contentStyle={{ borderRadius: '8px', fontSize: '12px', border: '1px solid #e2e8f0' }}
+                    contentStyle={{ borderRadius: '8px', fontSize: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   />
-                  <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+                  <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={24}>
                     {assetData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
@@ -127,7 +82,7 @@ export function ClientCharts({
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-slate-400 text-sm">ไม่มีข้อมูลอุปกรณ์</div>
+              <div className="h-full flex items-center justify-center text-slate-400 text-sm italic">ยังไม่มีข้อมูลอุปกรณ์ในระบบ</div>
             )}
           </div>
         </CardContent>
@@ -139,18 +94,18 @@ export function ClientCharts({
           <CardTitle className="text-sm font-semibold text-slate-700">สถานะอุปกรณ์ทั้งหมด</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[260px] w-full">
+          <div className="h-[300px] w-full">
             {assetStatusData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={formattedAssetStatusData}
                     cx="50%"
-                    cy="50%"
-                    outerRadius={85}
+                    cy="45%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={5}
                     dataKey="value"
-                    label={({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                    labelLine={false}
                   >
                     {formattedAssetStatusData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={ASSET_STATUS_COLORS[entry.rawName] || COLORS[index % COLORS.length]} />
@@ -158,13 +113,18 @@ export function ClientCharts({
                   </Pie>
                   <Tooltip 
                     formatter={(value: any) => [`${value} ชิ้น`, 'จำนวน']}
-                    contentStyle={{ borderRadius: '8px', fontSize: '12px', border: '1px solid #e2e8f0' }}
+                    contentStyle={{ borderRadius: '8px', fontSize: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   />
-                  <Legend wrapperStyle={{ fontSize: '11px' }} />
+                  <Legend 
+                    verticalAlign="bottom" 
+                    height={36} 
+                    iconType="circle"
+                    formatter={(value: string) => <span className="text-slate-600 font-medium">{value}</span>}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-slate-400 text-sm">ไม่มีข้อมูลอุปกรณ์</div>
+              <div className="h-full flex items-center justify-center text-slate-400 text-sm italic">ยังไม่มีข้อมูลอุปกรณ์ในระบบ</div>
             )}
           </div>
         </CardContent>
