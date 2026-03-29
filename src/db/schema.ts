@@ -1,3 +1,4 @@
+import { relations } from "drizzle-orm"
 import { pgTable, text, timestamp, boolean, primaryKey, integer } from "drizzle-orm/pg-core"
 import type { AdapterAccount } from "next-auth/adapters"
 
@@ -13,6 +14,10 @@ export const roles = pgTable("roles", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
 
+export const rolesRelations = relations(roles, ({ many }) => ({
+  users: many(users),
+}))
+
 export const branches = pgTable("branches", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   code: text("code").notNull().unique(),
@@ -25,6 +30,10 @@ export const branches = pgTable("branches", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
 
+export const branchesRelations = relations(branches, ({ many }) => ({
+  users: many(users),
+}))
+
 export const departments = pgTable("departments", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   code: text("code").notNull().unique(),
@@ -33,6 +42,10 @@ export const departments = pgTable("departments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
+
+export const departmentsRelations = relations(departments, ({ many }) => ({
+  users: many(users),
+}))
 
 export const users = pgTable("users", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -47,6 +60,23 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+  role: one(roles, {
+    fields: [users.roleId],
+    references: [roles.id],
+  }),
+  branch: one(branches, {
+    fields: [users.branchId],
+    references: [branches.id],
+  }),
+  department: one(departments, {
+    fields: [users.departmentId],
+    references: [departments.id],
+  }),
+  accounts: many(accounts),
+  sessions: many(sessions),
+}))
 
 // ==========================================
 // NEXTAUTH REQUIRED TABLES
