@@ -46,8 +46,13 @@ export async function onRequest(context) {
       });
     }
 
-    // Secure password check using bcrypt
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    // Secure password check (Supports both Plain Text for Migration and Bcrypt for Security)
+    let isPasswordValid = false;
+    if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
+      isPasswordValid = await bcrypt.compare(password, user.password);
+    } else {
+      isPasswordValid = (password === user.password);
+    }
 
     if (isPasswordValid) {
       // Reset login attempts on success

@@ -121,7 +121,12 @@
                     setTimeout(() => window.location.href = '/index.html', 1500);
                 } else {
                     const err = await response.json();
-                    notify.error(err.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+                    let message = err.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+                    if (message.includes('DATABASE_URL')) {
+                        message = '❌ ระบบยังไม่ได้เชื่อมต่อฐานข้อมูล กรุณาตั้งค่า DATABASE_URL ใน Cloudflare Dashboard';
+                    }
+                    errorText.innerText = message;
+                    errorMessage.classList.remove('hidden');
                 }
             } catch (err) {
                 notify.error('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');

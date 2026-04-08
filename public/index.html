@@ -47,6 +47,14 @@
                     <i data-lucide="users" class="mr-3 h-5 w-5"></i>
                     จัดการผู้ใช้งาน
                 </a>
+                <a href="/assets.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
+                    <i data-lucide="monitor" class="mr-3 h-5 w-5"></i>
+                    จัดการทรัพย์สิน
+                </a>
+                <a href="/tickets.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
+                    <i data-lucide="ticket" class="mr-3 h-5 w-5"></i>
+                    ระบบแจ้งซ่อม
+                </a>
                 <a href="/settings.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
                     <i data-lucide="settings" class="mr-3 h-5 w-5"></i>
                     ตั้งค่าระบบ
@@ -130,43 +138,13 @@
                 </div>
 
                 <!-- Simple Stats -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    <div class="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100">
-                        <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-blue-50 rounded-lg sm:rounded-xl flex items-center justify-center">
-                                <i data-lucide="users" class="h-4 w-4 sm:h-5 sm:w-5 text-blue-600"></i>
-                            </div>
-                            <h4 class="text-xs sm:text-sm font-bold text-slate-500">พนักงาน</h4>
-                        </div>
-                        <p class="text-2xl sm:text-3xl font-extrabold text-slate-900">128</p>
+                <div id="statsGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                    <div class="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 animate-pulse">
+                        <div class="h-10 w-10 bg-slate-100 rounded-xl mb-4"></div>
+                        <div class="h-4 w-20 bg-slate-100 rounded mb-2"></div>
+                        <div class="h-8 w-12 bg-slate-100 rounded"></div>
                     </div>
-                    <div class="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100">
-                        <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-50 rounded-lg sm:rounded-xl flex items-center justify-center">
-                                <i data-lucide="building-2" class="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600"></i>
-                            </div>
-                            <h4 class="text-xs sm:text-sm font-bold text-slate-500">สาขา</h4>
-                        </div>
-                        <p class="text-2xl sm:text-3xl font-extrabold text-slate-900">4</p>
-                    </div>
-                    <div class="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100">
-                        <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-50 rounded-lg sm:rounded-xl flex items-center justify-center">
-                                <i data-lucide="briefcase" class="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600"></i>
-                            </div>
-                            <h4 class="text-xs sm:text-sm font-bold text-slate-500">แผนก</h4>
-                        </div>
-                        <p class="text-2xl sm:text-3xl font-extrabold text-slate-900">12</p>
-                    </div>
-                    <div class="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100">
-                        <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-amber-50 rounded-lg sm:rounded-xl flex items-center justify-center">
-                                <i data-lucide="shield-check" class="h-4 w-4 sm:h-5 sm:w-5 text-amber-600"></i>
-                            </div>
-                            <h4 class="text-xs sm:text-sm font-bold text-slate-500">แอดมิน</h4>
-                        </div>
-                        <p class="text-2xl sm:text-3xl font-extrabold text-slate-900">3</p>
-                    </div>
+                    <!-- Repeated for each stat -->
                 </div>
             </div>
         </main>
@@ -189,6 +167,60 @@
         if (openSidebar) openSidebar.addEventListener('click', toggleSidebar);
         if (closeSidebar) closeSidebar.addEventListener('click', toggleSidebar);
         if (sidebarOverlay) sidebarOverlay.addEventListener('click', toggleSidebar);
+
+        // Load Dashboard Stats
+        async function loadDashboardStats() {
+            const statsGrid = document.getElementById('statsGrid');
+            try {
+                const response = await apiFetch('/api/dashboard?action=getStats');
+                const stats = await response.json();
+                
+                statsGrid.innerHTML = `
+                    <div class="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                        <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-blue-50 rounded-lg sm:rounded-xl flex items-center justify-center">
+                                <i data-lucide="users" class="h-4 w-4 sm:h-5 sm:w-5 text-blue-600"></i>
+                            </div>
+                            <h4 class="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">พนักงานทั้งหมด</h4>
+                        </div>
+                        <p class="text-2xl sm:text-4xl font-extrabold text-slate-900">${stats.totalUsers}</p>
+                    </div>
+                    <div class="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                        <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-50 rounded-lg sm:rounded-xl flex items-center justify-center">
+                                <i data-lucide="monitor" class="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600"></i>
+                            </div>
+                            <h4 class="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">ทรัพย์สินไอที</h4>
+                        </div>
+                        <p class="text-2xl sm:text-4xl font-extrabold text-slate-900">${stats.totalAssets}</p>
+                    </div>
+                    <div class="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                        <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-amber-50 rounded-lg sm:rounded-xl flex items-center justify-center">
+                                <i data-lucide="ticket" class="h-4 w-4 sm:h-5 sm:w-5 text-amber-600"></i>
+                            </div>
+                            <h4 class="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">งานค้างซ่อม</h4>
+                        </div>
+                        <p class="text-2xl sm:text-4xl font-extrabold text-slate-900">${stats.pendingTickets}</p>
+                    </div>
+                    <div class="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                        <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-50 rounded-lg sm:rounded-xl flex items-center justify-center">
+                                <i data-lucide="check-circle" class="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600"></i>
+                            </div>
+                            <h4 class="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">ซ่อมเสร็จเดือนนี้</h4>
+                        </div>
+                        <p class="text-2xl sm:text-4xl font-extrabold text-slate-900">${stats.resolvedThisMonth}</p>
+                    </div>
+                `;
+                lucide.createIcons();
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+                statsGrid.innerHTML = '<div class="col-span-full p-10 text-center text-red-500 font-bold">ไม่สามารถโหลดข้อมูลสถิติได้</div>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadDashboardStats);
     </script>
 </body>
 </html>
