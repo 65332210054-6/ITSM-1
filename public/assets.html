@@ -295,8 +295,12 @@
                 return;
             }
 
-            tbody.innerHTML = assets.map(a => `
-                <tr class="hover:bg-slate-50 transition-colors">
+            // Document fragment for better performance
+            const fragment = document.createDocumentFragment();
+            assets.forEach(a => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition-colors';
+                tr.innerHTML = `
                     <td class="px-6 py-4">
                         <div class="font-bold text-slate-800">${escapeHTML(a.asset_tag)}</div>
                         <div class="text-[10px] text-slate-400 font-medium">S/N: ${escapeHTML(a.serial_number)}</div>
@@ -322,8 +326,11 @@
                             <i data-lucide="edit-3" class="w-4 h-4"></i>
                         </button>
                     </td>
-                </tr>
-            `).join('');
+                `;
+                fragment.appendChild(tr);
+            });
+            tbody.innerHTML = '';
+            tbody.appendChild(fragment);
             lucide.createIcons();
         }
 

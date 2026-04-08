@@ -256,8 +256,11 @@
                 return;
             }
 
-            tbody.innerHTML = tickets.map(t => `
-                <tr class="hover:bg-slate-50 transition-colors">
+            const fragment = document.createDocumentFragment();
+            tickets.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition-colors';
+                tr.innerHTML = `
                     <td class="px-6 py-4">
                         <div class="font-bold text-slate-800 uppercase tracking-wider text-xs">#TK-${t.id.substring(0, 8)}</div>
                         <div class="text-[10px] text-slate-400 font-medium">${new Date(t.created_at).toLocaleDateString('th-TH')}</div>
@@ -285,8 +288,11 @@
                             <i data-lucide="eye" class="w-4 h-4"></i>
                         </button>
                     </td>
-                </tr>
-            `).join('');
+                `;
+                fragment.appendChild(tr);
+            });
+            tbody.innerHTML = '';
+            tbody.appendChild(fragment);
             lucide.createIcons();
         }
 

@@ -159,9 +159,24 @@ const notify = {
     }
 };
 
-// API Helper
+// API Helper with Caching and Performance
+const apiCache = new Map();
+
 async function apiFetch(url, options = {}) {
     const token = localStorage.getItem('token');
+    const cacheKey = `${url}_${JSON.stringify(options.headers || {})}`;
+
+    // Simple GET Cache (5 seconds)
+    if (options.method === 'GET' || !options.method) {
+        const cached = apiCache.get(cacheKey);
+        if (cached && (Date.now() - cached.time < 5000)) {
+            return cached.response.clone();
+        }
+    } else {
+        // Clear cache on mutations
+        apiCache.clear();
+    }
+
     const headers = {
         'Content-Type': 'application/json',
         ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
@@ -170,18 +185,28 @@ async function apiFetch(url, options = {}) {
 
     try {
         const response = await fetch(url, { ...options, headers });
+        
         if (response.status === 401) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             window.location.href = '/login.html';
             return;
         }
+
         if (response.status === 403) {
             const clone = response.clone();
             const data = await clone.json().catch(() => ({}));
             notify.error(data.message || 'คุณไม่มีสิทธิ์เข้าถึงส่วนนี้');
             return response;
         }
+
+        if ((options.method === 'GET' || !options.method) && response.ok) {
+            apiCache.set(cacheKey, {
+                response: response.clone(),
+                time: Date.now()
+            });
+        }
+
         return response;
     } catch (error) {
         console.error('Fetch error:', error);
