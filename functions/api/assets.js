@@ -52,13 +52,22 @@ export async function onRequest(context) {
       });
     }
 
-    // 2. Add/Edit Asset (Admin/Technician only)
+    // 2. Add/Edit/Delete Asset (Admin/Technician only)
     if (request.method === "POST") {
       if (userSession.role_name !== "Admin" && userSession.role_name !== "Technician") {
         return new Response(JSON.stringify({ message: "Forbidden: Unauthorized to manage assets" }), { status: 403 });
       }
       
       const data = await request.json();
+
+      // Handle Delete
+      if (action === "delete") {
+        const id = url.searchParams.get("id");
+        if (!id) return new Response(JSON.stringify({ message: "ID is required" }), { status: 400 });
+        await sql`DELETE FROM assets WHERE id = ${id}`;
+        return new Response(JSON.stringify({ message: "Asset deleted successfully" }), { status: 200 });
+      }
+
       const { id, asset_tag, serial_number, name, category, model, status, assigned_to, department_id, purchase_date } = data;
 
       if (id) {
@@ -66,18 +75,23 @@ export async function onRequest(context) {
         await sql`
           UPDATE assets 
           SET asset_tag = ${asset_tag}, serial_number = ${serial_number}, name = ${name}, 
-              category = ${category}, model = ${model}, status = ${status}, 
-              assigned_to = ${assigned_to}, department_id = ${department_id}, 
-              purchase_date = ${purchase_date}, updated_at = NOW()
+              category = ${category}, model = ${model || null}, status = ${status}, 
+              assigned_to = ${assigned_to || null}, department_id = ${department_id || null}, 
+              purchase_date = ${purchase_date || null}, updated_at = NOW()
           WHERE id = ${id}
         `;
         return new Response(JSON.stringify({ message: "Asset updated successfully" }), { status: 200 });
       } else {
-        // Create
+        // Create - Check for existing tag
+        const existing = await sql`SELECT id FROM assets WHERE asset_tag = ${asset_tag} LIMIT 1`;
+        if (existing.length > 0) {
+          return new Response(JSON.stringify({ message: "Asset Tag นี้มีอยู่ในระบบแล้ว" }), { status: 400 });
+        }
+
         const newId = crypto.randomUUID();
         await sql`
           INSERT INTO assets (id, asset_tag, serial_number, name, category, model, status, assigned_to, department_id, purchase_date, created_at, updated_at)
-          VALUES (${newId}, ${asset_tag}, ${serial_number}, ${name}, ${category}, ${model}, ${status}, ${assigned_to}, ${department_id}, ${purchase_date}, NOW(), NOW())
+          VALUES (${newId}, ${asset_tag}, ${serial_number}, ${name}, ${category}, ${model || null}, ${status}, ${assigned_to || null}, ${department_id || null}, ${purchase_date || null}, NOW(), NOW())
         `;
         return new Response(JSON.stringify({ message: "Asset created successfully" }), { status: 201 });
       }
