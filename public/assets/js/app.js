@@ -135,30 +135,6 @@ const notify = {
             icon: icon,
             title: message
         });
-    }
-};
-
-// Notification Helper
-const notify = {
-    success: (msg) => {
-        Swal.fire({
-            icon: 'success',
-            title: 'สำเร็จ',
-            text: msg,
-            timer: 2000,
-            showConfirmButton: false,
-            background: '#fff',
-            borderRadius: '24px'
-        });
-    },
-    error: (msg) => {
-        Swal.fire({
-            icon: 'error',
-            title: 'เกิดข้อผิดพลาด',
-            text: msg,
-            background: '#fff',
-            borderRadius: '24px'
-        });
     },
     confirm: async (title, text) => {
         const result = await Swal.fire({
@@ -170,23 +146,18 @@ const notify = {
             cancelButtonColor: '#f1f5f9',
             confirmButtonText: 'ยืนยัน',
             cancelButtonText: 'ยกเลิก',
-            background: '#fff',
-            borderRadius: '24px',
+            heightAuto: false,
             customClass: {
-                cancelButton: 'text-slate-600'
+                popup: 'rounded-3xl border-0 shadow-2xl',
+                title: 'font-bold text-slate-800',
+                htmlContainer: 'font-medium text-slate-500',
+                confirmButton: 'rounded-xl px-6 py-2.5 font-bold',
+                cancelButton: 'rounded-xl px-6 py-2.5 font-bold text-slate-600'
             }
         });
         return result.isConfirmed;
     }
 };
-
-// HTML Escaping Helper
-function escapeHTML(str) {
-    if (!str) return '';
-    const p = document.createElement('p');
-    p.textContent = str;
-    return p.innerHTML;
-}
 
 // API Helper
 async function apiFetch(url, options = {}) {
@@ -201,12 +172,19 @@ async function apiFetch(url, options = {}) {
         const response = await fetch(url, { ...options, headers });
         if (response.status === 401) {
             localStorage.removeItem('token');
+            localStorage.removeItem('user');
             window.location.href = '/login.html';
             return;
+        }
+        if (response.status === 403) {
+            const data = await response.json();
+            notify.error(data.message || 'คุณไม่มีสิทธิ์เข้าถึงส่วนนี้');
+            return response;
         }
         return response;
     } catch (error) {
         console.error('Fetch error:', error);
+        notify.error('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
         throw error;
     }
 }

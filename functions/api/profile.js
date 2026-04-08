@@ -1,5 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 import bcrypt from 'bcryptjs';
+import { validateSession } from '../auth.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -9,17 +10,18 @@ export async function onRequest(context) {
   }
 
   try {
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer session-")) {
+    const userSession = await validateSession(context);
+    if (!userSession) {
       return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
     }
 
-    // In this simple session setup, we don't have a DB session table, 
-    // so we'd normally verify a JWT. For now, we'll assume the client is who they say they are 
-    // or we'd need to pass the user ID in the token. 
-    // Since we're using localStorage 'user' object on client, let's pass the ID in the body for this demo.
-    
     const { id, name, email, password, avatar_url } = await request.json();
+    
+    // Security: Only allow updating own profile unless admin
+    if (id !== userSession.user_id && userSession.role_name !== "Admin") {
+      return new Response(JSON.stringify({ message: "Forbidden: You can only update your own profile" }), { status: 403 });
+    }
+
     const databaseUrl = env.DATABASE_URL;
 
     if (!databaseUrl) {

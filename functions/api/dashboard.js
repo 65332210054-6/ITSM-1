@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import { validateSession } from '../auth.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -9,8 +10,8 @@ export async function onRequest(context) {
   }
 
   try {
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer session-")) {
+    const userSession = await validateSession(context);
+    if (!userSession) {
       return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
     }
 

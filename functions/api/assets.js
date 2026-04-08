@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import { validateSession } from '../auth.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -9,8 +10,8 @@ export async function onRequest(context) {
   }
 
   try {
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer session-")) {
+    const userSession = await validateSession(context);
+    if (!userSession) {
       return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
     }
 
@@ -32,8 +33,12 @@ export async function onRequest(context) {
       });
     }
 
-    // 2. Add/Edit Asset
+    // 2. Add/Edit Asset (Admin/Technician only)
     if (request.method === "POST") {
+      if (userSession.role_name !== "Admin" && userSession.role_name !== "Technician") {
+        return new Response(JSON.stringify({ message: "Forbidden: Unauthorized to manage assets" }), { status: 403 });
+      }
+      
       const data = await request.json();
       const { id, asset_tag, serial_number, name, category, model, status, assigned_to, department_id, purchase_date } = data;
 

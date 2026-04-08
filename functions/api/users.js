@@ -1,5 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 import bcrypt from 'bcryptjs';
+import { validateSession } from '../auth.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -10,26 +11,27 @@ export async function onRequest(context) {
   }
 
   try {
-    // Basic Auth Check
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer session-")) {
+    const url = new URL(request.url);
+    const action = url.searchParams.get("action");
+
+    // Secure Auth Check
+    const userSession = await validateSession(context);
+    if (!userSession) {
       return new Response(JSON.stringify({ message: "Unauthorized" }), { 
         status: 401,
-        headers: { 
-          "Content-Type": "application/json",
-          "X-Frame-Options": "DENY",
-          "X-Content-Type-Options": "nosniff"
-        }
+        headers: { "Content-Type": "application/json" }
       });
     }
 
     const sql = neon(databaseUrl);
     
+    // Admin Only Check for Write Operations
+    if (request.method === "POST" && userSession.role_name !== "Admin") {
+      return new Response(JSON.stringify({ message: "Forbidden: Admin role required" }), { status: 403 });
+    }
+    
     // GET Users list and options
     if (request.method === "GET") {
-      const url = new URL(request.url);
-      const action = url.searchParams.get("action");
-
       if (action === "getOptions") {
         const roles = await sql`SELECT id, name FROM roles ORDER BY name`;
         const departments = await sql`SELECT id, name FROM departments ORDER BY name`;
@@ -59,8 +61,6 @@ export async function onRequest(context) {
 
     // POST Operations
     if (request.method === "POST") {
-      const url = new URL(request.url);
-      const action = url.searchParams.get("action");
       const data = await request.json();
 
       // 1. Create Single User
@@ -123,7 +123,18 @@ export async function onRequest(context) {
         return new Response(JSON.stringify({ message: `Imported ${successCount} users`, count: successCount }), { status: 200 });
       }
 
-      // 3. Update User (Default POST)
+      // 3. Delete User
+      if (action === "delete") {
+        const id = url.searchParams.get("id");
+        if (!id) {
+          return new Response(JSON.stringify({ message: "User ID is required" }), { status: 400 });
+        }
+
+        await sql`DELETE FROM users WHERE id = ${id}`;
+        return new Response(JSON.stringify({ message: "User deleted successfully" }), { status: 200 });
+      }
+
+      // 4. Update User (Default POST if no specific action or action is update)
       const { id, name, email, role_id, department_id } = data;
       
       if (!id) {
@@ -137,17 +148,6 @@ export async function onRequest(context) {
       `;
 
       return new Response(JSON.stringify({ message: "User updated successfully" }), { status: 200 });
-    }
-
-    // DELETE Operation
-    if (request.method === "POST" && action === "delete") {
-      const id = url.searchParams.get("id");
-      if (!id) {
-        return new Response(JSON.stringify({ message: "User ID is required" }), { status: 400 });
-      }
-
-      await sql`DELETE FROM users WHERE id = ${id}`;
-      return new Response(JSON.stringify({ message: "User deleted successfully" }), { status: 200 });
     }
 
     return new Response(JSON.stringify({ message: "Method not allowed" }), { 

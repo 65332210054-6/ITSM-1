@@ -18,6 +18,17 @@ export async function onRequest(context) {
     }
 
     const sql = neon(databaseUrl);
+
+    // Ensure sessions table exists (Migration)
+    await sql`
+      CREATE TABLE IF NOT EXISTS sessions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        expires_at TIMESTAMP WITH TIME ZONE
+      )
+    `;
+
     const users = await sql`
       SELECT u.id, u.name, u.email, u.password, u.avatar_url, u.login_attempts, u.lock_until, r.name as role_name 
       FROM users u 
@@ -58,8 +69,19 @@ export async function onRequest(context) {
       // Reset login attempts on success
       await sql`UPDATE users SET login_attempts = 0, lock_until = NULL WHERE id = ${user.id}`;
 
+      // Create a secure session token
+      const token = "session-" + crypto.randomUUID();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days session
+
+      // Store session in DB
+      await sql`
+        INSERT INTO sessions (id, user_id, expires_at)
+        VALUES (${token}, ${user.id}, ${expiresAt})
+      `;
+
       return new Response(JSON.stringify({ 
-        token: "session-" + Math.random().toString(36).substr(2),
+        token,
         user: { 
           id: user.id,
           name: user.name, 
