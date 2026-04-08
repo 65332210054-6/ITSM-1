@@ -139,6 +139,17 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ message: "User updated successfully" }), { status: 200 });
     }
 
+    // DELETE Operation
+    if (request.method === "POST" && action === "delete") {
+      const id = url.searchParams.get("id");
+      if (!id) {
+        return new Response(JSON.stringify({ message: "User ID is required" }), { status: 400 });
+      }
+
+      await sql`DELETE FROM users WHERE id = ${id}`;
+      return new Response(JSON.stringify({ message: "User deleted successfully" }), { status: 200 });
+    }
+
     return new Response(JSON.stringify({ message: "Method not allowed" }), { 
       status: 405,
       headers: { 

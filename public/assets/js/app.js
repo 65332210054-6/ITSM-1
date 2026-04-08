@@ -138,6 +138,56 @@ const notify = {
     }
 };
 
+// Notification Helper
+const notify = {
+    success: (msg) => {
+        Swal.fire({
+            icon: 'success',
+            title: 'สำเร็จ',
+            text: msg,
+            timer: 2000,
+            showConfirmButton: false,
+            background: '#fff',
+            borderRadius: '24px'
+        });
+    },
+    error: (msg) => {
+        Swal.fire({
+            icon: 'error',
+            title: 'เกิดข้อผิดพลาด',
+            text: msg,
+            background: '#fff',
+            borderRadius: '24px'
+        });
+    },
+    confirm: async (title, text) => {
+        const result = await Swal.fire({
+            title: title,
+            text: text,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#4f46e5',
+            cancelButtonColor: '#f1f5f9',
+            confirmButtonText: 'ยืนยัน',
+            cancelButtonText: 'ยกเลิก',
+            background: '#fff',
+            borderRadius: '24px',
+            customClass: {
+                cancelButton: 'text-slate-600'
+            }
+        });
+        return result.isConfirmed;
+    }
+};
+
+// HTML Escaping Helper
+function escapeHTML(str) {
+    if (!str) return '';
+    const p = document.createElement('p');
+    p.textContent = str;
+    return p.innerHTML;
+}
+
 // API Helper
 async function apiFetch(url, options = {}) {
     const token = localStorage.getItem('token');

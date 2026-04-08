@@ -607,9 +607,14 @@
                     <td class="px-6 py-4 text-right">
                         ${!isAdmin ? 
                             `<span class="text-slate-300 cursor-not-allowed" title="สิทธิ์การใช้งานของคุณไม่สามารถแก้ไขข้อมูลได้"><i data-lucide="lock" class="w-4 h-4 ml-auto"></i></span>` :
-                            `<button onclick="openEditModal('${user.id}', '${escapeHTML(user.name)}', '${escapeHTML(user.email)}', '${user.role_id}', '${user.department_id || ''}')" class="text-slate-400 hover:text-indigo-600 transition-colors p-2 hover:bg-indigo-50 rounded-lg">
-                                <i data-lucide="edit-3" class="w-4 h-4"></i>
-                            </button>`
+                            `<div class="flex justify-end gap-1">
+                                <button onclick="openEditModal('${user.id}', '${escapeHTML(user.name)}', '${escapeHTML(user.email)}', '${user.role_id}', '${user.department_id || ''}')" class="text-slate-400 hover:text-indigo-600 transition-colors p-2 hover:bg-indigo-50 rounded-lg" title="แก้ไข">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="deleteUser('${user.id}')" class="text-slate-400 hover:text-red-600 transition-colors p-2 hover:bg-red-50 rounded-lg" title="ลบ">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>`
                         }
                     </td>
                 </tr>
@@ -630,6 +635,26 @@
                 );
                 renderUsers(filtered);
             });
+        }
+
+        async function deleteUser(id) {
+            if (await notify.confirm('ยืนยันการลบ', 'คุณต้องการลบผู้ใช้งานนี้ใช่หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้')) {
+                try {
+                    const response = await apiFetch(`/api/users?action=delete&id=${id}`, {
+                        method: 'POST'
+                    });
+
+                    if (response.ok) {
+                        notify.success('ลบข้อมูลผู้ใช้งานสำเร็จ');
+                        loadUsers();
+                    } else {
+                        const err = await response.json();
+                        notify.error(err.message || 'เกิดข้อผิดพลาดในการลบ');
+                    }
+                } catch (err) {
+                    notify.error('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+                }
+            }
         }
 
         document.addEventListener('DOMContentLoaded', loadUsers);
