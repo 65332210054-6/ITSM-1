@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบแจ้งซ่อม | ITSM Admin</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.454.0/lucide.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', 'Sarabun', sans-serif; }
+    </style>
+</head>
+<body class="h-full flex overflow-hidden">
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden transition-opacity lg:hidden"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-slate-900 text-white flex flex-col h-full shadow-2xl transition-transform duration-300 z-50 -translate-x-full lg:translate-x-0 lg:static">
+        <div class="h-20 flex items-center justify-between px-6 border-b border-slate-800">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-blue-400 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/30">IT</div>
+                <div>
+                    <span class="font-bold text-base tracking-tight block leading-tight">ITSM</span>
+                    <span class="text-[10px] text-slate-400 block leading-tight font-medium">Enterprise Admin</span>
+                </div>
+            </div>
+            <button id="closeSidebar" class="lg:hidden text-slate-400 hover:text-white p-1"><i data-lucide="x" class="h-6 w-6"></i></button>
+        </div>
+        <nav class="flex-1 py-6 overflow-y-auto">
+            <div class="px-6 mb-4">
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em]">หลัก (Main)</p>
+            </div>
+            <div class="space-y-1 px-3">
+                <a href="/" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
+                    <i data-lucide="layout-dashboard" class="mr-3 h-5 w-5"></i> หน้าแรก
+                </a>
+                <a href="/users.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
+                    <i data-lucide="users" class="mr-3 h-5 w-5"></i> จัดการผู้ใช้งาน
+                </a>
+                <a href="/assets.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
+                    <i data-lucide="monitor" class="mr-3 h-5 w-5"></i> จัดการทรัพย์สิน
+                </a>
+                <a href="/tickets.html" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 transition-all">
+                    <i data-lucide="ticket" class="mr-3 h-5 w-5"></i> ระบบแจ้งซ่อม
+                </a>
+                <a href="/settings.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
+                    <i data-lucide="settings" class="mr-3 h-5 w-5"></i> ตั้งค่าระบบ
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-10 shadow-sm z-10">
+            <div class="flex items-center gap-4">
+                <button id="openSidebar" class="lg:hidden text-slate-500 hover:text-indigo-600 p-2 rounded-xl hover:bg-slate-50 transition-all"><i data-lucide="menu" class="h-6 w-6"></i></button>
+                <h1 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">รายการแจ้งซ่อมและบริการ</h1>
+            </div>
+            <div class="flex items-center gap-2 sm:gap-6">
+                <div class="flex items-center gap-2 sm:gap-4">
+                    <div class="text-right hidden md:block">
+                        <p id="userName" class="text-sm font-bold text-slate-800 leading-tight">Loading...</p>
+                        <p id="userRole" class="text-[10px] text-slate-500 font-bold uppercase tracking-wider leading-tight">System Admin</p>
+                        <p id="currentTime" class="text-[10px] font-semibold text-slate-500 mt-0.5">30/03/2026</p>
+                    </div>
+                    <button onclick="window.location.href='/profile.html'" class="flex items-center gap-3 p-1 rounded-2xl hover:bg-slate-50 transition-all">
+                        <div id="userAvatar" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-500/20 overflow-hidden">U</div>
+                    </button>
+                    <button id="logoutBtn" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all group">
+                        <i data-lucide="log-out" class="h-5 w-5 group-hover:translate-x-0.5 transition-transform"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-10 bg-slate-50/50">
+            <div class="max-w-6xl mx-auto space-y-6 sm:space-y-10">
+                <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+                    <div class="flex items-center gap-4 w-full md:w-auto">
+                        <div class="relative w-full md:w-80">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                                <i data-lucide="search" class="w-5 h-5"></i>
+                            </div>
+                            <input type="text" id="ticketSearch" placeholder="ค้นหาเลขที่แจ้ง, อาการ..." 
+                                class="block w-full pl-12 pr-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all shadow-sm bg-white">
+                        </div>
+                    </div>
+                    <button onclick="openTicketModal()" class="w-full md:w-auto bg-indigo-600 text-white px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 active:scale-95">
+                        <i data-lucide="plus" class="w-5 h-5"></i> เปิดใบแจ้งซ่อมใหม่
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[900px]">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200">
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Ticket ID</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">หัวข้อ / อาการแจ้ง</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">ผู้แจ้ง / แผนก</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">ความสำคัญ</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">สถานะ</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ticketTableBody" class="divide-y divide-slate-100">
+                                <tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">กำลังโหลดรายการแจ้งซ่อม...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Ticket Modal -->
+    <div id="ticketModal" class="fixed inset-0 bg-slate-900/50 z-[60] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <h2 class="text-xl font-bold text-slate-800 tracking-tight">เปิดใบแจ้งซ่อมใหม่</h2>
+                <button onclick="closeTicketModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <form id="ticketForm" class="p-8 space-y-5">
+                <input type="hidden" id="ticketId">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">หัวข้อ / อาการแจ้งเบื้องต้น</label>
+                    <input type="text" id="ticketSubject" required class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all" placeholder="เช่น คอมพิวเตอร์เปิดไม่ติด, อินเทอร์เน็ตใช้งานไม่ได้">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">รายละเอียดเพิ่มเติม</label>
+                    <textarea id="ticketDesc" rows="3" class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all" placeholder="อธิบายรายละเอียดของปัญหาที่พบ..."></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">ความสำคัญ</label>
+                        <select id="ticketPriority" required class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all bg-white">
+                            <option value="Low">ต่ำ (Low)</option>
+                            <option value="Medium" selected>ปกติ (Medium)</option>
+                            <option value="High">สูง (High)</option>
+                            <option value="Critical">เร่งด่วนที่สุด (Critical)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">ทรัพย์สินที่เกี่ยวข้อง (ถ้ามี)</label>
+                        <select id="ticketAsset" class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all bg-white">
+                            <option value="">ไม่ระบุทรัพย์สิน</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="closeTicketModal()" class="flex-1 px-6 py-3 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all active:scale-95">ยกเลิก</button>
+                    <button type="submit" class="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all active:scale-95 flex items-center justify-center gap-2">
+                        <i data-lucide="send" class="w-5 h-5"></i> ส่งใบแจ้งซ่อม
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="/assets/js/app.js"></script>
+    <script>
+        // Sidebar logic
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        function toggleSidebar() {
+            sidebar.classList.toggle('-translate-x-full');
+            sidebarOverlay.classList.toggle('hidden');
+        }
+        document.getElementById('openSidebar')?.addEventListener('click', toggleSidebar);
+        document.getElementById('closeSidebar')?.addEventListener('click', toggleSidebar);
+        sidebarOverlay?.addEventListener('click', toggleSidebar);
+
+        // Tickets Logic
+        let allTickets = [];
+
+        async function loadInitialData() {
+            try {
+                // Load My Assets for the select
+                const assetRes = await apiFetch('/api/assets');
+                const allAssets = await assetRes.json();
+                const assetSelect = document.getElementById('ticketAsset');
+                assetSelect.innerHTML = '<option value="">ไม่ระบุทรัพย์สิน</option>' + 
+                    allAssets.map(a => `<option value="${a.id}">${escapeHTML(a.asset_tag)} - ${escapeHTML(a.name)}</option>`).join('');
+
+                await loadTickets();
+            } catch (err) {
+                console.error('Failed to load initial data:', err);
+            }
+        }
+
+        async function loadTickets() {
+            const tbody = document.getElementById('ticketTableBody');
+            try {
+                const response = await apiFetch('/api/tickets');
+                allTickets = await response.json();
+                renderTickets(allTickets);
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+            }
+        }
+
+        function renderTickets(tickets) {
+            const tbody = document.getElementById('ticketTableBody');
+            if (tickets.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">ไม่พบรายการแจ้งซ่อม</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = tickets.map(t => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-slate-800 uppercase tracking-wider text-xs">#TK-${t.id.substring(0, 8)}</div>
+                        <div class="text-[10px] text-slate-400 font-medium">${new Date(t.created_at).toLocaleDateString('th-TH')}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-semibold text-slate-700">${escapeHTML(t.subject)}</div>
+                        <div class="text-[10px] text-slate-400 truncate max-w-xs">${escapeHTML(t.description || 'ไม่มีรายละเอียด')}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-medium text-slate-600">${escapeHTML(t.reporter_name || 'System')}</div>
+                        <div class="text-[10px] text-slate-400">${escapeHTML(t.department_name || '-')}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${getPriorityClass(t.priority)}">
+                            ${t.priority}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${getStatusClass(t.status)}">
+                            ${t.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="viewTicket('${t.id}')" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function getPriorityClass(p) {
+            switch(p) {
+                case 'Low': return 'bg-slate-100 text-slate-600';
+                case 'Medium': return 'bg-blue-50 text-blue-600';
+                case 'High': return 'bg-amber-50 text-amber-600';
+                case 'Critical': return 'bg-red-50 text-red-600 animate-pulse';
+                default: return 'bg-slate-50 text-slate-600';
+            }
+        }
+
+        function getStatusClass(s) {
+            switch(s) {
+                case 'Open': return 'bg-indigo-50 text-indigo-600';
+                case 'In Progress': return 'bg-blue-50 text-blue-600';
+                case 'Resolved': return 'bg-emerald-50 text-emerald-600';
+                case 'Closed': return 'bg-slate-100 text-slate-400';
+                default: return 'bg-slate-50 text-slate-600';
+            }
+        }
+
+        function openTicketModal() {
+            document.getElementById('ticketForm').reset();
+            document.getElementById('ticketModal').classList.remove('hidden');
+        }
+
+        function closeTicketModal() {
+            document.getElementById('ticketModal').classList.add('hidden');
+        }
+
+        document.getElementById('ticketForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userObj = JSON.parse(localStorage.getItem('user') || '{}');
+            const data = {
+                subject: document.getElementById('ticketSubject').value,
+                description: document.getElementById('ticketDesc').value,
+                priority: document.getElementById('ticketPriority').value,
+                asset_id: document.getElementById('ticketAsset').value || null,
+                reporter_id: userObj.id
+            };
+
+            try {
+                const response = await apiFetch('/api/tickets', {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    notify.success('ส่งใบแจ้งซ่อมสำเร็จ! เจ้าหน้าที่จะรับเรื่องโดยเร็วที่สุด');
+                    closeTicketModal();
+                    loadTickets();
+                } else {
+                    const err = await response.json();
+                    notify.error(err.message || 'เกิดข้อผิดพลาด');
+                }
+            } catch (err) {
+                notify.error('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', loadInitialData);
+    </script>
+</body>
+</html>

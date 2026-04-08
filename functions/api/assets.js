@@ -16,6 +16,25 @@ export async function onRequest(context) {
     }
 
     const sql = neon(databaseUrl);
+
+    // Migration: Ensure assets table exists
+    await sql`
+      CREATE TABLE IF NOT EXISTS assets (
+        id TEXT PRIMARY KEY,
+        asset_tag TEXT UNIQUE NOT NULL,
+        serial_number TEXT UNIQUE,
+        name TEXT NOT NULL,
+        category TEXT,
+        model TEXT,
+        status TEXT DEFAULT 'Available',
+        assigned_to TEXT REFERENCES users(id),
+        department_id TEXT REFERENCES departments(id),
+        purchase_date DATE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
+
     const url = new URL(request.url);
     const action = url.searchParams.get("action");
 
