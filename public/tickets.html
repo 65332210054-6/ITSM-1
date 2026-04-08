@@ -120,7 +120,7 @@
     <div id="ticketModal" class="fixed inset-0 bg-slate-900/50 z-[60] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
             <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                <h2 class="text-xl font-bold text-slate-800 tracking-tight">เปิดใบแจ้งซ่อมใหม่</h2>
+                <h2 id="modalTitle" class="text-xl font-bold text-slate-800 tracking-tight">เปิดใบแจ้งซ่อมใหม่</h2>
                 <button onclick="closeTicketModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-6 h-6"></i></button>
             </div>
             <form id="ticketForm" class="p-8 space-y-5">
@@ -144,16 +144,35 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">ทรัพย์สินที่เกี่ยวข้อง (ถ้ามี)</label>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">ทรัพย์สินที่เกี่ยวข้อง</label>
                         <select id="ticketAsset" class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all bg-white">
                             <option value="">ไม่ระบุทรัพย์สิน</option>
                         </select>
                     </div>
                 </div>
+                <div id="adminFields" class="hidden space-y-5 pt-2 border-t border-slate-100">
+                    <div class="grid grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">สถานะการดำเนินการ</label>
+                            <select id="ticketStatus" class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all bg-white">
+                                <option value="Open">รอดำเนินการ (Open)</option>
+                                <option value="In Progress">กำลังดำเนินการ (In Progress)</option>
+                                <option value="Resolved">แก้ไขเสร็จสิ้น (Resolved)</option>
+                                <option value="Closed">ปิดงาน (Closed)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">ช่างที่รับผิดชอบ</label>
+                            <select id="ticketAssignee" class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all bg-white">
+                                <option value="">รอมอบหมาย</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
                 <div class="pt-4 flex gap-3">
                     <button type="button" onclick="closeTicketModal()" class="flex-1 px-6 py-3 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all active:scale-95">ยกเลิก</button>
                     <button type="submit" class="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all active:scale-95 flex items-center justify-center gap-2">
-                        <i data-lucide="send" class="w-5 h-5"></i> ส่งใบแจ้งซ่อม
+                        <i data-lucide="save" class="w-5 h-5"></i> บันทึกข้อมูล
                     </button>
                 </div>
             </form>
@@ -176,15 +195,32 @@
 
         // Tickets Logic
         let allTickets = [];
+        let technicians = [];
 
         async function loadInitialData() {
             try {
+                // Check role
+                const userObj = JSON.parse(localStorage.getItem('user') || '{}');
+                const isAdminOrTech = userObj.role === 'Admin' || userObj.role === 'Technician';
+
                 // Load My Assets for the select
-                const assetRes = await apiFetch('/api/assets');
+                const [assetRes, userRes] = await Promise.all([
+                    apiFetch('/api/assets'),
+                    isAdminOrTech ? apiFetch('/api/users') : Promise.resolve(null)
+                ]);
+
                 const allAssets = await assetRes.json();
                 const assetSelect = document.getElementById('ticketAsset');
                 assetSelect.innerHTML = '<option value="">ไม่ระบุทรัพย์สิน</option>' + 
                     allAssets.map(a => `<option value="${a.id}">${escapeHTML(a.asset_tag)} - ${escapeHTML(a.name)}</option>`).join('');
+
+                if (userRes && userRes.ok) {
+                    const allUsers = await userRes.json();
+                    technicians = allUsers.filter(u => u.role_name === 'Admin' || u.role_name === 'Technician');
+                    const assigneeSelect = document.getElementById('ticketAssignee');
+                    assigneeSelect.innerHTML = '<option value="">รอมอบหมาย</option>' + 
+                        technicians.map(t => `<option value="${t.id}">${escapeHTML(t.name)}</option>`).join('');
+                }
 
                 await loadTickets();
             } catch (err) {
@@ -275,7 +311,10 @@
         }
 
         function openTicketModal() {
+            document.getElementById('modalTitle').innerText = 'เปิดใบแจ้งซ่อมใหม่';
             document.getElementById('ticketForm').reset();
+            document.getElementById('ticketId').value = '';
+            document.getElementById('adminFields').classList.add('hidden');
             document.getElementById('ticketModal').classList.remove('hidden');
         }
 
@@ -283,16 +322,50 @@
             document.getElementById('ticketModal').classList.add('hidden');
         }
 
+        async function viewTicket(id) {
+            const ticket = allTickets.find(t => t.id === id);
+            if (!ticket) return;
+
+            const userObj = JSON.parse(localStorage.getItem('user') || '{}');
+            const isAdminOrTech = userObj.role === 'Admin' || userObj.role === 'Technician';
+
+            document.getElementById('modalTitle').innerText = 'จัดการใบแจ้งซ่อม';
+            document.getElementById('ticketId').value = ticket.id;
+            document.getElementById('ticketSubject').value = ticket.subject;
+            document.getElementById('ticketDesc').value = ticket.description || '';
+            document.getElementById('ticketPriority').value = ticket.priority;
+            document.getElementById('ticketAsset').value = ticket.asset_id || '';
+            
+            if (isAdminOrTech) {
+                document.getElementById('adminFields').classList.remove('hidden');
+                document.getElementById('ticketStatus').value = ticket.status;
+                document.getElementById('ticketAssignee').value = ticket.assigned_to || '';
+            } else {
+                document.getElementById('adminFields').classList.add('hidden');
+            }
+
+            document.getElementById('ticketModal').classList.remove('hidden');
+        }
+
         document.getElementById('ticketForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const id = document.getElementById('ticketId').value;
             const userObj = JSON.parse(localStorage.getItem('user') || '{}');
+            const isAdminOrTech = userObj.role === 'Admin' || userObj.role === 'Technician';
+
             const data = {
+                id: id || null,
                 subject: document.getElementById('ticketSubject').value,
                 description: document.getElementById('ticketDesc').value,
                 priority: document.getElementById('ticketPriority').value,
                 asset_id: document.getElementById('ticketAsset').value || null,
-                reporter_id: userObj.id
+                reporter_id: id ? undefined : userObj.id // Only for new
             };
+
+            if (isAdminOrTech && id) {
+                data.status = document.getElementById('ticketStatus').value;
+                data.assigned_to = document.getElementById('ticketAssignee').value || null;
+            }
 
             try {
                 const response = await apiFetch('/api/tickets', {
@@ -301,7 +374,7 @@
                 });
 
                 if (response.ok) {
-                    notify.success('ส่งใบแจ้งซ่อมสำเร็จ! เจ้าหน้าที่จะรับเรื่องโดยเร็วที่สุด');
+                    notify.success(id ? 'อัปเดตข้อมูลสำเร็จ' : 'ส่งใบแจ้งซ่อมสำเร็จ');
                     closeTicketModal();
                     loadTickets();
                 } else {

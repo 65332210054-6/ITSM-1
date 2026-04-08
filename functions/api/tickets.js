@@ -43,21 +43,23 @@ export async function onRequest(context) {
       if (userSession.role_name === 'Admin' || userSession.role_name === 'Technician') {
         // Admins and Technicians see all tickets
         tickets = await sql`
-          SELECT t.*, u.name as reporter_name, d.name as department_name, a.asset_tag
+          SELECT t.*, u.name as reporter_name, d.name as department_name, a.asset_tag, tech.name as technician_name
           FROM tickets t
           JOIN users u ON t.reporter_id = u.id
           LEFT JOIN departments d ON u.department_id = d.id
           LEFT JOIN assets a ON t.asset_id = a.id
+          LEFT JOIN users tech ON t.assigned_to = tech.id
           ORDER BY t.created_at DESC
         `;
       } else {
         // Users see only their own tickets
         tickets = await sql`
-          SELECT t.*, u.name as reporter_name, d.name as department_name, a.asset_tag
+          SELECT t.*, u.name as reporter_name, d.name as department_name, a.asset_tag, tech.name as technician_name
           FROM tickets t
           JOIN users u ON t.reporter_id = u.id
           LEFT JOIN departments d ON u.department_id = d.id
           LEFT JOIN assets a ON t.asset_id = a.id
+          LEFT JOIN users tech ON t.assigned_to = tech.id
           WHERE t.reporter_id = ${userSession.user_id}
           ORDER BY t.created_at DESC
         `;
@@ -70,7 +72,7 @@ export async function onRequest(context) {
     // 2. POST Ticket (Create/Update)
     if (request.method === "POST") {
       const data = await request.json();
-      const { id, subject, description, priority, asset_id, status } = data;
+      const { id, subject, description, priority, asset_id, status, assigned_to } = data;
 
       if (id) {
         // Update (Only for Admin/Technician or the original reporter)
@@ -79,7 +81,8 @@ export async function onRequest(context) {
           UPDATE tickets 
           SET subject = ${subject}, description = ${description}, 
               priority = ${priority}, asset_id = ${asset_id}, 
-              status = ${status || 'Open'}, updated_at = NOW()
+              status = ${status || 'Open'}, assigned_to = ${assigned_to || null}, 
+              updated_at = NOW()
           WHERE id = ${id}
         `;
         return new Response(JSON.stringify({ message: "Ticket updated successfully" }), { status: 200 });
