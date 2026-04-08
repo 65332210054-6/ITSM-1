@@ -196,10 +196,20 @@
             const tbody = document.getElementById('ticketTableBody');
             try {
                 const response = await apiFetch('/api/tickets');
+                if (!response || !response.ok) {
+                    throw new Error('Failed to fetch tickets');
+                }
                 allTickets = await response.json();
                 renderTickets(allTickets);
             } catch (err) {
-                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+                console.error('Load Tickets Error:', err);
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-red-500">
+                    <div class="flex flex-col items-center gap-2">
+                        <i data-lucide="alert-circle" class="w-8 h-8"></i>
+                        <span>เกิดข้อผิดพลาด: ${err.message}</span>
+                    </div>
+                </td></tr>`;
+                lucide.createIcons();
             }
         }
 
@@ -301,6 +311,19 @@
             } catch (err) {
                 notify.error('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
             }
+        });
+
+        // Search logic
+        document.getElementById('ticketSearch').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allTickets.filter(t => 
+                t.subject.toLowerCase().includes(term) || 
+                (t.description || '').toLowerCase().includes(term) || 
+                (t.reporter_name || '').toLowerCase().includes(term) ||
+                t.id.toLowerCase().includes(term) ||
+                `#tk-${t.id.substring(0, 8)}`.includes(term)
+            );
+            renderTickets(filtered);
         });
 
         document.addEventListener('DOMContentLoaded', loadInitialData);

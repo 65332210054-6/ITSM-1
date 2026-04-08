@@ -177,7 +177,8 @@ async function apiFetch(url, options = {}) {
             return;
         }
         if (response.status === 403) {
-            const data = await response.json();
+            const clone = response.clone();
+            const data = await clone.json().catch(() => ({}));
             notify.error(data.message || 'คุณไม่มีสิทธิ์เข้าถึงส่วนนี้');
             return response;
         }

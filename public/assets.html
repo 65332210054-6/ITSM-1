@@ -227,34 +227,64 @@
                 const [userRes, deptRes] = await Promise.all([
                     apiFetch('/api/users'),
                     apiFetch('/api/departments')
-                ]);
+                ]).catch(err => {
+                    console.error('Initial data fetch failed:', err);
+                    return [null, null];
+                });
                 
-                allUsers = await userRes.json();
-                allDepts = await deptRes.json();
-
-                const userSelect = document.getElementById('assetUser');
-                const deptSelect = document.getElementById('assetDept');
-
-                userSelect.innerHTML = '<option value="">ไม่มี (Stock)</option>' + 
-                    allUsers.map(u => `<option value="${u.id}">${escapeHTML(u.name)}</option>`).join('');
+                if (userRes && userRes.ok) {
+                    allUsers = await userRes.json().catch(() => []);
+                    const userSelect = document.getElementById('assetUser');
+                    userSelect.innerHTML = '<option value="">ไม่มี (Stock)</option>' + 
+                        allUsers.map(u => `<option value="${u.id}">${escapeHTML(u.name)}</option>`).join('');
+                }
                 
-                deptSelect.innerHTML = '<option value="">ไม่มีแผนก</option>' + 
-                    allDepts.map(d => `<option value="${d.id}">${escapeHTML(d.name)}</option>`).join('');
+                if (deptRes && deptRes.ok) {
+                    allDepts = await deptRes.json().catch(() => []);
+                    const deptSelect = document.getElementById('assetDept');
+                    deptSelect.innerHTML = '<option value="">ไม่มีแผนก</option>' + 
+                        allDepts.map(d => `<option value="${d.id}">${escapeHTML(d.name)}</option>`).join('');
+                }
 
                 await loadAssets();
             } catch (err) {
                 console.error('Failed to load initial data:', err);
+                notify.error('ไม่สามารถโหลดข้อมูลพื้นฐานได้');
+                await loadAssets(); // Still try to load assets anyway
             }
         }
 
         async function loadAssets() {
             const tbody = document.getElementById('assetTableBody');
+            console.log('Fetching assets...');
             try {
                 const response = await apiFetch('/api/assets');
+                console.log('Assets response:', response);
+                
+                if (!response) {
+                    console.error('No response from apiFetch');
+                    return;
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('Assets API Error:', response.status, errorData);
+                    throw new Error(errorData.message || `Error ${response.status}`);
+                }
+
                 allAssets = await response.json();
+                console.log('Loaded assets:', allAssets);
                 renderAssets(allAssets);
             } catch (err) {
-                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+                console.error('Load Assets Catch:', err);
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-red-500">
+                    <div class="flex flex-col items-center gap-2">
+                        <i data-lucide="alert-circle" class="w-8 h-8"></i>
+                        <span>เกิดข้อผิดพลาด: ${err.message}</span>
+                        <button onclick="loadAssets()" class="mt-2 text-xs text-indigo-600 underline">ลองใหม่อีกครั้ง</button>
+                    </div>
+                </td></tr>`;
+                lucide.createIcons();
             }
         }
 

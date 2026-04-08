@@ -18,20 +18,24 @@ export async function onRequest(context) {
     const sql = neon(databaseUrl);
 
     // Migration: Ensure tickets table exists
-    await sql`
-      CREATE TABLE IF NOT EXISTS tickets (
-        id TEXT PRIMARY KEY,
-        subject TEXT NOT NULL,
-        description TEXT,
-        status TEXT DEFAULT 'Open',
-        priority TEXT DEFAULT 'Medium',
-        reporter_id TEXT NOT NULL REFERENCES users(id),
-        assigned_to TEXT REFERENCES users(id),
-        asset_id TEXT REFERENCES assets(id),
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-      )
-    `;
+    try {
+      await sql`
+        CREATE TABLE IF NOT EXISTS tickets (
+          id TEXT PRIMARY KEY,
+          subject TEXT NOT NULL,
+          description TEXT,
+          status TEXT DEFAULT 'Open',
+          priority TEXT DEFAULT 'Medium',
+          reporter_id TEXT NOT NULL REFERENCES users(id),
+          assigned_to TEXT REFERENCES users(id),
+          asset_id TEXT REFERENCES assets(id),
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        )
+      `;
+    } catch (migErr) {
+      console.error("Tickets Migration Error:", migErr);
+    }
 
     // 1. GET Tickets
     if (request.method === "GET") {
