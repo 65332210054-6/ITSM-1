@@ -8,6 +8,9 @@ try {
     const assets = await sql`SELECT COUNT(*) FROM assets`;
     console.log('Assets count:', assets[0].count);
 
+    const tickets = await sql`SELECT COUNT(*) FROM tickets`;
+    console.log('Tickets count:', tickets[0].count);
+
     if (assets[0].count > 0) {
         const rows = await sql`SELECT * FROM assets LIMIT 5`;
         console.log('Sample assets:', rows);

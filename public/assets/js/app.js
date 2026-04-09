@@ -1,22 +1,7 @@
 // Common app logic
 document.addEventListener('DOMContentLoaded', () => {
-    // Check Authentication
-    const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const path = window.location.pathname;
-    const isLoginPage = path === '/login' || path === '/login.html' || path.endsWith('/login.html');
-
-    // Authentication Guard
-    if (!token && !isLoginPage) {
-        window.location.href = '/login.html';
-        return;
-    }
-
-    // Redirect to home if already logged in and visiting login page
-    if (token && isLoginPage) {
-        window.location.href = '/index.html';
-        return;
-    }
 
     // Role-based Access Control
     const isAdminOnlyPage = path.endsWith('users.html') || path.endsWith('settings.html');
@@ -75,6 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
             link.style.display = 'none';
         });
     }
+
+    // Initialize Shared Sidebar Logic
+    ui.initSidebar();
 });
 
 // Security: Escape HTML to prevent XSS
@@ -156,6 +144,48 @@ const notify = {
             }
         });
         return result.isConfirmed;
+    },
+
+    initSidebar: () => {
+        const openSidebar = document.getElementById('openSidebar');
+        const closeSidebar = document.getElementById('closeSidebar');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        if (!sidebar || !sidebarOverlay) return;
+
+        const toggleSidebar = () => {
+            sidebar.classList.toggle('-translate-x-full');
+            sidebarOverlay.classList.toggle('hidden');
+            // Prevent body scroll when sidebar is open on mobile
+            if (!sidebarOverlay.classList.contains('hidden')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+        };
+
+        if (openSidebar) openSidebar.addEventListener('click', toggleSidebar);
+        if (closeSidebar) closeSidebar.addEventListener('click', toggleSidebar);
+        if (sidebarOverlay) sidebarOverlay.addEventListener('click', toggleSidebar);
+
+        // Highlight Active Link based on pathname
+        const path = window.location.pathname;
+        const navLinks = document.querySelectorAll('nav a');
+        navLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href === path || (path === '/' && href === '/index.html')) {
+                link.classList.add('bg-indigo-600', 'text-white', 'shadow-lg', 'shadow-indigo-600/20');
+                link.classList.remove('text-slate-400', 'hover:bg-slate-800', 'hover:text-white');
+                
+                // If it has an icon, ensure it stays visible/colored
+                const icon = link.querySelector('i');
+                if (icon) icon.classList.remove('text-slate-400');
+            } else {
+                link.classList.remove('bg-indigo-600', 'text-white', 'shadow-lg', 'shadow-indigo-600/20');
+                link.classList.add('text-slate-400', 'hover:bg-slate-800', 'hover:text-white');
+            }
+        });
     }
 };
 
@@ -214,3 +244,47 @@ async function apiFetch(url, options = {}) {
         throw error;
     }
 }
+
+// Global UI Helpers
+const ui = {
+    choicesInstances: {},
+
+    initChoices: (container = document) => {
+        if (typeof Choices === 'undefined') {
+            console.warn('Choices.js not loaded yet, retrying in 200ms...');
+            setTimeout(() => ui.initChoices(container), 200);
+            return;
+        }
+
+        const selects = container.querySelectorAll('select');
+        selects.forEach(select => {
+            // Skip if already initialized
+            if (select.classList.contains('choices__input')) return;
+            
+            if (ui.choicesInstances[select.id]) {
+                ui.choicesInstances[select.id].destroy();
+            }
+
+            const isCompact = select.id === 'itemsPerPageSelect';
+            try {
+                const instance = new Choices(select, {
+                    searchEnabled: false,
+                    itemSelectText: '',
+                    shouldSort: false,
+                    allowHTML: true,
+                    position: isCompact ? 'top' : 'auto'
+                });
+                ui.choicesInstances[select.id] = instance;
+
+                if (isCompact) {
+                    const wrapper = select.closest('.choices');
+                    if (wrapper) {
+                        wrapper.classList.add('choices-compact-wrapper');
+                    }
+                }
+            } catch (e) {
+                console.error('Choices init error for', select.id, e);
+            }
+        });
+    }
+};

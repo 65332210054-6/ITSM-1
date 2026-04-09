@@ -4,13 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบแจ้งซ่อม | ITSM Admin</title>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.454.0/lucide.min.css" rel="stylesheet">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', 'Sarabun', sans-serif; }
-    </style>
+    <!-- Choices.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <link rel="stylesheet" href="/assets/css/styles.css">
 </head>
 <body class="h-full flex overflow-hidden">
     <!-- Mobile Sidebar Overlay -->
@@ -42,7 +46,7 @@
                 <a href="/assets.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
                     <i data-lucide="monitor" class="mr-3 h-5 w-5"></i> จัดการทรัพย์สิน
                 </a>
-                <a href="/tickets.html" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 transition-all">
+                <a href="/tickets.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all">
                     <i data-lucide="ticket" class="mr-3 h-5 w-5"></i> ระบบแจ้งซ่อม
                 </a>
                 <a href="/settings.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
@@ -54,7 +58,7 @@
 
     <!-- Main Content -->
     <div class="flex-1 flex flex-col overflow-hidden">
-        <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-10 shadow-sm z-10">
+        <header class="page-header">
             <div class="flex items-center gap-4">
                 <button id="openSidebar" class="lg:hidden text-slate-500 hover:text-indigo-600 p-2 rounded-xl hover:bg-slate-50 transition-all"><i data-lucide="menu" class="h-6 w-6"></i></button>
                 <h1 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">รายการแจ้งซ่อมและบริการ</h1>
@@ -88,28 +92,56 @@
                                 class="block w-full pl-12 pr-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all shadow-sm bg-white">
                         </div>
                     </div>
-                    <button onclick="openTicketModal()" class="w-full md:w-auto bg-indigo-600 text-white px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 active:scale-95">
+                    <button onclick="openTicketModal()" class="w-full md:w-auto btn-primary">
                         <i data-lucide="plus" class="w-5 h-5"></i> เปิดใบแจ้งซ่อมใหม่
                     </button>
                 </div>
 
-                <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="card">
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse min-w-[900px]">
                             <thead>
                                 <tr class="bg-slate-50 border-b border-slate-200">
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Ticket ID</th>
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">หัวข้อ / อาการแจ้ง</th>
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">ผู้แจ้ง / แผนก</th>
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">ความสำคัญ</th>
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">สถานะ</th>
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">จัดการ</th>
+                                    <th class="th-cell">Ticket ID</th>
+                                    <th class="th-cell">หัวข้อ / อาการแจ้ง</th>
+                                    <th class="th-cell">ผู้แจ้ง / แผนก</th>
+                                    <th class="th-cell">ความสำคัญ</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">สถานะ</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">แก้ไข</th>
                                 </tr>
                             </thead>
                             <tbody id="ticketTableBody" class="divide-y divide-slate-100">
                                 <tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">กำลังโหลดรายการแจ้งซ่อม...</td></tr>
                             </tbody>
                         </table>
+                    </div>
+                    <!-- Pagination Footer -->
+                    <div class="pagination-footer">
+                        <div class="flex items-center gap-4">
+                            <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                แสดง <span id="showingStart">0</span> - <span id="showingEnd">0</span> จาก <span id="totalItems">0</span> รายการ
+                            </div>
+                            <div class="flex items-center gap-2 border-l border-slate-200 pl-4">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">แสดงหน้าละ:</span>
+                                <select id="itemsPerPageSelect">
+                                    <option value="10">10</option>
+                                    <option value="20">20</option>
+                                    <option value="30">30</option>
+                                    <option value="50">50</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="prevPage" class="p-2 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-white transition-all disabled:opacity-30 disabled:cursor-not-allowed" disabled>
+                                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                            </button>
+                            <div id="pageNumbers" class="flex items-center gap-1">
+                                <!-- Page numbers will be injected here -->
+                            </div>
+                            <button id="nextPage" class="p-2 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-white transition-all disabled:opacity-30 disabled:cursor-not-allowed" disabled>
+                                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -118,25 +150,25 @@
 
     <!-- Ticket Modal -->
     <div id="ticketModal" class="fixed inset-0 bg-slate-900/50 z-[60] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl animate-in fade-in zoom-in duration-200">
+            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-3xl">
                 <h2 id="modalTitle" class="text-xl font-bold text-slate-800 tracking-tight">เปิดใบแจ้งซ่อมใหม่</h2>
                 <button onclick="closeTicketModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-6 h-6"></i></button>
             </div>
             <form id="ticketForm" class="p-8 space-y-5">
                 <input type="hidden" id="ticketId">
                 <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">หัวข้อ / อาการแจ้งเบื้องต้น</label>
-                    <input type="text" id="ticketSubject" required class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all" placeholder="เช่น คอมพิวเตอร์เปิดไม่ติด, อินเทอร์เน็ตใช้งานไม่ได้">
+                    <label class="form-label">หัวข้อ / อาการแจ้งเบื้องต้น</label>
+                    <input type="text" id="ticketSubject" required class="form-input" placeholder="เช่น คอมพิวเตอร์เปิดไม่ติด, อินเทอร์เน็ตใช้งานไม่ได้">
                 </div>
                 <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">รายละเอียดเพิ่มเติม</label>
-                    <textarea id="ticketDesc" rows="3" class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all" placeholder="อธิบายรายละเอียดของปัญหาที่พบ..."></textarea>
+                    <label class="form-label">รายละเอียดเพิ่มเติม</label>
+                    <textarea id="ticketDesc" rows="3" class="form-input" placeholder="อธิบายรายละเอียดของปัญหาที่พบ..."></textarea>
                 </div>
                 <div class="grid grid-cols-2 gap-5">
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">ความสำคัญ</label>
-                        <select id="ticketPriority" required class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all bg-white">
+                        <label class="form-label">ความสำคัญ</label>
+                        <select id="ticketPriority" required class="form-input">
                             <option value="Low">ต่ำ (Low)</option>
                             <option value="Medium" selected>ปกติ (Medium)</option>
                             <option value="High">สูง (High)</option>
@@ -144,8 +176,8 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">ทรัพย์สินที่เกี่ยวข้อง</label>
-                        <select id="ticketAsset" class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all bg-white">
+                        <label class="form-label">ทรัพย์สินที่เกี่ยวข้อง</label>
+                        <select id="ticketAsset" class="form-input">
                             <option value="">ไม่ระบุทรัพย์สิน</option>
                         </select>
                     </div>
@@ -153,8 +185,8 @@
                 <div id="adminFields" class="hidden space-y-5 pt-2 border-t border-slate-100">
                     <div class="grid grid-cols-2 gap-5">
                         <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-2">สถานะการดำเนินการ</label>
-                            <select id="ticketStatus" class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all bg-white">
+                            <label class="form-label">สถานะการดำเนินการ</label>
+                            <select id="ticketStatus" class="form-input">
                                 <option value="Open">รอดำเนินการ (Open)</option>
                                 <option value="In Progress">กำลังดำเนินการ (In Progress)</option>
                                 <option value="Resolved">แก้ไขเสร็จสิ้น (Resolved)</option>
@@ -162,8 +194,8 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-2">ช่างที่รับผิดชอบ</label>
-                            <select id="ticketAssignee" class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all bg-white">
+                            <label class="form-label">ช่างที่รับผิดชอบ</label>
+                            <select id="ticketAssignee" class="form-input">
                                 <option value="">รอมอบหมาย</option>
                             </select>
                         </div>
@@ -180,51 +212,67 @@
     </div>
 
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Choices.js JS -->
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
     <script src="/assets/js/app.js"></script>
     <script>
-        // Sidebar logic
-        const sidebar = document.getElementById('sidebar');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
-        function toggleSidebar() {
-            sidebar.classList.toggle('-translate-x-full');
-            sidebarOverlay.classList.toggle('hidden');
-        }
-        document.getElementById('openSidebar')?.addEventListener('click', toggleSidebar);
-        document.getElementById('closeSidebar')?.addEventListener('click', toggleSidebar);
-        sidebarOverlay?.addEventListener('click', toggleSidebar);
-
         // Tickets Logic
         let allTickets = [];
+        let filteredTickets = [];
         let technicians = [];
+        
+        // Pagination state
+        let currentPage = 1;
+        let itemsPerPage = 10;
 
         async function loadInitialData() {
+            // Initialize Shared UI Components
+            ui.initChoices();
+            
+            // Load tickets immediately
+            loadTickets();
+
+            // Load meta data in background
             try {
-                // Check role
                 const userObj = JSON.parse(localStorage.getItem('user') || '{}');
                 const isAdminOrTech = userObj.role === 'Admin' || userObj.role === 'Technician';
 
-                // Load My Assets for the select
-                const [assetRes, userRes] = await Promise.all([
+                const results = await Promise.allSettled([
                     apiFetch('/api/assets'),
                     isAdminOrTech ? apiFetch('/api/users') : Promise.resolve(null)
                 ]);
 
-                const allAssets = await assetRes.json();
-                const assetSelect = document.getElementById('ticketAsset');
-                assetSelect.innerHTML = '<option value="">ไม่ระบุทรัพย์สิน</option>' + 
-                    allAssets.map(a => `<option value="${a.id}">${escapeHTML(a.asset_tag)} - ${escapeHTML(a.name)}</option>`).join('');
+                const assetRes = results[0].status === 'fulfilled' ? results[0].value : null;
+                const userRes = results[1].status === 'fulfilled' ? results[1].value : null;
 
-                if (userRes && userRes.ok) {
-                    const allUsers = await userRes.json();
-                    technicians = allUsers.filter(u => u.role_name === 'Admin' || u.role_name === 'Technician');
-                    const assigneeSelect = document.getElementById('ticketAssignee');
-                    assigneeSelect.innerHTML = '<option value="">รอมอบหมาย</option>' + 
-                        technicians.map(t => `<option value="${t.id}">${escapeHTML(t.name)}</option>`).join('');
+                if (assetRes && assetRes.ok) {
+                    const allAssets = await assetRes.json().catch(() => []);
+                    const assetSelect = document.getElementById('ticketAsset');
+                    if (assetSelect) {
+                        assetSelect.innerHTML = '<option value="">ไม่ระบุทรัพย์สิน</option>' + 
+                            allAssets.map(a => `<option value="${a.id}">${escapeHTML(a.asset_tag)} - ${escapeHTML(a.name)}</option>`).join('');
+                        if (ui.choicesInstances['ticketAsset']) {
+                            ui.choicesInstances['ticketAsset'].destroy();
+                            ui.choicesInstances['ticketAsset'] = new Choices(assetSelect, { searchEnabled: false, itemSelectText: '', shouldSort: false, allowHTML: true });
+                        }
+                    }
                 }
 
-                await loadTickets();
+                if (userRes && userRes.ok) {
+                    const allUsers = await userRes.json().catch(() => []);
+                    technicians = allUsers.filter(u => u.role_name === 'Admin' || u.role_name === 'Technician');
+                    const assigneeSelect = document.getElementById('ticketAssignee');
+                    if (assigneeSelect) {
+                        assigneeSelect.innerHTML = '<option value="">รอมอบหมาย</option>' + 
+                            technicians.map(t => `<option value="${t.id}">${escapeHTML(t.name)}</option>`).join('');
+                        if (choicesInstances['ticketAssignee']) {
+                            choicesInstances['ticketAssignee'].destroy();
+                            choicesInstances['ticketAssignee'] = new Choices(assigneeSelect, { searchEnabled: false, itemSelectText: '', shouldSort: false, allowHTML: true });
+                        }
+                    }
+                }
             } catch (err) {
-                console.error('Failed to load initial data:', err);
+                console.error('Failed to load background data:', err);
             }
         }
 
@@ -236,7 +284,8 @@
                     throw new Error('Failed to fetch tickets');
                 }
                 allTickets = await response.json();
-                renderTickets(allTickets);
+                filteredTickets = [...allTickets];
+                renderTickets();
             } catch (err) {
                 console.error('Load Tickets Error:', err);
                 tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-red-500">
@@ -249,15 +298,21 @@
             }
         }
 
-        function renderTickets(tickets) {
+        function renderTickets() {
             const tbody = document.getElementById('ticketTableBody');
-            if (tickets.length === 0) {
+            if (filteredTickets.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">ไม่พบรายการแจ้งซ่อม</td></tr>';
+                updatePagination();
                 return;
             }
 
+            // Calculate slices for pagination
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pagedTickets = filteredTickets.slice(startIndex, endIndex);
+
             const fragment = document.createDocumentFragment();
-            tickets.forEach(t => {
+            pagedTickets.forEach(t => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition-colors';
                 tr.innerHTML = `
@@ -278,14 +333,14 @@
                             ${t.priority}
                         </span>
                     </td>
-                    <td class="px-6 py-4">
+                    <td class="px-6 py-4 text-center">
                         <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${getStatusClass(t.status)}">
                             ${t.status}
                         </span>
                     </td>
                     <td class="px-6 py-4 text-right">
-                        <button onclick="viewTicket('${t.id}')" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
-                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        <button onclick="viewTicket('${t.id}')" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all active:scale-95" title="แก้ไข">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
                         </button>
                     </td>
                 `;
@@ -294,7 +349,76 @@
             tbody.innerHTML = '';
             tbody.appendChild(fragment);
             lucide.createIcons();
+            updatePagination();
         }
+
+        function updatePagination() {
+            const totalItems = filteredTickets.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+            
+            // Adjust current page if needed
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const startIndex = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+            const endIndex = Math.min(currentPage * itemsPerPage, totalItems);
+
+            document.getElementById('showingStart').innerText = startIndex;
+            document.getElementById('showingEnd').innerText = endIndex;
+            document.getElementById('totalItems').innerText = totalItems;
+
+            const prevBtn = document.getElementById('prevPage');
+            const nextBtn = document.getElementById('nextPage');
+            const pageNums = document.getElementById('pageNumbers');
+
+            prevBtn.disabled = currentPage === 1;
+            nextBtn.disabled = currentPage === totalPages;
+
+            // Generate page numbers
+            let html = '';
+            const maxVisiblePages = 3;
+            let start = Math.max(1, currentPage - 1);
+            let end = Math.min(totalPages, start + maxVisiblePages - 1);
+            
+            if (end - start + 1 < maxVisiblePages) {
+                start = Math.max(1, end - maxVisiblePages + 1);
+            }
+
+            for (let i = start; i <= end; i++) {
+                html += `
+                    <button onclick="goToPage(${i})" class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all ${i === currentPage ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-indigo-600 hover:bg-white'}">
+                        ${i}
+                    </button>
+                `;
+            }
+            pageNums.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            renderTickets();
+        }
+
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTickets();
+            }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredTickets.length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderTickets();
+            }
+        });
+
+        document.getElementById('itemsPerPageSelect').addEventListener('change', (e) => {
+            itemsPerPage = parseInt(e.target.value);
+            currentPage = 1;
+            renderTickets();
+        });
 
         function getPriorityClass(p) {
             switch(p) {
@@ -321,6 +445,15 @@
             document.getElementById('ticketForm').reset();
             document.getElementById('ticketId').value = '';
             document.getElementById('adminFields').classList.add('hidden');
+            
+            // Reset Choices
+            Object.values(ui.choicesInstances).forEach(instance => {
+                instance.setChoiceByValue('');
+            });
+            // Specific defaults
+            if (ui.choicesInstances['ticketPriority']) ui.choicesInstances['ticketPriority'].setChoiceByValue('Medium');
+            if (ui.choicesInstances['ticketStatus']) ui.choicesInstances['ticketStatus'].setChoiceByValue('Open');
+
             document.getElementById('ticketModal').classList.remove('hidden');
         }
 
@@ -339,13 +472,15 @@
             document.getElementById('ticketId').value = ticket.id;
             document.getElementById('ticketSubject').value = ticket.subject;
             document.getElementById('ticketDesc').value = ticket.description || '';
-            document.getElementById('ticketPriority').value = ticket.priority;
-            document.getElementById('ticketAsset').value = ticket.asset_id || '';
+            
+            // Set Choices values
+            if (ui.choicesInstances['ticketPriority']) ui.choicesInstances['ticketPriority'].setChoiceByValue(ticket.priority);
+            if (ui.choicesInstances['ticketAsset']) ui.choicesInstances['ticketAsset'].setChoiceByValue(ticket.asset_id || '');
             
             if (isAdminOrTech) {
                 document.getElementById('adminFields').classList.remove('hidden');
-                document.getElementById('ticketStatus').value = ticket.status;
-                document.getElementById('ticketAssignee').value = ticket.assigned_to || '';
+                if (ui.choicesInstances['ticketStatus']) ui.choicesInstances['ticketStatus'].setChoiceByValue(ticket.status);
+                if (ui.choicesInstances['ticketAssignee']) ui.choicesInstances['ticketAssignee'].setChoiceByValue(ticket.assigned_to || '');
             } else {
                 document.getElementById('adminFields').classList.add('hidden');
             }
@@ -394,15 +529,28 @@
 
         // Search logic
         document.getElementById('ticketSearch').addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            const filtered = allTickets.filter(t => 
-                t.subject.toLowerCase().includes(term) || 
-                (t.description || '').toLowerCase().includes(term) || 
-                (t.reporter_name || '').toLowerCase().includes(term) ||
-                t.id.toLowerCase().includes(term) ||
-                `#tk-${t.id.substring(0, 8)}`.includes(term)
-            );
-            renderTickets(filtered);
+            const term = e.target.value.toLowerCase().trim();
+            if (!term) {
+                filteredTickets = [...allTickets];
+            } else {
+                const terms = term.split(/\s+/);
+                filteredTickets = allTickets.filter(t => {
+                    const searchText = [
+                        t.id,
+                        `#tk-${t.id.substring(0, 8)}`,
+                        t.subject,
+                        t.description || '',
+                        t.reporter_name || '',
+                        t.department_name || '',
+                        t.status,
+                        t.priority
+                    ].join(' ').toLowerCase();
+                    
+                    return terms.every(w => searchText.includes(w));
+                });
+            }
+            currentPage = 1; // Reset to first page on search
+            renderTickets();
         });
 
         document.addEventListener('DOMContentLoaded', loadInitialData);

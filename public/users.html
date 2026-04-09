@@ -4,14 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>จัดการผู้ใช้งาน | ITSM Admin</title>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.454.0/lucide.min.css" rel="stylesheet">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', 'Sarabun', sans-serif; }
-    </style>
+    <!-- Choices.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <link rel="stylesheet" href="/assets/css/styles.css">
 </head>
 <body class="h-full flex overflow-hidden">
     <!-- Mobile Sidebar Overlay -->
@@ -40,7 +44,7 @@
                 <a href="/" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
                     <i data-lucide="layout-dashboard" class="mr-3 h-5 w-5"></i> หน้าแรก
                 </a>
-                <a href="/users.html" class="flex items-center px-4 py-3 text-sm font-semibold rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 transition-all">
+                <a href="/users.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all">
                     <i data-lucide="users" class="mr-3 h-5 w-5"></i> จัดการผู้ใช้งาน
                 </a>
                 <a href="/assets.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
@@ -58,7 +62,7 @@
 
     <!-- Main Content -->
     <div class="flex-1 flex flex-col overflow-hidden">
-        <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-10 shadow-sm z-10">
+        <header class="page-header">
             <div class="flex items-center gap-4">
                 <!-- Mobile Menu Button -->
                 <button id="openSidebar" class="lg:hidden text-slate-500 hover:text-indigo-600 p-2 rounded-xl hover:bg-slate-50 transition-all">
@@ -94,17 +98,17 @@
                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
                             <i data-lucide="search" class="w-5 h-5"></i>
                         </div>
-                        <input type="text" placeholder="ค้นหาชื่อ หรืออีเมลพนักงาน..." 
+                        <input type="text" id="userSearch" placeholder="ค้นหาชื่อ หรืออีเมลพนักงาน..." 
                             class="block w-full pl-12 pr-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all shadow-sm bg-white">
                     </div>
                     
                     <div id="addUserBtnContainer" class="w-full md:w-auto">
-                        <button onclick="openAddModal()" class="w-full md:w-auto bg-indigo-600 text-white px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 active:scale-95">
+                        <button onclick="openAddModal()" class="w-full md:w-auto btn-primary">
                             <i data-lucide="user-plus" class="w-5 h-5"></i> เพิ่มผู้ใช้งานใหม่
                         </button>
                     </div>
                 </div>
-                <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="card">
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse min-w-[600px]">
                             <thead>
@@ -123,6 +127,34 @@
                             </tbody>
                         </table>
                     </div>
+                    <!-- Pagination Footer -->
+                    <div class="pagination-footer">
+                        <div class="flex items-center gap-4">
+                            <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                แสดง <span id="showingStart">0</span> - <span id="showingEnd">0</span> จาก <span id="totalItems">0</span> รายการ
+                            </div>
+                            <div class="flex items-center gap-2 border-l border-slate-200 pl-4">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">แสดงหน้าละ:</span>
+                                <select id="itemsPerPageSelect">
+                                    <option value="10">10</option>
+                                    <option value="20">20</option>
+                                    <option value="30">30</option>
+                                    <option value="50">50</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="prevPage" class="p-2 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-white transition-all disabled:opacity-30 disabled:cursor-not-allowed" disabled>
+                                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                            </button>
+                            <div id="pageNumbers" class="flex items-center gap-1">
+                                <!-- Page numbers will be injected here -->
+                            </div>
+                            <button id="nextPage" class="p-2 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-white transition-all disabled:opacity-30 disabled:cursor-not-allowed" disabled>
+                                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -130,8 +162,8 @@
 
     <!-- Edit User Modal -->
     <div id="editModal" class="fixed inset-0 bg-slate-900/50 z-[60] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg animate-in fade-in zoom-in duration-200">
+            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-3xl">
                 <h2 class="text-xl font-bold text-slate-800 tracking-tight">แก้ไขข้อมูลผู้ใช้งาน</h2>
                 <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
                     <i data-lucide="x" class="w-6 h-6"></i>
@@ -140,23 +172,23 @@
             <form id="editForm" class="p-8 space-y-5">
                 <input type="hidden" id="editUserId">
                 <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">ชื่อ-นามสกุล</label>
-                    <input type="text" id="editName" required class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all">
+                    <label class="form-label">ชื่อ-นามสกุล</label>
+                    <input type="text" id="editName" required class="form-input">
                 </div>
                 <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">ชื่อผู้ใช้งาน / อีเมล</label>
-                    <input type="text" id="editEmail" required class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all">
+                    <label class="form-label">ชื่อผู้ใช้งาน / อีเมล</label>
+                    <input type="text" id="editEmail" required class="form-input">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">บทบาท</label>
-                        <select id="editRole" required class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all bg-white">
+                        <label class="form-label">บทบาท</label>
+                        <select id="editRole" required class="form-input">
                             <!-- Roles populated by JS -->
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">แผนก</label>
-                        <select id="editDept" class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all bg-white">
+                        <label class="form-label">แผนก</label>
+                        <select id="editDept" class="form-input">
                             <option value="">ไม่มีแผนก</option>
                             <!-- Departments populated by JS -->
                         </select>
@@ -174,8 +206,8 @@
 
     <!-- Add User Modal -->
     <div id="addModal" class="fixed inset-0 bg-slate-900/50 z-[60] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-xl animate-in fade-in zoom-in duration-200">
+            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-3xl">
                 <h2 class="text-xl font-bold text-slate-800 tracking-tight">เพิ่มผู้ใช้งานใหม่</h2>
                 <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
                     <i data-lucide="x" class="w-6 h-6"></i>
@@ -196,31 +228,31 @@
             <form id="addManualForm" class="p-8 space-y-5">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">ชื่อ-นามสกุล</label>
-                        <input type="text" id="addName" required class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all" placeholder="สมชาย ใจดี">
+                        <label class="form-label">ชื่อ-นามสกุล</label>
+                        <input type="text" id="addName" required class="form-input" placeholder="สมชาย ใจดี">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">ชื่อผู้ใช้งาน / อีเมล</label>
-                        <input type="text" id="addEmail" required class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all" placeholder="somchai.j">
+                        <label class="form-label">ชื่อผู้ใช้งาน / อีเมล</label>
+                        <input type="text" id="addEmail" required class="form-input" placeholder="somchai.j">
                     </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">บทบาท</label>
-                        <select id="addRole" required class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all bg-white">
+                        <label class="form-label">บทบาท</label>
+                        <select id="addRole" required class="form-input">
                             <!-- Roles populated by JS -->
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">แผนก</label>
-                        <select id="addDept" class="block w-full px-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all bg-white">
+                        <label class="form-label">แผนก</label>
+                        <select id="addDept" class="form-input">
                             <option value="">ไม่มีแผนก</option>
                             <!-- Departments populated by JS -->
                         </select>
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">รหัสผ่านเริ่มต้น</label>
+                    <label class="form-label">รหัสผ่านเริ่มต้น</label>
                     <div class="relative group">
                         <input type="password" id="addPassword" required class="block w-full px-4 pr-12 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all" placeholder="••••••••">
                         <button type="button" id="toggleAddPassword" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-indigo-600 transition-colors">
@@ -293,17 +325,13 @@
     </div>
 
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Choices.js JS -->
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
     <script src="/assets/js/app.js"></script>
     <script>
         // UI Elements
-        const sidebar = document.getElementById('sidebar');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
-        const openSidebar = document.getElementById('openSidebar');
-        const closeSidebar = document.getElementById('closeSidebar');
-
         const editModal = document.getElementById('editModal');
         const editForm = document.getElementById('editForm');
-        
         const addModal = document.getElementById('addModal');
         const addManualForm = document.getElementById('addManualForm');
         const addImportSection = document.getElementById('addImportSection');
@@ -316,15 +344,11 @@
         let importedData = [];
         let optionsLoaded = false;
 
-        // Mobile Sidebar Toggle
-        function toggleSidebar() {
-            sidebar.classList.toggle('-translate-x-full');
-            sidebarOverlay.classList.toggle('hidden');
-        }
-
-        if (openSidebar) openSidebar.addEventListener('click', toggleSidebar);
-        if (closeSidebar) closeSidebar.addEventListener('click', toggleSidebar);
-        if (sidebarOverlay) sidebarOverlay.addEventListener('click', toggleSidebar);
+        // Pagination/Data state
+        let allUsers = [];
+        let filteredUsers = [];
+        let currentPage = 1;
+        let itemsPerPage = 10;
 
         // Password Toggle Logic for Add User
         const toggleAddPassword = document.getElementById('toggleAddPassword');
@@ -359,6 +383,7 @@
                 roleSelects.forEach(s => s.innerHTML = roleOptions);
                 deptSelects.forEach(s => s.innerHTML = deptOptions);
                 
+                ui.initChoices();
                 optionsLoaded = true;
             } catch (err) {
                 console.error('Failed to load options:', err);
@@ -369,6 +394,10 @@
         async function openAddModal() {
             await loadOptions();
             addModal.classList.remove('hidden');
+            
+            // Reset Choices values
+            Object.values(ui.choicesInstances).forEach(instance => instance.setChoiceByValue(''));
+            
             lucide.createIcons();
         }
 
@@ -517,8 +546,10 @@
             document.getElementById('editUserId').value = id;
             document.getElementById('editName').value = name;
             document.getElementById('editEmail').value = email;
-            document.getElementById('editRole').value = roleId;
-            document.getElementById('editDept').value = deptId || '';
+            
+            // Set Choices values
+            if (ui.choicesInstances['editRole']) ui.choicesInstances['editRole'].setChoiceByValue(roleId);
+            if (ui.choicesInstances['editDept']) ui.choicesInstances['editDept'].setChoiceByValue(deptId || '');
             
             editModal.classList.remove('hidden');
             lucide.createIcons();
@@ -556,7 +587,6 @@
         });
 
         // Data Loading
-        let allUsers = [];
         async function loadUsers() {
             const tableBody = document.getElementById('userTableBody');
             const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -569,24 +599,52 @@
 
             try {
                 const response = await apiFetch('/api/users');
-                allUsers = await response.json();
-                renderUsers(allUsers);
-            } catch (error) {
-                tableBody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+                if (!response.ok) throw new Error('Failed to load users');
+                const data = await response.json();
+                allUsers = data;
+                
+                // If there's an active search, apply it
+                const searchInput = document.getElementById('userSearch');
+                if (searchInput && searchInput.value.trim()) {
+                    const term = searchInput.value.toLowerCase().trim();
+                    const terms = term.split(/\s+/);
+                    filteredUsers = allUsers.filter(u => {
+                        const searchText = [
+                            u.name || '',
+                            u.email || '',
+                            u.role_name || '',
+                            u.department_name || ''
+                        ].join(' ').toLowerCase();
+                        return terms.every(t => searchText.includes(t));
+                    });
+                } else {
+                    filteredUsers = [...allUsers];
+                }
+                
+                renderUsers();
+            } catch (err) {
+                console.error(err);
+                tableBody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-red-500">ไม่สามารถโหลดข้อมูลผู้ใช้งานได้</td></tr>';
             }
         }
 
-        function renderUsers(users) {
+        function renderUsers() {
             const tableBody = document.getElementById('userTableBody');
             const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
             const isAdmin = currentUser.role === 'Admin';
 
-            if (users.length === 0) {
+            if (filteredUsers.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">ไม่พบข้อมูลผู้ใช้งาน</td></tr>';
+                updatePagination();
                 return;
             }
 
-            tableBody.innerHTML = users.map(user => `
+            // Calculate slices for pagination
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pagedUsers = filteredUsers.slice(startIndex, endIndex);
+
+            tableBody.innerHTML = pagedUsers.map(user => `
                 <tr class="hover:bg-slate-50/50 transition-colors">
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
@@ -608,10 +666,10 @@
                         ${!isAdmin ? 
                             `<span class="text-slate-300 cursor-not-allowed" title="สิทธิ์การใช้งานของคุณไม่สามารถแก้ไขข้อมูลได้"><i data-lucide="lock" class="w-4 h-4 ml-auto"></i></span>` :
                             `<div class="flex justify-end gap-1">
-                                <button onclick="openEditModal('${user.id}', '${escapeHTML(user.name)}', '${escapeHTML(user.email)}', '${user.role_id}', '${user.department_id || ''}')" class="text-slate-400 hover:text-indigo-600 transition-colors p-2 hover:bg-indigo-50 rounded-lg" title="แก้ไข">
+                                <button onclick="openEditModal('${user.id}', '${escapeHTML(user.name)}', '${escapeHTML(user.email)}', '${user.role_id}', '${user.department_id || ''}')" class="text-slate-400 hover:text-indigo-600 transition-all p-2 hover:bg-indigo-50 rounded-xl active:scale-95" title="แก้ไข">
                                     <i data-lucide="edit-3" class="w-4 h-4"></i>
                                 </button>
-                                <button onclick="deleteUser('${user.id}')" class="text-slate-400 hover:text-red-600 transition-colors p-2 hover:bg-red-50 rounded-lg" title="ลบ">
+                                <button onclick="deleteUser('${user.id}')" class="text-slate-400 hover:text-red-600 transition-all p-2 hover:bg-red-50 rounded-xl active:scale-95" title="ลบ">
                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                                 </button>
                             </div>`
@@ -620,20 +678,97 @@
                 </tr>
             `).join('');
             lucide.createIcons();
+            updatePagination();
         }
 
+        function updatePagination() {
+            const totalItems = filteredUsers.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+            
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const startIndex = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+            const endIndex = Math.min(currentPage * itemsPerPage, totalItems);
+
+            document.getElementById('showingStart').innerText = startIndex;
+            document.getElementById('showingEnd').innerText = endIndex;
+            document.getElementById('totalItems').innerText = totalItems;
+
+            const prevBtn = document.getElementById('prevPage');
+            const nextBtn = document.getElementById('nextPage');
+            const pageNums = document.getElementById('pageNumbers');
+
+            prevBtn.disabled = currentPage === 1;
+            nextBtn.disabled = currentPage === totalPages;
+
+            let html = '';
+            const maxVisiblePages = 3;
+            let start = Math.max(1, currentPage - 1);
+            let end = Math.min(totalPages, start + maxVisiblePages - 1);
+            
+            if (end - start + 1 < maxVisiblePages) {
+                start = Math.max(1, end - maxVisiblePages + 1);
+            }
+
+            for (let i = start; i <= end; i++) {
+                html += `
+                    <button onclick="goToPage(${i})" class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all ${i === currentPage ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-indigo-600 hover:bg-white'}">
+                        ${i}
+                    </button>
+                `;
+            }
+            pageNums.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            renderUsers();
+        }
+
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderUsers();
+            }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderUsers();
+            }
+        });
+
+        document.getElementById('itemsPerPageSelect').addEventListener('change', (e) => {
+            itemsPerPage = parseInt(e.target.value);
+            currentPage = 1;
+            renderUsers();
+        });
+
         // Search Logic
-        const searchInput = document.querySelector('input[placeholder*="ค้นหาชื่อ"]');
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
-                const term = e.target.value.toLowerCase();
-                const filtered = allUsers.filter(u => 
-                    u.name.toLowerCase().includes(term) || 
-                    u.email.toLowerCase().includes(term) ||
-                    (u.role_name && u.role_name.toLowerCase().includes(term)) ||
-                    (u.department_name && u.department_name.toLowerCase().includes(term))
-                );
-                renderUsers(filtered);
+        const userSearch = document.getElementById('userSearch');
+        if (userSearch) {
+            userSearch.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase().trim();
+                if (!term) {
+                    filteredUsers = [...allUsers];
+                } else {
+                    const terms = term.split(/\s+/);
+                    filteredUsers = allUsers.filter(u => {
+                        const searchText = [
+                            u.name || '',
+                            u.email || '',
+                            u.role_name || '',
+                            u.department_name || ''
+                        ].join(' ').toLowerCase();
+                        
+                        return terms.every(t => searchText.includes(t));
+                    });
+                }
+                currentPage = 1;
+                renderUsers();
             });
         }
 
@@ -657,7 +792,11 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', loadUsers);
+        document.addEventListener('DOMContentLoaded', () => {
+            ui.initChoices();
+            loadUsers();
+            loadOptions();
+        });
     </script>
 </body>
 </html>

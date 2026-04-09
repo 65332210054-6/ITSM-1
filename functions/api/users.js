@@ -61,6 +61,18 @@ export async function onRequest(context) {
 
     // POST Operations
     if (request.method === "POST") {
+      // 1. Delete User (Doesn't require body)
+      if (action === "delete") {
+        const id = url.searchParams.get("id");
+        if (!id) {
+          return new Response(JSON.stringify({ message: "User ID is required" }), { status: 400 });
+        }
+
+        await sql`DELETE FROM users WHERE id = ${id}`;
+        return new Response(JSON.stringify({ message: "User deleted successfully" }), { status: 200 });
+      }
+
+      // Other actions require JSON body
       const data = await request.json();
 
       // 1. Create Single User
@@ -123,16 +135,6 @@ export async function onRequest(context) {
         return new Response(JSON.stringify({ message: `Imported ${successCount} users`, count: successCount }), { status: 200 });
       }
 
-      // 3. Delete User
-      if (action === "delete") {
-        const id = url.searchParams.get("id");
-        if (!id) {
-          return new Response(JSON.stringify({ message: "User ID is required" }), { status: 400 });
-        }
-
-        await sql`DELETE FROM users WHERE id = ${id}`;
-        return new Response(JSON.stringify({ message: "User deleted successfully" }), { status: 200 });
-      }
 
       // 4. Update User (Default POST if no specific action or action is update)
       const { id, name, email, role_id, department_id } = data;

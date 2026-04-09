@@ -62,16 +62,16 @@ export async function onRequest(context) {
       if (userSession.role_name !== "Admin" && userSession.role_name !== "Technician") {
         return new Response(JSON.stringify({ message: "Forbidden: Unauthorized to manage assets" }), { status: 403 });
       }
-      
-      const data = await request.json();
 
-      // Handle Delete
+      // Handle Delete (Doesn't require body)
       if (action === "delete") {
         const id = url.searchParams.get("id");
         if (!id) return new Response(JSON.stringify({ message: "ID is required" }), { status: 400 });
         await sql`DELETE FROM assets WHERE id = ${id}`;
         return new Response(JSON.stringify({ message: "Asset deleted successfully" }), { status: 200 });
       }
+      
+      const data = await request.json();
 
       const { id, asset_tag, serial_number, name, category, model, status, assigned_to, department_id, purchase_date } = data;
 
