@@ -13,57 +13,14 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.454.0/lucide.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/assets/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="h-full flex overflow-hidden">
     <!-- Mobile Sidebar Overlay -->
     <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden transition-opacity lg:hidden"></div>
 
-    <!-- Sidebar -->
-    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-slate-900 text-white flex flex-col h-full shadow-2xl transition-transform duration-300 z-50 -translate-x-full lg:translate-x-0 lg:static">
-        <div class="h-20 flex items-center justify-between px-6 border-b border-slate-800">
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-blue-400 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/30">
-                    IT
-                </div>
-                <div>
-                    <span class="font-bold text-base tracking-tight block leading-tight">ITSM</span>
-                    <span class="text-[10px] text-slate-400 block leading-tight font-medium">Enterprise Admin</span>
-                </div>
-            </div>
-            <!-- Close button for mobile -->
-            <button id="closeSidebar" class="lg:hidden text-slate-400 hover:text-white p-1">
-                <i data-lucide="x" class="h-6 w-6"></i>
-            </button>
-        </div>
-
-        <nav class="flex-1 py-6 overflow-y-auto">
-            <div class="px-6 mb-4">
-                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em]">หลัก (Main)</p>
-            </div>
-            <div class="space-y-1 px-3">
-                <a href="/" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all">
-                    <i data-lucide="layout-dashboard" class="mr-3 h-5 w-5"></i>
-                    หน้าแรก
-                </a>
-                <a href="/users.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
-                    <i data-lucide="users" class="mr-3 h-5 w-5"></i>
-                    จัดการผู้ใช้งาน
-                </a>
-                <a href="/assets.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
-                    <i data-lucide="monitor" class="mr-3 h-5 w-5"></i>
-                    จัดการทรัพย์สิน
-                </a>
-                <a href="/tickets.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
-                    <i data-lucide="ticket" class="mr-3 h-5 w-5"></i>
-                    ระบบแจ้งซ่อม
-                </a>
-                <a href="/settings.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
-                    <i data-lucide="settings" class="mr-3 h-5 w-5"></i>
-                    ตั้งค่าระบบ
-                </a>
-            </div>
-        </nav>
-    </aside>
+    <!-- Sidebar Container (Client-side rendered) -->
+    <div id="sidebar-container" class="lg:static"></div>
 
     <!-- Main Content -->
     <div class="flex-1 flex flex-col overflow-hidden">
@@ -146,7 +103,28 @@
                         <div class="h-4 w-20 bg-slate-100 rounded mb-2"></div>
                         <div class="h-8 w-12 bg-slate-100 rounded"></div>
                     </div>
-                    <!-- Repeated for each stat -->
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="font-bold text-slate-800">ทรัพย์สินแยกตามประเภท (Asset categories)</h3>
+                            <i data-lucide="pie-chart" class="text-slate-400 w-5 h-5"></i>
+                        </div>
+                        <div class="h-[300px] flex items-center justify-center">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="font-bold text-slate-800">แนวโน้มการแจ้งซ่อม (6 เดือนล่าสุด)</h3>
+                            <i data-lucide="trending-up" class="text-slate-400 w-5 h-5"></i>
+                        </div>
+                        <div class="h-[300px] flex items-center justify-center">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -207,7 +185,69 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', loadDashboardStats);
+        async function loadDashboardCharts() {
+            try {
+                const response = await apiFetch('/api/dashboard?action=getChartData');
+                const data = await response.json();
+
+                // Category Chart (Doughnut)
+                const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+                new Chart(categoryCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.assetsByCategory.map(a => a.category),
+                        datasets: [{
+                            data: data.assetsByCategory.map(a => a.count),
+                            backgroundColor: ['#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+                            borderWidth: 0,
+                            spacing: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { weight: '600' } } }
+                        },
+                        cutout: '70%'
+                    }
+                });
+
+                // Trend Chart (Bar)
+                const trendCtx = document.getElementById('trendChart').getContext('2d');
+                new Chart(trendCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.ticketTrends.map(t => t.month),
+                        datasets: [{
+                            label: 'จำนวนงานแจ้งซ่อม',
+                            data: data.ticketTrends.map(t => t.count),
+                            backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                            borderColor: '#6366f1',
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            borderSkipped: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, grid: { display: false } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to load charts:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboardStats();
+            loadDashboardCharts();
+        });
     </script>
 </body>
 </html>

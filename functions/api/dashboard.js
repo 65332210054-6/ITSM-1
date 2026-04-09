@@ -57,6 +57,43 @@ export async function onRequest(context) {
       });
     }
 
+    if (action === "getChartData") {
+      // Asset categories distribution
+      let assetsByCategory = [];
+      try {
+        assetsByCategory = await sql`SELECT category, COUNT(*) as count FROM assets GROUP BY category`;
+      } catch (e) { assetsByCategory = []; }
+
+      // Ticket status distribution
+      let ticketsByStatus = [];
+      try {
+        ticketsByStatus = await sql`SELECT status, COUNT(*) as count FROM tickets GROUP BY status`;
+      } catch (e) { ticketsByStatus = []; }
+
+      // Ticket trends (Last 6 months)
+      let ticketTrends = [];
+      try {
+        ticketTrends = await sql`
+          SELECT 
+            to_char(created_at, 'Mon YYYY') as month,
+            COUNT(*) as count,
+            min(created_at) as sort_date
+          FROM tickets
+          WHERE created_at >= now() - interval '6 months'
+          GROUP BY month
+          ORDER BY sort_date ASC
+        `;
+      } catch (e) { ticketTrends = []; }
+
+      return new Response(JSON.stringify({
+        assetsByCategory,
+        ticketsByStatus,
+        ticketTrends
+      }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
     return new Response(JSON.stringify({ message: "Action not found" }), { status: 404 });
 
   } catch (error) {
