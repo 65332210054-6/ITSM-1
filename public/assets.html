@@ -554,29 +554,14 @@
             renderAssets();
         });
 
-        // Export Assets
-        document.getElementById('exportAssetsBtn')?.addEventListener('click', async () => {
-            try {
-                const response = await apiFetch('/api/assets');
-                const assets = await response.json();
-                
-                const exportData = assets.map(a => ({
-                    'Asset Tag': a.asset_tag,
-                    'S/N': a.serial_number,
-                    'ชื่อรายการ': a.name,
-                    'แบรนด์/รุ่น': a.model || '-',
-                    'หมวดหมู่': a.category,
-                    'ผู้ครอบครอง': a.assigned_to_name || 'ว่าง',
-                    'แผนก': a.department_name || '-',
-                    'สถานะ': a.status,
-                    'วันที่ซื้อ': a.purchase_date ? new Date(a.purchase_date).toLocaleDateString('th-TH') : '-'
-                }));
+        // Export Assets (Server-side)
+        document.getElementById('exportAssetsBtn')?.addEventListener('click', () => {
+            const token = localStorage.getItem('token');
+            if (!token) return notify.error('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่');
 
-                ui.exportCSV(exportData, 'it-assets-list');
-                notify.success('ส่งออกข้อมูลสำเร็จ');
-            } catch (err) {
-                notify.error('ไม่สามารถส่งออกข้อมูลได้');
-            }
+            // Native browser download via direct URL
+            window.location.href = `/api/assets?action=export&token=${token}`;
+            notify.success('กำลังดาวน์โหลดข้อมูล...');
         });
 
         document.addEventListener('DOMContentLoaded', loadInitialData);

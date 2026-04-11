@@ -62,7 +62,7 @@
                             <h2 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">จัดการสาขา</h2>
                             <p class="text-xs sm:text-sm text-slate-400 mt-1 font-medium leading-relaxed">ข้อมูลที่ตั้งและสาขาต่างๆ</p>
                         </div>
-                        <button class="w-full sm:w-auto btn-primary">
+                        <button onclick="openBranchModal()" class="w-full sm:w-auto btn-primary">
                             <i data-lucide="plus" class="w-5 h-5"></i> เพิ่มสาขาใหม่
                         </button>
                     </div>
@@ -79,7 +79,7 @@
                             <h2 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">จัดการแผนก</h2>
                             <p class="text-xs sm:text-sm text-slate-400 mt-1 font-medium leading-relaxed">โครงสร้างแผนกงานภายในบริษัท</p>
                         </div>
-                        <button class="w-full sm:w-auto btn-primary">
+                        <button onclick="openDeptModal()" class="w-full sm:w-auto btn-primary">
                             <i data-lucide="plus" class="w-5 h-5"></i> เพิ่มแผนกใหม่
                         </button>
                     </div>
@@ -92,54 +92,301 @@
         </main>
     </div>
 
+    <!-- Modals -->
+    <!-- Branch Modal -->
+    <div id="branchModal" class="fixed inset-0 bg-slate-900/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl transition-all scale-95 opacity-0 modal-content overflow-hidden">
+            <div class="bg-indigo-600 p-6 text-white flex justify-between items-center">
+                <h3 class="text-lg font-bold">เพิ่มสาขาใหม่</h3>
+                <button onclick="toggleModal('branchModal', false)" class="text-white/80 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ชื่อสาขา</label>
+                    <input type="hidden" id="editBranchId" value="">
+                    <input type="text" id="branchName" class="form-input" placeholder="เช่น สำนักงานใหญ่, สาขาระยอง">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ที่อยู่ / รายละเอียด</label>
+                    <textarea id="branchLocation" class="form-input w-full resize-none" rows="3" placeholder="กรอกที่อยู่แบบเต็ม เช่น 123 อาคาร ABC ชั้น 2 ถนน..."></textarea>
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button onclick="toggleModal('branchModal', false)" class="flex-1 px-4 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all">ยกเลิก</button>
+                    <button onclick="saveBranch()" class="flex-1 px-4 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all">บันทึกสาขา</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Department Modal -->
+    <div id="deptModal" class="fixed inset-0 bg-slate-900/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl transition-all scale-95 opacity-0 modal-content overflow-hidden">
+            <div class="bg-indigo-600 p-6 text-white flex justify-between items-center">
+                <h3 class="text-lg font-bold">เพิ่มแผนกใหม่</h3>
+                <button onclick="toggleModal('deptModal', false)" class="text-white/80 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ชื่อแผนก</label>
+                    <input type="hidden" id="editDeptId" value="">
+                    <input type="text" id="deptName" class="form-input" placeholder="เช่น ฝ่ายบุคคล, ฝ่ายไอที">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">สังกัดสาขา</label>
+                    <select id="parentBranch" class="form-input">
+                        <!-- Options loaded here -->
+                    </select>
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button onclick="toggleModal('deptModal', false)" class="flex-1 px-4 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all">ยกเลิก</button>
+                    <button onclick="saveDept()" class="flex-1 px-4 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all">บันทึกแผนก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="/assets/js/app.js"></script>
     <script>
-        async function loadSettings() {
+
+        function toggleModal(id, show) {
+            const modal = document.getElementById(id);
+            const content = modal.querySelector('.modal-content');
+            if (show) {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    content.classList.remove('scale-95', 'opacity-0');
+                    content.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            } else {
+                content.classList.remove('scale-100', 'opacity-100');
+                content.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 200);
+            }
+        }
+
+        function openBranchModal(id = '', name = '', location = '') {
+            document.getElementById('editBranchId').value = id;
+            document.getElementById('branchName').value = name;
+            document.getElementById('branchLocation').value = location;
+            document.querySelector('#branchModal h3').textContent = id ? 'แก้ไขสาขา' : 'เพิ่มสาขาใหม่';
+            toggleModal('branchModal', true);
+        }
+
+        async function openDeptModal(id = '', name = '', branchId = '') {
+            document.getElementById('editDeptId').value = id;
+            document.getElementById('deptName').value = name;
+            document.querySelector('#deptModal h3').textContent = id ? 'แก้ไขแผนก' : 'เพิ่มแผนกใหม่';
+            
             try {
-                // Load Branches
+                const response = await apiFetch('/api/branches');
+                const branches = await response.json();
+                const select = document.getElementById('parentBranch');
+                select.innerHTML = branches.map(b => `<option value="${b.id}" ${b.id === branchId ? 'selected' : ''}>${b.name}</option>`).join('');
+                if (branches.length === 0) {
+                    select.innerHTML = '<option value="">กรุณาสร้างสาขาก่อน</option>';
+                }
+                toggleModal('deptModal', true);
+            } catch (err) {
+                notify.error('ไม่สามารถโหลดข้อมูลสาขาได้');
+            }
+        }
+
+        async function saveBranch() {
+            const id = document.getElementById('editBranchId').value;
+            const name = document.getElementById('branchName').value.trim();
+            const location = document.getElementById('branchLocation').value.trim();
+            if (!name) return notify.error('กรุณาระบุชื่อสาขา');
+
+            try {
+                const response = await apiFetch('/api/branches', {
+                    method: id ? 'PUT' : 'POST',
+                    body: JSON.stringify({ id, name, location })
+                });
+                if (response.ok) {
+                    notify.success(id ? 'แก้ไขสาขาสำเร็จ' : 'เพิ่มสาขาสำเร็จ');
+                    toggleModal('branchModal', false);
+                    loadSettings();
+                } else {
+                    const res = await response.json();
+                    notify.error(res.message || 'เกิดข้อผิดพลาด');
+                }
+            } catch (err) {
+                notify.error('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+            }
+        }
+
+        async function saveDept() {
+            const id = document.getElementById('editDeptId').value;
+            const name = document.getElementById('deptName').value.trim();
+            const branch_id = document.getElementById('parentBranch').value;
+            if (!name) return notify.error('กรุณาระบุชื่อแผนก');
+
+            try {
+                const response = await apiFetch('/api/departments', {
+                    method: id ? 'PUT' : 'POST',
+                    body: JSON.stringify({ id, name, branch_id })
+                });
+                if (response.ok) {
+                    notify.success(id ? 'แก้ไขแผนกสำเร็จ' : 'เพิ่มแผนกสำเร็จ');
+                    toggleModal('deptModal', false);
+                    loadSettings();
+                } else {
+                    const res = await response.json();
+                    notify.error(res.error || res.message || 'เกิดข้อผิดพลาด');
+                }
+            } catch (err) {
+                notify.error('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+            }
+        }
+
+        async function deleteBranch(id, name) {
+            Swal.fire({
+                title: 'ยืนยันการลบสาขา?',
+                text: `คุณกำลังลบสาขา "${name}" ข้อมูลแผนกในสาขานี้จะไม่ถูกลบแต่จะไม่มีสาขาสังกัด`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#4f46e5',
+                cancelButtonColor: '#94a3b8',
+                confirmButtonText: 'ยืนยันการลบ',
+                cancelButtonText: 'ยกเลิก'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const response = await apiFetch(`/api/branches?action=delete&id=${id}`, { method: 'POST' });
+                        if (response.ok) {
+                            notify.success('ลบสาขาสำเร็จ');
+                            loadSettings();
+                        } else {
+                            notify.error('ไม่สามารถลบสาขาได้');
+                        }
+                    } catch (err) {
+                        notify.error('เกิดข้อผิดพลาด');
+                    }
+                }
+            });
+        }
+
+        async function deleteDept(id, name) {
+            Swal.fire({
+                title: 'ยืนยันการลบแผนก?',
+                text: `คุณกำลังลบแผนก "${name}"`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#4f46e5',
+                cancelButtonColor: '#94a3b8',
+                confirmButtonText: 'ยืนยันการลบ',
+                cancelButtonText: 'ยกเลิก'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const response = await apiFetch(`/api/departments?action=delete&id=${id}`, { method: 'POST' });
+                        if (response.ok) {
+                            notify.success('ลบแผนกสำเร็จ');
+                            loadSettings();
+                        } else {
+                            notify.error('ไม่สามารถลบแผนกได้');
+                        }
+                    } catch (err) {
+                        notify.error('เกิดข้อผิดพลาด');
+                    }
+                }
+            });
+        }
+
+        async function loadSettings() {
+            // Render Sidebar
+            if (window.ui && ui.renderSidebar) {
+                ui.renderSidebar('sidebar-container');
+            }
+
+            // Load Branches
+            const branchGrid = document.getElementById('branchGrid');
+            try {
                 const branchResponse = await apiFetch('/api/branches');
+                if (!branchResponse.ok) throw new Error('API Error');
                 const branches = await branchResponse.json();
-                const branchGrid = document.getElementById('branchGrid');
                 
                 if (branches.length === 0) {
                     branchGrid.innerHTML = '<div class="p-10 text-center text-slate-400 col-span-full font-medium">ไม่พบข้อมูลสาขา</div>';
                 } else {
-                    branchGrid.innerHTML = branches.map(branch => `
-                        <div class="bg-white border border-slate-200 rounded-2xl p-5 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 transition-all cursor-pointer group">
-                            <div class="flex items-center gap-4 mb-3">
+                    branchGrid.innerHTML = branches.map(branch => {
+                        const safeName = escapeHTML(branch.name).replace(/'/g, "\\'");
+                        const safeLoc = escapeHTML(branch.location || '').replace(/'/g, "\\'");
+                        return `
+                        <div class="bg-white border border-slate-200 rounded-2xl p-5 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 transition-all group relative">
+                            <button onclick="deleteBranch('${branch.id}', '${safeName}')" class="absolute top-2 right-2 w-8 h-8 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 z-10">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                            <div class="flex items-center gap-4 mb-3 cursor-pointer" onclick="openBranchModal('${branch.id}', '${safeName}', '${safeLoc}')">
                                 <div class="w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-200 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all">
                                     <i data-lucide="building-2" class="w-5 h-5"></i>
                                 </div>
-                                <h3 class="font-bold text-slate-700 tracking-tight">${escapeHTML(branch.name)}</h3>
+                                <h3 class="font-bold text-slate-700 tracking-tight">
+                                    <span class="text-xs bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-md mr-1 tracking-wider inline-block">${branch.code || '000'}</span>
+                                    ${escapeHTML(branch.name)}
+                                </h3>
                             </div>
-                            <p class="text-xs text-slate-400 font-medium leading-relaxed truncate">${escapeHTML(branch.address || 'ไม่มีข้อมูลที่อยู่')}</p>
+                            <p class="text-xs text-slate-400 font-medium leading-relaxed truncate">${escapeHTML(branch.location || 'ไม่มีข้อมูลที่อยู่')}</p>
                         </div>
-                    `).join('');
+                    `}).join('');
                 }
+            } catch (error) {
+                console.error('Error loading branches:', error);
+                branchGrid.innerHTML = `
+                    <div class="p-10 text-center col-span-full">
+                        <p class="text-red-500 font-bold mb-2">ไม่สามารถโหลดข้อมูลสาขาได้</p>
+                        <button onclick="loadSettings()" class="text-xs text-indigo-600 font-bold hover:underline">คลิกเพื่อลองใหม่</button>
+                    </div>
+                `;
+            }
 
-                // Load Departments
+            // Load Departments
+            const deptGrid = document.getElementById('deptGrid');
+            try {
                 const deptResponse = await apiFetch('/api/departments');
+                if (!deptResponse.ok) throw new Error('API Error');
                 const depts = await deptResponse.json();
-                const deptGrid = document.getElementById('deptGrid');
                 
                 if (depts.length === 0) {
                     deptGrid.innerHTML = '<div class="p-10 text-center text-slate-400 col-span-full font-medium">ไม่พบข้อมูลแผนก</div>';
                 } else {
-                    deptGrid.innerHTML = depts.map(dept => `
-                        <div class="bg-white border border-slate-200 rounded-2xl p-5 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 transition-all cursor-pointer text-center">
-                            <div class="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 mx-auto mb-3">
-                                <i data-lucide="briefcase" class="w-6 h-6"></i>
+                    deptGrid.innerHTML = depts.map(dept => {
+                        const safeName = escapeHTML(dept.name).replace(/'/g, "\\'");
+                        return `
+                        <div class="bg-white border border-slate-200 rounded-2xl p-5 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 transition-all relative text-center group">
+                            <button onclick="deleteDept('${dept.id}', '${safeName}')" class="absolute top-2 right-2 w-8 h-8 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 z-10">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                            <div class="cursor-pointer" onclick="openDeptModal('${dept.id}', '${safeName}', '${dept.branch_id || ''}')">
+                                <div class="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 mx-auto mb-3 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-all">
+                                    <i data-lucide="briefcase" class="w-6 h-6"></i>
+                                </div>
+                                <h3 class="font-bold text-slate-700 text-sm mb-1">
+                                    <span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded mr-1 inline-block">${dept.code || '000'}</span>
+                                    ${escapeHTML(dept.name)}
+                                </h3>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">${escapeHTML(dept.branch_name || '-')}</p>
                             </div>
-                            <h3 class="font-bold text-slate-700 text-sm mb-1">${escapeHTML(dept.name)}</h3>
-                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">${escapeHTML(dept.branch_name || '-')}</p>
                         </div>
-                    `).join('');
+                    `}).join('');
                 }
-                lucide.createIcons();
             } catch (error) {
-                console.error(error);
+                console.error('Error loading departments:', error);
+                deptGrid.innerHTML = `
+                    <div class="p-10 text-center col-span-full">
+                        <p class="text-red-500 font-bold mb-2">ไม่สามารถโหลดข้อมูลแผนกได้</p>
+                        <button onclick="loadSettings()" class="text-xs text-indigo-600 font-bold hover:underline">คลิกเพื่อลองใหม่</button>
+                    </div>
+                `;
             }
+            lucide.createIcons();
         }
 
         document.addEventListener('DOMContentLoaded', loadSettings);

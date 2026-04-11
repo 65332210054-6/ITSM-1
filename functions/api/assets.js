@@ -45,6 +45,40 @@ export async function onRequest(context) {
 
     // 1. Get Assets List
     if (request.method === "GET") {
+      if (action === "export") {
+        const assets = await sql`
+          SELECT a.*, u.name as assigned_to_name, d.name as department_name
+          FROM assets a
+          LEFT JOIN users u ON a.assigned_to = u.id
+          LEFT JOIN departments d ON a.department_id = d.id
+          ORDER BY a.created_at DESC
+        `;
+
+        const csvHeader = "\ufeff" + ["Asset Tag", "S/N", "ชื่อรายการ", "แบรนด์/รุ่น", "หมวดหมู่", "ผู้ครอบครอง", "แผนก", "สถานะ", "วันที่ซื้อ"].join(",") + "\n";
+        const csvRows = assets.map(a => {
+          const row = [
+            a.asset_tag || "-",
+            a.serial_number || "-",
+            a.name || "-",
+            a.model || "-",
+            a.category || "-",
+            a.assigned_to_name || "ว่าง",
+            a.department_name || "ไม่ระบุ",
+            a.status || "-",
+            a.purchase_date && a.purchase_date !== '0000-00-00' ? new Date(a.purchase_date).toLocaleDateString("th-TH") : "-"
+          ];
+          return row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",");
+        }).join("\n");
+
+        return new Response(csvHeader + csvRows, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/csv; charset=utf-8",
+            "Content-Disposition": "attachment; filename=\"it-assets-list.csv\""
+          }
+        });
+      }
+
       const assets = await sql`
         SELECT a.*, u.name as assigned_to_name, d.name as department_name
         FROM assets a

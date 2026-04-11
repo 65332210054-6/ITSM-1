@@ -766,26 +766,14 @@
             loadUsers();
             loadOptions();
 
-            // Export Users
-            document.getElementById('exportUsersBtn')?.addEventListener('click', async () => {
-                try {
-                    const response = await apiFetch('/api/users');
-                    const users = await response.json();
-                    const exportData = users.map(u => ({
-                        'ID': u.id,
-                        'ชื่อ-นามสกุล': u.name,
-                        'อีเมล': u.email,
-                        'บทบาท': u.role,
-                        'แผนก': u.department_name,
-                        'สาขา': u.branch_name,
-                        'สถานะ': u.status === 'active' ? 'ปกติ' : 'ระงับ',
-                        'วันที่สร้าง': new Date(u.created_at).toLocaleDateString('th-TH')
-                    }));
-                    ui.exportCSV(exportData, 'it-users-list');
-                    notify.success('ส่งออกข้อมูลสำเร็จ');
-                } catch (err) {
-                    notify.error('ไม่สามารถส่งออกข้อมูลได้');
-                }
+            // Export Users (Server-side)
+            document.getElementById('exportUsersBtn')?.addEventListener('click', () => {
+                const token = localStorage.getItem('token');
+                if (!token) return notify.error('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่');
+                
+                // Native browser download via direct URL
+                window.location.href = `/api/users?action=export&token=${token}`;
+                notify.success('กำลังดาวน์โหลดข้อมูล...');
             });
         });
     </script>

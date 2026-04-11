@@ -32,6 +32,37 @@ export async function onRequest(context) {
     
     // GET Users list and options
     if (request.method === "GET") {
+      if (action === "export") {
+        const users = await sql`
+          SELECT u.id, u.name, u.email, r.name as role_name, d.name as department_name, u.created_at
+          FROM users u 
+          LEFT JOIN roles r ON u.role_id = r.id 
+          LEFT JOIN departments d ON u.department_id = d.id 
+          ORDER BY u.created_at DESC
+        `;
+
+        const csvHeader = "\ufeff" + ["ID", "ชื่อ-นามสกุล", "อีเมล", "บทบาท", "แผนก", "วันที่สร้าง"].join(",") + "\n";
+        const csvRows = users.map(u => {
+          const row = [
+            u.id,
+            u.name || "-",
+            u.email || "-",
+            u.role_name || "User",
+            u.department_name || "ไม่ระบุ",
+            u.created_at ? new Date(u.created_at).toLocaleDateString("th-TH") : "-"
+          ];
+          return row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",");
+        }).join("\n");
+
+        return new Response(csvHeader + csvRows, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/csv; charset=utf-8",
+            "Content-Disposition": "attachment; filename=\"it-users-list.csv\""
+          }
+        });
+      }
+
       if (action === "getOptions") {
         const roles = await sql`SELECT id, name FROM roles ORDER BY name`;
         const departments = await sql`SELECT id, name FROM departments ORDER BY name`;

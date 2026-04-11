@@ -346,14 +346,23 @@ const ui = {
             }).join(','))
         ].join('\n');
 
-        const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        // Ensure .csv extension and add date for uniqueness
+        const date = new Date().toISOString().split('T')[0];
+        const finalFilename = filename.endsWith('.csv') ? filename : `${filename}-${date}.csv`;
+
+        // Data URI approach (More robust for filenames on HTTP)
+        const encodedUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent('\ufeff' + csvContent);
+        
         const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', filename);
-        link.style.visibility = 'hidden';
+        link.href = encodedUri;
+        link.download = finalFilename;
+        link.style.display = 'none';
+        
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
+        
+        setTimeout(() => {
+            document.body.removeChild(link);
+        }, 100);
     }
 };

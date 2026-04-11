@@ -1,12 +1,21 @@
 export async function validateSession(context) {
   const { request, env } = context;
+  let token;
   const authHeader = request.headers.get("Authorization");
   
-  if (!authHeader || !authHeader.startsWith("Bearer session-")) {
-    return null;
+  if (authHeader && authHeader.startsWith("Bearer session-")) {
+    token = authHeader.split(" ")[1];
+  } else {
+    const url = new URL(request.url);
+    const queryToken = url.searchParams.get("token");
+    if (queryToken && queryToken.startsWith("session-")) {
+      token = queryToken;
+    }
   }
 
-  const token = authHeader.split(" ")[1];
+  if (!token) {
+    return null;
+  }
   const { neon } = await import('@neondatabase/serverless');
   const sql = neon(env.DATABASE_URL);
 

@@ -191,7 +191,10 @@
                 const data = await response.json();
 
                 // Category Chart (Doughnut)
+                data.assetsByCategory.sort((a, b) => parseInt(b.count) - parseInt(a.count));
                 const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+                const totalCategoryAssets = data.assetsByCategory.reduce((sum, a) => sum + parseInt(a.count), 0);
+                
                 new Chart(categoryCtx, {
                     type: 'doughnut',
                     data: {
@@ -200,16 +203,58 @@
                             data: data.assetsByCategory.map(a => a.count),
                             backgroundColor: ['#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
                             borderWidth: 0,
-                            spacing: 4
+                            spacing: 4,
+                            hoverOffset: 15
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        layout: { padding: 20 },
                         plugins: {
-                            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { weight: '600' } } }
+                            tooltip: {
+                                usePointStyle: true,
+                                callbacks: {
+                                    title: () => null,
+                                    label: (context) => {
+                                        const label = context.label || '';
+                                        const value = context.parsed || context.raw;
+                                        const percent = totalCategoryAssets > 0 ? Math.round((value / totalCategoryAssets) * 100) : 0;
+                                        return [
+                                            ` ${label}`,
+                                            ` จำนวน: ${value} (${percent}%)`
+                                        ];
+                                    }
+                                }
+                            },
+                            legend: { 
+                                position: 'right', 
+                                labels: { 
+                                    usePointStyle: true, 
+                                    padding: 20, 
+                                    font: { weight: '600' },
+                                    generateLabels: (chart) => {
+                                        const datasets = chart.data.datasets;
+                                        return chart.data.labels.map((label, i) => {
+                                            const value = datasets[0].data[i];
+                                            const percent = totalCategoryAssets > 0 ? Math.round((value / totalCategoryAssets) * 100) : 0;
+                                            return {
+                                                text: `${label}: ${value} (${percent}%)`,
+                                                fillStyle: datasets[0].backgroundColor[i],
+                                                strokeStyle: datasets[0].backgroundColor[i],
+                                                pointStyle: 'circle',
+                                                hidden: isNaN(datasets[0].data[i]) || chart.getDatasetMeta(0).data[i].hidden,
+                                                index: i
+                                            };
+                                        });
+                                    }
+                                } 
+                            }
                         },
-                        cutout: '70%'
+                        cutout: '70%',
+                        onHover: (event, chartElement) => {
+                            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                        }
                     }
                 });
 
