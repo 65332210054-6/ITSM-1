@@ -1,6 +1,9 @@
 import { neon } from '@neondatabase/serverless';
 import bcrypt from 'bcryptjs';
 
+// Migration flag: runs once per cold start
+let _phoneMigrationDone = false;
+
 export async function onRequest(context) {
   const { request, env } = context;
   
@@ -29,10 +32,24 @@ export async function onRequest(context) {
       )
     `;
 
+    // Auto-cleanup expired suspensions globally
+    await sql`UPDATE users SET status = 'active', lock_until = NULL WHERE status = 'suspended' AND lock_until <= NOW()`;
+
+    // Run phone column migration only once per cold start
+    if (!_phoneMigrationDone) {
+      try {
+        await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT`;
+        _phoneMigrationDone = true;
+      } catch (_) { _phoneMigrationDone = true; }
+    }
+
     const users = await sql`
-      SELECT u.id, u.name, u.email, u.password, u.avatar_url, u.login_attempts, u.lock_until, r.name as role_name 
+      SELECT u.id, u.name, u.email, u.password, u.avatar_url, u.phone, u.login_attempts, u.lock_until, u.status, 
+             r.name as role_name, b.name as branch_name, d.name as department_name 
       FROM users u 
       LEFT JOIN roles r ON u.role_id = r.id 
+      LEFT JOIN branches b ON u.branch_id = b.id
+      LEFT JOIN departments d ON u.department_id = d.id
       WHERE u.email = ${email} 
       LIMIT 1
     `;
@@ -46,7 +63,27 @@ export async function onRequest(context) {
       });
     }
 
-    // Check if account is locked
+    // Check custom statuses
+    if (user.status === 'inactive') {
+      return new Response(JSON.stringify({ 
+        message: "บัญชีของคุณถูกระงับการใช้งาน ไม่สามารถเข้าระบบได้ กรุณาติดต่อฝ่าย IT" 
+      }), { 
+        status: 403,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    if (user.status === 'suspended') {
+      const remainingMinutes = Math.ceil((new Date(user.lock_until) - new Date()) / 60000);
+      return new Response(JSON.stringify({ 
+        message: `บัญชีถูกหยุดใช้งานชั่วคราว กรุณารออีก ${remainingMinutes} นาทีแล้วลองใหม่` 
+      }), { 
+        status: 403,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    // Check if account is locked due to wrong password attempts
     if (user.lock_until && new Date(user.lock_until) > new Date()) {
       const remainingMinutes = Math.ceil((new Date(user.lock_until) - new Date()) / 60000);
       return new Response(JSON.stringify({ 
@@ -57,7 +94,7 @@ export async function onRequest(context) {
       });
     }
 
-    // Secure password check (Supports both Plain Text for Migration and Bcrypt for Security)
+    // Secure password check (supports both plain text migration and bcrypt)
     let isPasswordValid = false;
     if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
       isPasswordValid = await bcrypt.compare(password, user.password);
@@ -66,15 +103,11 @@ export async function onRequest(context) {
     }
 
     if (isPasswordValid) {
-      // Reset login attempts on success
       await sql`UPDATE users SET login_attempts = 0, lock_until = NULL WHERE id = ${user.id}`;
-
-      // Create a secure session token
       const token = "session-" + crypto.randomUUID();
       const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days session
+      expiresAt.setDate(expiresAt.getDate() + 7);
 
-      // Store session in DB
       await sql`
         INSERT INTO sessions (id, user_id, expires_at)
         VALUES (${token}, ${user.id}, ${expiresAt})
@@ -87,7 +120,10 @@ export async function onRequest(context) {
           name: user.name, 
           email: user.email,
           role: user.role_name,
-          avatar_url: user.avatar_url
+          avatar_url: user.avatar_url,
+          phone: user.phone,
+          branch_name: user.branch_name,
+          department_name: user.department_name
         }
       }), { 
         status: 200,

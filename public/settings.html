@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ตั้งค่าระบบ | ITSM Admin</title>
     <script>
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
         if (!localStorage.getItem('token')) {
             window.location.replace('/login.html');
+        } else if (user.role !== 'Admin') {
+            // Redirect non-admins away from settings
+            window.location.replace('/index.html');
         }
     </script>
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
@@ -25,36 +29,137 @@
 
     <!-- Main Content -->
     <div class="flex-1 flex flex-col overflow-hidden">
-        <header class="page-header">
-            <div class="flex items-center gap-4">
-                <!-- Mobile Menu Button -->
-                <button id="openSidebar" class="lg:hidden text-slate-500 hover:text-indigo-600 p-2 rounded-xl hover:bg-slate-50 transition-all">
-                    <i data-lucide="menu" class="h-6 w-6"></i>
-                </button>
-                <h1 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">ตั้งค่าระบบ</h1>
-            </div>
-            <div class="flex items-center gap-2 sm:gap-6">
-                <!-- User Profile Header Section -->
-                <div class="flex items-center gap-2 sm:gap-4">
-                    <div class="text-right hidden md:block">
-                        <p id="userName" class="text-sm font-bold text-slate-800 leading-tight">Loading...</p>
-                        <p id="userRole" class="text-[10px] text-slate-500 font-bold uppercase tracking-wider leading-tight">System Admin</p>
-                        <p id="currentTime" class="text-[10px] font-semibold text-slate-500 mt-0.5">30/03/2026</p>
-                    </div>
-                    <div class="relative group">
-                        <button onclick="window.location.href='/profile.html'" class="flex items-center gap-3 p-1 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100" title="แก้ไขข้อมูลส่วนตัว">
-                            <div id="userAvatar" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-500/20 overflow-hidden">U</div>
-                        </button>
-                    </div>
-                    <button id="logoutBtn" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all group" title="ออกจากระบบ">
-                        <i data-lucide="log-out" class="h-5 w-5 group-hover:translate-x-0.5 transition-transform"></i>
-                    </button>
-                </div>
-            </div>
-        </header>
+        <!-- Header Container (Client-side rendered) -->
+        <div id="header-container"></div>
 
         <main class="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-10 bg-slate-50/50">
             <div class="max-w-6xl mx-auto space-y-6 sm:space-y-10">
+                <!-- General Settings -->
+                <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 p-4 sm:p-8">
+                    <div class="mb-6 sm:mb-8">
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">ตั้งค่าทั่วไป (General)</h2>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1 font-medium leading-relaxed">เปิด/ปิด ฟังก์ชันต่างๆ ในระบบ</p>
+                    </div>
+                    <div class="space-y-6 max-w-2xl">
+                        <!-- Toggle items -->
+                        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800">สรุปจำนวนบทบาท (User Management)</h3>
+                                <p class="text-xs text-slate-500 mt-1">แสดงกล่องสรุปสถิติบทบาทของผู้ใช้งานที่ด้านบนของตาราง</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="toggleUserRoles" class="sr-only peer" onchange="toggleSetting('show_user_roles', this.checked)">
+                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
+                        </div>
+
+                        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800">ตัวกรองข้อมูล (User Management)</h3>
+                                <p class="text-xs text-slate-500 mt-1">แสดงแถบตัวกรองบทบาท สาขา และแผนกในหน้าจัดการผู้ใช้งาน</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="toggleUserFilter" class="sr-only peer" onchange="toggleSetting('show_user_filter', this.checked)">
+                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Module Management -->
+                <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 p-4 sm:p-8">
+                    <div class="mb-6 sm:mb-8">
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">การจัดการโมดูล (Module Management)</h2>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1 font-medium leading-relaxed">เปิด/ปิด การเข้าถึงโมดูลต่างๆ สำหรับผู้ใช้ทั่วไป</p>
+                    </div>
+                    <div class="space-y-6">
+                        <!-- Module Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- User Module -->
+                            <div class="bg-slate-50 rounded-2xl border border-slate-100 p-6">
+                                <div class="flex items-center gap-3 mb-4">
+                                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-sm border border-slate-200">
+                                        <i data-lucide="users" class="w-5 h-5"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-sm font-bold text-slate-800">จัดการผู้ใช้งาน</h3>
+                                        <p class="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Users Module</p>
+                                    </div>
+                                </div>
+                                <div class="space-y-3">
+                                    <label class="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100 cursor-not-allowed opacity-60">
+                                        <span class="text-xs font-bold text-slate-600">Admin</span>
+                                        <input type="checkbox" checked disabled class="rounded border-slate-300 text-indigo-600">
+                                    </label>
+                                    <label class="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
+                                        <span class="text-xs font-bold text-slate-600">Technician</span>
+                                        <input type="checkbox" id="role-users-Technician" onchange="updateModuleAccess('module_users_enabled', 'Technician', this.checked)" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                    </label>
+                                    <label class="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
+                                        <span class="text-xs font-bold text-slate-600">User</span>
+                                        <input type="checkbox" id="role-users-User" onchange="updateModuleAccess('module_users_enabled', 'User', this.checked)" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Asset Module -->
+                            <div class="bg-slate-50 rounded-2xl border border-slate-100 p-6">
+                                <div class="flex items-center gap-3 mb-4">
+                                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm border border-slate-200">
+                                        <i data-lucide="monitor" class="w-5 h-5"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-sm font-bold text-slate-800">จัดการทรัพย์สิน</h3>
+                                        <p class="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Assets Module</p>
+                                    </div>
+                                </div>
+                                <div class="space-y-3">
+                                    <label class="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100 cursor-not-allowed opacity-60">
+                                        <span class="text-xs font-bold text-slate-600">Admin</span>
+                                        <input type="checkbox" checked disabled class="rounded border-slate-300 text-indigo-600">
+                                    </label>
+                                    <label class="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
+                                        <span class="text-xs font-bold text-slate-600">Technician</span>
+                                        <input type="checkbox" id="role-assets-Technician" onchange="updateModuleAccess('module_assets_enabled', 'Technician', this.checked)" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                    </label>
+                                    <label class="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
+                                        <span class="text-xs font-bold text-slate-600">User</span>
+                                        <input type="checkbox" id="role-assets-User" onchange="updateModuleAccess('module_assets_enabled', 'User', this.checked)" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Ticket Module -->
+                            <div class="bg-slate-50 rounded-2xl border border-slate-100 p-6">
+                                <div class="flex items-center gap-3 mb-4">
+                                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-amber-600 shadow-sm border border-slate-200">
+                                        <i data-lucide="ticket" class="w-5 h-5"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-sm font-bold text-slate-800">ระบบแจ้งซ่อม</h3>
+                                        <p class="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Tickets Module</p>
+                                    </div>
+                                </div>
+                                <div class="space-y-3">
+                                    <label class="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100 cursor-not-allowed opacity-60">
+                                        <span class="text-xs font-bold text-slate-600">Admin</span>
+                                        <input type="checkbox" checked disabled class="rounded border-slate-300 text-indigo-600">
+                                    </label>
+                                    <label class="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
+                                        <span class="text-xs font-bold text-slate-600">Technician</span>
+                                        <input type="checkbox" id="role-tickets-Technician" onchange="updateModuleAccess('module_tickets_enabled', 'Technician', this.checked)" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                    </label>
+                                    <label class="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
+                                        <span class="text-xs font-bold text-slate-600">User</span>
+                                        <input type="checkbox" id="role-tickets-User" onchange="updateModuleAccess('module_tickets_enabled', 'User', this.checked)" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+
                 <!-- Branch Management -->
                 <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 p-4 sm:p-8">
                     <div class="flex flex-col sm:flex-row items-center justify-between mb-6 sm:mb-8 gap-4">
@@ -88,14 +193,47 @@
                         <div class="p-10 text-center text-slate-400 col-span-full">กำลังโหลดข้อมูลแผนก...</div>
                     </div>
                 </div>
+                <!-- Audit Logs Management (Admin Only) -->
+                <div id="auditLogsSection" class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 p-4 sm:p-8 hidden">
+                    <div class="flex flex-col sm:flex-row items-center justify-between mb-6 sm:mb-8 gap-4">
+                        <div>
+                            <h2 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">ประวัติการใช้งาน (Audit Logs)</h2>
+                            <p class="text-xs sm:text-sm text-slate-400 mt-1 font-medium leading-relaxed">บันทึกกิจกรรมและการแก้ไขข้อมูลทั้งหมดในระบบ</p>
+                        </div>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                           <select id="filterLogModule" class="form-input text-xs w-full sm:w-32 h-10 py-0" onchange="loadAuditLogs()">
+                               <option value="">ทุกโมดูล</option>
+                               <option value="Users">Users</option>
+                               <option value="Assets">Assets</option>
+                               <option value="Tickets">Tickets</option>
+                           </select>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="border-b border-slate-100">
+                                    <th class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">วัน-เวลา</th>
+                                    <th class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">ผู้กระทำ</th>
+                                    <th class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">โมดูล</th>
+                                    <th class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">การกระทำ</th>
+                                    <th class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 text-right">รายละเอียด</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auditLogsBody" class="divide-y divide-slate-50">
+                                <!-- Logs will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
     <!-- Modals -->
     <!-- Branch Modal -->
-    <div id="branchModal" class="fixed inset-0 bg-slate-900/50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl transition-all scale-95 opacity-0 modal-content overflow-hidden">
+    <div id="branchModal" class="modal-overlay hidden">
+        <div class="modal-content max-w-md animate-in fade-in zoom-in duration-200 overflow-hidden">
             <div class="bg-indigo-600 p-6 text-white flex justify-between items-center">
                 <h3 class="text-lg font-bold">เพิ่มสาขาใหม่</h3>
                 <button onclick="toggleModal('branchModal', false)" class="text-white/80 hover:text-white transition-colors">
@@ -121,8 +259,8 @@
     </div>
 
     <!-- Department Modal -->
-    <div id="deptModal" class="fixed inset-0 bg-slate-900/50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl transition-all scale-95 opacity-0 modal-content overflow-hidden">
+    <div id="deptModal" class="modal-overlay hidden">
+        <div class="modal-content max-w-md animate-in fade-in zoom-in duration-200 overflow-hidden">
             <div class="bg-indigo-600 p-6 text-white flex justify-between items-center">
                 <h3 class="text-lg font-bold">เพิ่มแผนกใหม่</h3>
                 <button onclick="toggleModal('deptModal', false)" class="text-white/80 hover:text-white transition-colors">
@@ -155,19 +293,10 @@
 
         function toggleModal(id, show) {
             const modal = document.getElementById(id);
-            const content = modal.querySelector('.modal-content');
             if (show) {
                 modal.classList.remove('hidden');
-                setTimeout(() => {
-                    content.classList.remove('scale-95', 'opacity-0');
-                    content.classList.add('scale-100', 'opacity-100');
-                }, 10);
             } else {
-                content.classList.remove('scale-100', 'opacity-100');
-                content.classList.add('scale-95', 'opacity-0');
-                setTimeout(() => {
-                    modal.classList.add('hidden');
-                }, 200);
+                modal.classList.add('hidden');
             }
         }
 
@@ -300,11 +429,169 @@
             });
         }
 
+        // Settings Logic
+        async function loadGeneralSettings() {
+            try {
+                const response = await apiFetch('/api/system-settings');
+                if (response.ok) {
+                    const settings = await response.json();
+                    document.getElementById('toggleUserRoles').checked = settings.show_user_roles !== false; 
+                    document.getElementById('toggleUserFilter').checked = settings.show_user_filter !== false;
+                    
+                    // Helper to set checkboxes from role list
+                    const setCheckboxes = (key, rolePrefix) => {
+                        const val = settings[key];
+                        // Backward compatibility: if 'true' or not set, all are checked. If 'false', none are checked.
+                        let allowedRoles = ['Technician', 'User'];
+                        if (val === false || val === 'false') {
+                            allowedRoles = [];
+                        } else if (typeof val === 'string' && val !== 'true') {
+                            allowedRoles = val.split(',').map(r => r.trim());
+                        }
+
+                        ['Technician', 'User'].forEach(role => {
+                            const el = document.getElementById(`role-${rolePrefix}-${role}`);
+                            if (el) el.checked = allowedRoles.includes(role);
+                        });
+                    };
+
+                    setCheckboxes('module_users_enabled', 'users');
+                    setCheckboxes('module_assets_enabled', 'assets');
+                    setCheckboxes('module_tickets_enabled', 'tickets');
+                }
+            } catch (err) {
+                console.error("Failed to load settings", err);
+            }
+        }
+
+        async function updateModuleAccess(key, role, isChecked) {
+            try {
+                // Get current settings first
+                const settings = await ui.getSystemSettings();
+                let val = settings[key];
+                
+                // Construct standard role list based on current value
+                let allowedRoles = ['Admin', 'Technician', 'User'];
+                if (val === false || val === 'false') {
+                    allowedRoles = ['Admin'];
+                } else if (val === true || val === 'true' || !val) {
+                    allowedRoles = ['Admin', 'Technician', 'User'];
+                } else {
+                    allowedRoles = String(val).split(',').map(r => r.trim());
+                }
+
+                // Update list
+                if (isChecked) {
+                    if (!allowedRoles.includes(role)) allowedRoles.push(role);
+                } else {
+                    allowedRoles = allowedRoles.filter(r => r !== role);
+                }
+
+                // Force Admin to stay
+                if (!allowedRoles.includes('Admin')) allowedRoles.push('Admin');
+
+                const newVal = allowedRoles.join(',');
+
+                const response = await apiFetch('/api/system-settings', {
+                    method: 'POST',
+                    body: JSON.stringify({ setting_key: key, setting_value: newVal })
+                });
+
+                if (response.ok) {
+                    // Update cache and sidebar instantly
+                    await ui.getSystemSettings(true);
+                    ui.renderSidebar('sidebar-container');
+                    notify.toast('อัปเดตสิทธิ์การเข้าถึงแล้ว');
+                }
+            } catch (err) {
+                notify.error('ไม่สามารถอัปเดตสิทธิ์ได้');
+            }
+        }
+
+        async function toggleSetting(key, value) {
+            try {
+                const response = await apiFetch('/api/system-settings', {
+                    method: 'POST',
+                    body: JSON.stringify({ setting_key: key, setting_value: value ? 'true' : 'false' })
+                });
+                if (!response.ok) {
+                    throw new Error("Failed to save setting");
+                }
+                // Force-refresh cache & update sidebar immediately (no 2-min wait)
+                await ui.getSystemSettings(true);
+                ui.renderSidebar('sidebar-container');
+                notify.toast('บันทึกการตั้งค่าแล้ว');
+            } catch (err) {
+                notify.error('ไม่สามารถบันทึกการตั้งค่าได้');
+                // Revert toggle visually
+                const toggle = document.getElementById(key === 'show_user_roles' ? 'toggleUserRoles' : 'toggleUserFilter');
+                if (toggle) toggle.checked = !value;
+            }
+        }
+
+        async function loadAuditLogs() {
+            const body = document.getElementById('auditLogsBody');
+            const module = document.getElementById('filterLogModule').value;
+            
+            try {
+                const response = await apiFetch(`/api/logs?module=${module}`);
+                if (!response.ok) throw new Error('API Error');
+                const logs = await response.json();
+                
+                if (logs.length === 0) {
+                    body.innerHTML = '<tr><td colspan="5" class="py-10 text-center text-slate-400 font-medium">ไม่พบประวัติการใช้งาน</td></tr>';
+                    return;
+                }
+
+                body.innerHTML = logs.map(log => `
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="py-3 px-2 text-[10px] text-slate-500 font-medium whitespace-nowrap">
+                            ${new Date(log.created_at).toLocaleString('th-TH')}
+                        </td>
+                        <td class="py-3 px-2">
+                             <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[8px] font-bold text-slate-500">
+                                    ${escapeHTML((log.user_name || 'System').charAt(0))}
+                                </div>
+                                <span class="text-xs font-bold text-slate-700">${escapeHTML(log.user_name || 'System')}</span>
+                            </div>
+                        </td>
+                        <td class="py-3 px-2">
+                            <span class="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md font-bold uppercase tracking-wider">${log.module}</span>
+                        </td>
+                        <td class="py-3 px-2">
+                            <span class="text-xs font-semibold ${log.action === 'Delete' ? 'text-red-500' : log.action === 'Create' ? 'text-emerald-500' : 'text-amber-500'}">
+                                ${log.action}
+                            </span>
+                        </td>
+                        <td class="py-3 px-2 text-right">
+                             <button onclick='Swal.fire({title: "รายละเอียด", html: "<pre class=\"text-left text-xs bg-slate-50 p-4 rounded-xl overflow-auto\">" + JSON.stringify(${JSON.stringify(log.details)}, null, 2) + "</pre>", confirmButtonColor: "#4f46e5"})' class="text-indigo-600 hover:text-indigo-700 font-bold text-[10px] underline">ดู JSON</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Failed to load logs:', err);
+                body.innerHTML = '<tr><td colspan="5" class="py-10 text-center text-red-500 font-bold">ไม่สามารถโหลดข้อมูลประวัติได้</td></tr>';
+            }
+        }
+
         async function loadSettings() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const isAdmin = user.role === 'Admin';
+
+            // Show Audit Logs only for Admin
+            const auditSection = document.getElementById('auditLogsSection');
+            if (isAdmin && auditSection) {
+                auditSection.classList.remove('hidden');
+                loadAuditLogs();
+            }
+
             // Render Sidebar
             if (window.ui && ui.renderSidebar) {
                 ui.renderSidebar('sidebar-container');
             }
+
+            loadGeneralSettings();
 
             // Load Branches
             const branchGrid = document.getElementById('branchGrid');

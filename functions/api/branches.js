@@ -22,16 +22,13 @@ export async function onRequest(context) {
       await sql`
         CREATE TABLE IF NOT EXISTS branches (
           id TEXT PRIMARY KEY,
+          code TEXT UNIQUE,
           name TEXT NOT NULL,
           address TEXT,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
           updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
         )
       `;
-      // Fix NOT NULL constraint on legacy 'code' column if it exists
-      try {
-        await sql`ALTER TABLE branches ALTER COLUMN code DROP NOT NULL`;
-      } catch (codeErr) {}
     } catch (migErr) {
       console.error("Branches Migration Error:", migErr);
     }

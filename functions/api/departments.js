@@ -22,21 +22,18 @@ export async function onRequest(context) {
       await sql`
         CREATE TABLE IF NOT EXISTS departments (
           id TEXT PRIMARY KEY,
+          code TEXT UNIQUE,
           name TEXT NOT NULL,
           branch_id TEXT REFERENCES branches(id) ON DELETE SET NULL,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
           updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
         )
       `;
-      // Ensure branch_id column exists (in case table was created without it previously)
+      // Ensure columns exist (in case table was created without them previously)
       try {
         await sql`ALTER TABLE departments ADD COLUMN IF NOT EXISTS branch_id TEXT REFERENCES branches(id) ON DELETE SET NULL`;
+        await sql`ALTER TABLE departments ADD COLUMN IF NOT EXISTS code TEXT UNIQUE`;
       } catch (colErr) {}
-      
-      // Fix NOT NULL constraint on legacy 'code' column if it exists
-      try {
-        await sql`ALTER TABLE departments ALTER COLUMN code DROP NOT NULL`;
-      } catch (codeErr) {}
     } catch (migErr) {
       console.error("Departments Migration Error:", migErr);
     }

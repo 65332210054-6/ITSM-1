@@ -1,67 +1,6 @@
-// Common app logic
-document.addEventListener('DOMContentLoaded', () => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const path = window.location.pathname;
-
-    // Role-based Access Control
-    const isAdminOnlyPage = path.endsWith('users.html') || path.endsWith('settings.html');
-    if (isAdminOnlyPage && user.role !== 'Admin') {
-        window.location.href = '/index.html';
-        return;
-    }
-
-    // Initialize Lucide Icons
-    if (window.lucide) {
-        lucide.createIcons();
-    }
-
-    // Update Header Profile Info
-    const userNameEl = document.getElementById('userName');
-    const welcomeNameEl = document.getElementById('welcomeName');
-    const userRoleEl = document.getElementById('userRole');
-    const userAvatarEl = document.getElementById('userAvatar');
-
-    if (userNameEl) userNameEl.innerText = user.name || 'User';
-    if (welcomeNameEl) welcomeNameEl.innerText = user.name || 'User';
-    if (userRoleEl) userRoleEl.innerText = user.role || 'System Admin';
-    if (userAvatarEl) {
-        if (user.avatar_url) {
-            userAvatarEl.innerHTML = `<img src="${user.avatar_url}" class="w-full h-full rounded-xl object-cover">`;
-        } else {
-            userAvatarEl.innerText = (user.name || 'U').charAt(0).toUpperCase();
-        }
-    }
-
-    // Logout Handler
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login.html';
-        });
-    }
-
-    // Current Time
-    const currentTimeEl = document.getElementById('currentTime');
-    if (currentTimeEl) {
-        const now = new Date();
-        const d = String(now.getDate()).padStart(2, '0');
-        const m = String(now.getMonth() + 1).padStart(2, '0');
-        const y = now.getFullYear();
-        currentTimeEl.innerText = `${d}/${m}/${y}`;
-    }
-
-    // Initialize Shared Sidebar
-    const sidebarContainer = document.getElementById('sidebar-container');
-    if (sidebarContainer) {
-        ui.renderSidebar('sidebar-container');
-    } else {
-        // Fallback for pages that haven't updated yet or hardcoded
-        ui.initSidebar();
-    }
-});
+/**
+ * IT Management System - Core Client Application
+ */
 
 // Security: Escape HTML to prevent XSS
 function escapeHTML(str) {
@@ -147,19 +86,19 @@ const notify = {
 
 // API Helper with Caching and Performance
 const apiCache = new Map();
+let _isRedirecting = false;
+let _pendingSettingsFetch = null;
 
 async function apiFetch(url, options = {}) {
     const token = localStorage.getItem('token');
     const cacheKey = `${url}_${JSON.stringify(options.headers || {})}`;
 
-    // Simple GET Cache (5 seconds)
     if (options.method === 'GET' || !options.method) {
         const cached = apiCache.get(cacheKey);
         if (cached && (Date.now() - cached.time < 5000)) {
             return cached.response.clone();
         }
     } else {
-        // Clear cache on mutations
         apiCache.clear();
     }
 
@@ -173,16 +112,22 @@ async function apiFetch(url, options = {}) {
         const response = await fetch(url, { ...options, headers });
         
         if (response.status === 401) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login.html';
+            const currentPath = window.location.pathname.replace(/\/$/, '').replace(/\.html$/, '') || '/';
+            if (!_isRedirecting && currentPath !== '/login') {
+                _isRedirecting = true;
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login.html';
+            }
             return;
         }
 
         if (response.status === 403) {
-            const clone = response.clone();
-            const data = await clone.json().catch(() => ({}));
-            notify.error(data.message || 'คุณไม่มีสิทธิ์เข้าถึงส่วนนี้');
+            if (!options.silent) {
+                const clone = response.clone();
+                const data = await clone.json().catch(() => ({}));
+                notify.error(data.message || 'คุณไม่มีสิทธิ์เข้าถึงส่วนนี้');
+            }
             return response;
         }
 
@@ -192,62 +137,287 @@ async function apiFetch(url, options = {}) {
                 time: Date.now()
             });
         }
-
         return response;
     } catch (error) {
         console.error('Fetch error:', error);
-        notify.error('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
-        throw error;
+        if (!options.silent) notify.error('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
+        return null;
     }
 }
 
 // Global UI Helpers
 const ui = {
     choicesInstances: {},
+    systemSettingsCache: null,
 
-    initChoices: (container = document) => {
-        if (typeof Choices === 'undefined') {
-            console.warn('Choices.js not loaded yet, retrying in 200ms...');
-            setTimeout(() => ui.initChoices(container), 200);
-            return;
+    verifySession: async () => {
+        try {
+            const res = await apiFetch('/api/profile', { method: 'GET', silent: true });
+            if (res && res.ok) {
+                const data = await res.json();
+                const localUser = JSON.parse(localStorage.getItem('user') || '{}');
+                
+                // Robust check for any changes in the user record
+                const dataStr = JSON.stringify(data.user);
+                const localStr = JSON.stringify({
+                    id: localUser.id,
+                    name: localUser.name,
+                    email: localUser.email,
+                    role: localUser.role,
+                    avatar_url: localUser.avatar_url,
+                    phone: localUser.phone,
+                    branch_name: localUser.branch_name,
+                    department_name: localUser.department_name
+                });
+
+                if (data.user && dataStr !== localStr) {
+                    const newUser = { ...localUser, ...data.user };
+                    localStorage.setItem('user', JSON.stringify(newUser));
+                    
+                    // Trigger UI updates immediately
+                    const pageTitle = document.title.split('|')[0].trim();
+                    ui.renderHeader(pageTitle, window.location.pathname.includes('-detail'));
+                    
+                    const settings = await ui.getSystemSettings();
+                    if (document.getElementById('sidebar-container')) {
+                        ui.renderSidebar('sidebar-container', settings);
+                    }
+
+                    // Handle Access Control Redirects if role changed
+                    if (data.user.role !== localUser.role) {
+                        const path = window.location.pathname;
+                        const normPath = path.replace(/\/$/, '').replace(/\.html$/, '') || '/';
+                        
+                        let moduleKey = '';
+                        if (normPath === '/users') moduleKey = 'module_users_enabled';
+                        if (normPath === '/assets' || normPath === '/asset-detail') moduleKey = 'module_assets_enabled';
+                        if (normPath === '/tickets' || normPath === '/ticket-detail') moduleKey = 'module_tickets_enabled';
+
+                        if (moduleKey && !ui.checkAccess(moduleKey, settings, data.user)) {
+                            if (!_isRedirecting) {
+                                _isRedirecting = true;
+                                window.location.replace('/index.html');
+                            }
+                        }
+                    }
+                }
+                return data;
+            }
+        } catch (e) { console.error('Session verification failed', e); }
+        return null;
+    },
+
+    getSystemSettings: async (forceRefresh = false) => {
+        const localCache = localStorage.getItem('system_settings');
+        const cacheTimestamp = parseInt(localStorage.getItem('system_settings_time') || '0', 10);
+        const cacheAge = Date.now() - cacheTimestamp;
+        const CACHE_TTL = 2 * 60 * 1000;
+
+        if (localCache && !forceRefresh) {
+            const settings = JSON.parse(localCache);
+            if (cacheAge > CACHE_TTL) ui.getSystemSettings(true).catch(() => {}); 
+            return settings;
         }
 
-        const selects = container.querySelectorAll('select');
+        if (_pendingSettingsFetch && !forceRefresh) return _pendingSettingsFetch;
+
+        _pendingSettingsFetch = (async () => {
+            try {
+                const response = await fetch('/api/system-settings', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (response.ok) {
+                    const settings = await response.json();
+                    ui.systemSettingsCache = settings;
+                    localStorage.setItem('system_settings', JSON.stringify(settings));
+                    localStorage.setItem('system_settings_time', Date.now().toString());
+                    return settings;
+                }
+            } catch (e) {
+                console.error("Settings fetch failed", e);
+            } finally {
+                _pendingSettingsFetch = null;
+            }
+            return ui.systemSettingsCache || (localCache ? JSON.parse(localCache) : {});
+        })();
+        return _pendingSettingsFetch;
+    },
+
+    initCrossTabSync: () => {
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'system_settings') {
+                const settings = JSON.parse(e.newValue || '{}');
+                ui.systemSettingsCache = settings;
+                ui.renderSidebar('sidebar-container', settings);
+            }
+        });
+    },
+
+    initChoices: (target = document) => {
+        if (typeof Choices === 'undefined') {
+            setTimeout(() => ui.initChoices(target), 200);
+            return;
+        }
+        const selects = (target instanceof HTMLElement) ? [target] : target.querySelectorAll('select');
         selects.forEach(select => {
             if (select.classList.contains('choices__input')) return;
-            
-            if (ui.choicesInstances[select.id]) {
-                ui.choicesInstances[select.id].destroy();
-            }
-
-            const isCompact = select.id === 'itemsPerPageSelect';
+            if (ui.choicesInstances[select.id]) ui.choicesInstances[select.id].destroy();
             try {
                 const instance = new Choices(select, {
                     searchEnabled: false,
                     itemSelectText: '',
                     shouldSort: false,
                     allowHTML: true,
-                    position: isCompact ? 'top' : 'auto'
+                    position: select.id === 'itemsPerPageSelect' ? 'top' : 'auto',
+                    placeholder: true,
+                    placeholderValue: select.getAttribute('placeholder') || null
                 });
                 ui.choicesInstances[select.id] = instance;
-
-                if (isCompact) {
-                    const wrapper = select.closest('.choices');
-                    if (wrapper) {
-                        wrapper.classList.add('choices-compact-wrapper');
-                    }
-                }
-            } catch (e) {
-                console.error('Choices init error for', select.id, e);
-            }
+            } catch (e) {}
         });
     },
 
-    renderSidebar: (containerId) => {
+    checkAccess: (key, settings, user) => {
+        const u = user || JSON.parse(localStorage.getItem('user') || '{}');
+        if (u.role === 'Admin') return true;
+        const val = settings[key];
+        if (val === true || val === 'true') return true;
+        if (val === false || val === 'false') return false;
+        if (!val) return true;
+        const allowedRoles = String(val).split(',').map(r => r.trim());
+        return allowedRoles.includes(u.role);
+    },
+
+    renderTableLoading: (tableBodyId, colspan, message = 'กำลังโหลดข้อมูล...') => {
+        const tbody = document.getElementById(tableBodyId);
+        if (!tbody) return;
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="${colspan}" class="px-6 py-10 text-center text-slate-400">
+                    <div class="flex flex-col items-center justify-center gap-3">
+                        <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                        <p class="font-medium">${escapeHTML(message)}</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+    },
+
+    renderHeader: (title, showBack = false) => {
+        const container = document.getElementById('header-container');
+        if (!container) return;
+        
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const avatarInitial = (user.name || '?').charAt(0).toUpperCase();
+
+        const backButton = showBack ? `
+            <button onclick="window.history.back()" class="text-slate-500 hover:text-indigo-600 p-2 rounded-xl hover:bg-slate-50 transition-all">
+                <i data-lucide="arrow-left" class="h-6 w-6"></i>
+            </button>
+        ` : `
+            <button id="openSidebar" class="lg:hidden text-slate-500 hover:text-indigo-600 p-2 rounded-xl hover:bg-slate-50 transition-all">
+                <i data-lucide="menu" class="h-6 w-6"></i>
+            </button>
+        `;
+
+        container.innerHTML = `
+            <header class="page-header">
+                <div class="flex items-center gap-4">
+                    ${backButton}
+                    <h1 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">${title}</h1>
+                </div>
+                <div class="flex items-center gap-2 sm:gap-6">
+                        <button onclick="window.location.href='/profile.html'" class="flex items-center gap-3 p-1 sm:p-2 rounded-2xl hover:bg-slate-100 transition-all active:scale-95 group border border-transparent hover:border-slate-200 cursor-pointer">
+                            <div class="text-right hidden md:block">
+                                <p id="userName" class="text-sm font-bold text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors">${escapeHTML(user.name || 'User')}</p>
+                                <p id="userRole" class="text-[10px] text-slate-500 font-bold uppercase tracking-wider leading-tight">${user.role || 'System Admin'}</p>
+                                <p id="currentTime" class="text-[10px] font-semibold text-slate-500 mt-0.5">${new Date().toLocaleDateString('th-TH')}</p>
+                            </div>
+                            <div id="userAvatar" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-500/20 overflow-hidden ring-2 ring-transparent group-hover:ring-indigo-100 transition-all">
+                                ${user.avatar_url ? `<img src="${user.avatar_url}" class="w-full h-full object-cover">` : avatarInitial}
+                            </div>
+                        </button>
+                        <button id="logoutBtn" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all group">
+                            <i data-lucide="log-out" class="h-5 w-5 group-hover:translate-x-0.5 transition-transform"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+        `;
+        
+        // Re-initialize sidebar toggle because we just replaced the button
+        ui.initSidebar();
+        
+        // Re-attach logout listener
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.onclick = (e) => {
+                e.preventDefault();
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login.html';
+            };
+        }
+
+        if (window.lucide) lucide.createIcons();
+    },
+
+    getBadgeClass: (type, value) => {
+        const val = String(value).toLowerCase();
+        if (type === 'status') {
+             if (['active', 'in use', 'resolved', 'closed', 'success'].includes(val)) return 'status-badge status-success';
+             if (['inactive', 'broken', 'repairing', 'danger'].includes(val)) return 'status-badge status-danger';
+             if (['suspended', 'on hold', 'warning', 'in progress'].includes(val)) return 'status-badge status-warning';
+             return 'status-badge status-neutral';
+        }
+        if (type === 'priority') {
+             if (['critical', 'high'].includes(val)) return 'status-badge status-danger';
+             if (['medium'].includes(val)) return 'status-badge status-warning';
+             return 'status-badge status-success';
+        }
+        return 'status-badge status-neutral';
+    },
+
+    renderPagination: (containerId, currentPage, totalPages, totalItems, itemsPerPage) => {
         const container = document.getElementById(containerId);
         if (!container) return;
+        const startIndex = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+        const endIndex = Math.min(currentPage * itemsPerPage, totalItems);
 
+        const startEl = document.getElementById('showingStart');
+        const endEl = document.getElementById('showingEnd');
+        const totalEl = document.getElementById('totalItems');
+        if (startEl) startEl.innerText = startIndex;
+        if (endEl) endEl.innerText = endIndex;
+        if (totalEl) totalEl.innerText = totalItems;
+
+        const prevBtn = document.getElementById('prevPage');
+        const nextBtn = document.getElementById('nextPage');
+        const pageNums = document.getElementById('pageNumbers');
+
+        if (prevBtn) prevBtn.disabled = currentPage === 1;
+        if (nextBtn) nextBtn.disabled = currentPage === totalPages;
+
+        if (pageNums) {
+            let html = '';
+            let start = Math.max(1, currentPage - 2);
+            let end = Math.min(totalPages, start + 4);
+            if (end - start + 1 < 5) start = Math.max(1, end - 4);
+            for (let i = start; i <= end; i++) {
+                html += `<button onclick="goToPage(${i})" class="pagination-btn ${i === currentPage ? 'pagination-btn-active' : 'pagination-btn-inactive'}">${i}</button>`;
+            }
+            pageNums.innerHTML = html;
+        }
+    },
+
+    renderSidebar: async (containerId, settingsFromParam = null) => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
         const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const settings = settingsFromParam || await ui.getSystemSettings();
+        const usersVisible = ui.checkAccess('module_users_enabled', settings, user);
+        const assetsVisible = ui.checkAccess('module_assets_enabled', settings, user);
+        const ticketsVisible = ui.checkAccess('module_tickets_enabled', settings, user);
         const isAdmin = user.role === 'Admin';
 
         container.innerHTML = `
@@ -260,37 +430,19 @@ const ui = {
                             <span class="text-[10px] text-slate-400 block leading-tight font-medium">Enterprise Admin</span>
                         </div>
                     </div>
-                    <button id="closeSidebar" class="lg:hidden text-slate-400 hover:text-white p-1"><i data-lucide="x" class="h-6 w-6"></i></button>
                 </div>
                 <nav class="flex-1 py-6 overflow-y-auto">
-                    <div class="px-6 mb-4">
-                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em]">หลัก (Main)</p>
-                    </div>
+                    <div class="px-6 mb-4"><p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em]">หลัก (Main)</p></div>
                     <div class="space-y-1 px-3">
-                        <a href="/" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all">
-                            <i data-lucide="layout-dashboard" class="mr-3 h-5 w-5"></i> หน้าแรก
-                        </a>
-                        ${isAdmin ? `
-                        <a href="/users.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
-                            <i data-lucide="users" class="mr-3 h-5 w-5"></i> จัดการผู้ใช้งาน
-                        </a>
-                        ` : ''}
-                        <a href="/assets.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
-                            <i data-lucide="monitor" class="mr-3 h-5 w-5"></i> จัดการทรัพย์สิน
-                        </a>
-                        <a href="/tickets.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
-                            <i data-lucide="ticket" class="mr-3 h-5 w-5"></i> ระบบแจ้งซ่อม
-                        </a>
-                        ${isAdmin ? `
-                        <a href="/settings.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
-                            <i data-lucide="settings" class="mr-3 h-5 w-5"></i> ตั้งค่าระบบ
-                        </a>
-                        ` : ''}
+                        <a href="/" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all"><i data-lucide="layout-dashboard" class="mr-3 h-5 w-5"></i> หน้าแรก</a>
+                        ${usersVisible ? `<a href="/users.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="users" class="mr-3 h-5 w-5"></i> จัดการผู้ใช้งาน</a>` : ''}
+                        ${assetsVisible ? `<a href="/assets.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="monitor" class="mr-3 h-5 w-5"></i> จัดการทรัพย์สิน</a>` : ''}
+                        ${ticketsVisible ? `<a href="/tickets.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="ticket" class="mr-3 h-5 w-5"></i> ระบบแจ้งซ่อม</a>` : ''}
+                        ${isAdmin ? `<a href="/settings.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="settings" class="mr-3 h-5 w-5"></i> ตั้งค่าระบบ</a>` : ''}
                     </div>
                 </nav>
             </aside>
         `;
-
         if (window.lucide) lucide.createIcons();
         ui.initSidebar();
     },
@@ -300,69 +452,111 @@ const ui = {
         const closeSidebar = document.getElementById('closeSidebar');
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
-
-        if (!sidebar || !sidebarOverlay) return;
-
         const toggleSidebar = () => {
+            if (!sidebar) return;
             sidebar.classList.toggle('-translate-x-full');
-            sidebarOverlay.classList.toggle('hidden');
-            if (!sidebarOverlay.classList.contains('hidden')) {
-                document.body.style.overflow = 'hidden';
-            } else {
-                document.body.style.overflow = '';
-            }
+            if (sidebarOverlay) sidebarOverlay.classList.toggle('hidden');
         };
-
-        if (openSidebar) openSidebar.addEventListener('click', toggleSidebar);
-        if (closeSidebar) closeSidebar.addEventListener('click', toggleSidebar);
-        if (sidebarOverlay) sidebarOverlay.addEventListener('click', toggleSidebar);
-
+        if (openSidebar) openSidebar.onclick = toggleSidebar;
+        if (closeSidebar) closeSidebar.onclick = toggleSidebar;
+        
         const path = window.location.pathname;
-        const navLinks = document.querySelectorAll('nav a');
-        navLinks.forEach(link => {
+        const normPath = path.replace(/\/$/, '').replace(/\.html$/, '') || '/';
+        document.querySelectorAll('nav a').forEach(link => {
             const href = link.getAttribute('href');
-            if (href === path || (path === '/' && href === '/index.html') || (path.endsWith(href) && href !== '/')) {
+            if (!href) return;
+            const normHref = href.replace(/\/$/, '').replace(/\.html$/, '') || '/';
+            if (normPath === normHref || (normPath === '/index' && normHref === '/')) {
                 link.classList.add('bg-indigo-600', 'text-white', 'shadow-lg', 'shadow-indigo-600/20');
-                link.classList.remove('text-slate-400', 'hover:bg-slate-800', 'hover:text-white');
-                const icon = link.querySelector('i');
-                if (icon) icon.classList.remove('text-slate-400');
-            } else {
-                link.classList.remove('bg-indigo-600', 'text-white', 'shadow-lg', 'shadow-indigo-600/20');
-                link.classList.add('text-slate-400', 'hover:bg-slate-800', 'hover:text-white');
+                link.classList.remove('text-slate-400', 'hover:bg-slate-800');
             }
         });
     },
 
+    // Standard Profile/Logout Helpers
     exportCSV: (data, filename = 'export.csv') => {
         if (!data || !data.length) return notify.error('ไม่มีข้อมูลให้ Export');
-        
         const headers = Object.keys(data[0]);
-        const csvContent = [
-            headers.join(','),
-            ...data.map(row => headers.map(header => {
-                let cell = row[header] === null || row[header] === undefined ? '' : row[header];
-                cell = String(cell).replace(/"/g, '""');
-                return `"${cell}"`;
-            }).join(','))
-        ].join('\n');
-
-        // Ensure .csv extension and add date for uniqueness
+        const csvContent = [headers.join(','), ...data.map(row => headers.map(header => {
+            let cell = row[header] === null || row[header] === undefined ? '' : row[header];
+            return `"${String(cell).replace(/"/g, '""')}"`;
+        }).join(','))].join('\n');
         const date = new Date().toISOString().split('T')[0];
-        const finalFilename = filename.endsWith('.csv') ? filename : `${filename}-${date}.csv`;
-
-        // Data URI approach (More robust for filenames on HTTP)
-        const encodedUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent('\ufeff' + csvContent);
-        
         const link = document.createElement('a');
-        link.href = encodedUri;
-        link.download = finalFilename;
+        link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent('\ufeff' + csvContent);
+        link.download = filename.endsWith('.csv') ? filename : `${filename}-${date}.csv`;
         link.style.display = 'none';
-        
-        document.body.appendChild(link);
-        link.click();
-        
-        setTimeout(() => {
-            document.body.removeChild(link);
-        }, 100);
+        document.body.appendChild(link); link.click();
+        document.body.removeChild(link);
     }
 };
+
+// Application Lifecycle (Bottom)
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const path = window.location.pathname;
+        const normPath = path.replace(/\/$/, '').replace(/\.html$/, '') || '/';
+        if (normPath === '/login') return;
+
+        // Shared Elements
+        const elements = {
+            name: document.getElementById('userName'),
+            welcome: document.getElementById('welcomeName'),
+            role: document.getElementById('userRole'),
+            avatar: document.getElementById('userAvatar'),
+            time: document.getElementById('currentTime'),
+            sidebar: document.getElementById('sidebar-container'),
+            logout: document.getElementById('logoutBtn')
+        };
+
+        // 1. FAST OPTIMISTIC RENDER (Local Data)
+        try {
+            const localUser = JSON.parse(localStorage.getItem('user') || '{}');
+            const localSettings = JSON.parse(localStorage.getItem('system_settings') || '{}');
+            
+            const pageTitle = document.title.split('|')[0].trim();
+            if (document.getElementById('header-container')) {
+                ui.renderHeader(pageTitle, window.location.pathname.includes('-detail'));
+            }
+
+            if (elements.sidebar) ui.renderSidebar('sidebar-container', localSettings);
+            else ui.initSidebar();
+
+            ui.initCrossTabSync();
+        } catch (e) { console.error("Optimistic failed", e); }
+
+        // 2. BACKGROUND VERIFICATION (Remote Data)
+        const [sessionData, settings] = await Promise.all([
+            ui.verifySession().catch(() => null),
+            ui.getSystemSettings().catch(() => ({}))
+        ]);
+
+        const user = sessionData?.user || JSON.parse(localStorage.getItem('user') || '{}');
+        const isAdmin = user.role === 'Admin';
+        
+        let moduleKey = '';
+        if (normPath === '/users') moduleKey = 'module_users_enabled';
+        else if (normPath === '/assets' || normPath === '/asset-detail') moduleKey = 'module_assets_enabled';
+        else if (normPath === '/tickets' || normPath === '/ticket-detail') moduleKey = 'module_tickets_enabled';
+
+        if (moduleKey && !ui.checkAccess(moduleKey, settings, user)) {
+            window.location.replace('/index.html');
+            return;
+        }
+
+        if ((normPath === '/users' || normPath === '/settings') && !isAdmin) {
+             window.location.replace('/index.html');
+             return;
+        }
+
+        // Final UI Polish (Only if data changed)
+        const currentSettingsJSON = localStorage.getItem('system_settings');
+        if (elements.sidebar && JSON.stringify(settings) !== currentSettingsJSON) {
+            ui.renderSidebar('sidebar-container', settings);
+        }
+        
+        if (elements.name) elements.name.innerText = user.name || 'User';
+        if (elements.role) elements.role.innerText = user.role || 'System Admin';
+        if (window.lucide) lucide.createIcons();
+    } catch (err) { console.error("Global init failed:", err); }
+});

@@ -13,17 +13,17 @@ const dbUrl = dbUrlLine.split('=')[1].trim().replace(/['"]/g, '');
 
 const sql = neon(dbUrl);
 
-async function check() {
+async function main() {
     try {
-        const result = await sql`
-            SELECT column_name, is_nullable, column_default 
-            FROM information_schema.columns 
-            WHERE table_name = 'departments';
-        `;
-        console.log("Departments Table Structure:");
-        console.table(result);
+        // Change is_active to status varchar
+        await sql`ALTER TABLE users RENAME COLUMN is_active TO status`;
+        await sql`ALTER TABLE users ALTER COLUMN status DROP DEFAULT`;
+        await sql`ALTER TABLE users ALTER COLUMN status TYPE VARCHAR(20) USING (CASE WHEN status=true THEN 'active' ELSE 'inactive' END)`;
+        await sql`ALTER TABLE users ALTER COLUMN status SET DEFAULT 'active'`;
+        
+        console.log("Changed is_active to status column.");
     } catch(err) {
         console.error(err);
     }
 }
-check();
+main();

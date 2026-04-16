@@ -1,4 +1,4 @@
-export async function validateSession(context) {
+export async function validateSession(context, sqlInstance = null) {
   const { request, env } = context;
   let token;
   const authHeader = request.headers.get("Authorization");
@@ -13,11 +13,9 @@ export async function validateSession(context) {
     }
   }
 
-  if (!token) {
-    return null;
-  }
-  const { neon } = await import('@neondatabase/serverless');
-  const sql = neon(env.DATABASE_URL);
+  if (!token) return null;
+
+  const sql = sqlInstance || (await import('@neondatabase/serverless')).neon(env.DATABASE_URL);
 
   const sessions = await sql`
     SELECT s.user_id, u.name, u.email, r.name as role_name 
@@ -28,9 +26,33 @@ export async function validateSession(context) {
     LIMIT 1
   `;
 
-  if (sessions.length === 0) {
-    return null;
+  return sessions[0] || null;
+}
+
+export async function checkModuleAccess(context, moduleKey, sqlInstance = null) {
+  const sql = sqlInstance || (await import('@neondatabase/serverless')).neon(context.env.DATABASE_URL);
+  const userSession = await validateSession(context, sql);
+  if (!userSession) return null; // Unauthorized
+
+  if (userSession.role_name === "Admin") return userSession;
+
+  try {
+    const settings = await sql`SELECT setting_value FROM system_settings WHERE setting_key = ${moduleKey} LIMIT 1`;
+    let allowedRoles = ['Admin', 'Technician', 'User'];
+    
+    if (settings.length > 0) {
+      const val = settings[0].setting_value;
+      if (val === 'false') {
+        allowedRoles = ['Admin'];
+      } else if (val !== 'true') {
+        allowedRoles = val.split(',').map(r => r.trim());
+      }
+    }
+
+    if (allowedRoles.includes(userSession.role_name)) return userSession;
+  } catch (error) {
+    console.error(`Error checking module access (${moduleKey}):`, error);
   }
 
-  return sessions[0];
+  return false; // Forbidden
 }

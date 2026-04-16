@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รายละเอียดการแจ้งซ่อม | ITSM Admin</title>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.454.0/lucide.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body class="h-full flex overflow-hidden">
+    <!-- Sidebar Container -->
+    <div id="sidebar-container"></div>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Header Container (Client-side rendered) -->
+        <div id="header-container"></div>
+
+        <main class="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-10 bg-slate-50/50">
+            <div class="max-w-4xl mx-auto space-y-6">
+                <!-- Ticket Header Card -->
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span id="ticketStatus" class="px-3 py-1 bg-amber-100 text-amber-600 rounded-full text-[10px] font-bold uppercase tracking-widest">OPEN</span>
+                                <span id="ticketPriority" class="px-3 py-1 bg-red-100 text-red-600 rounded-full text-[10px] font-bold uppercase tracking-widest">URGENT</span>
+                            </div>
+                            <h1 id="ticketSubject" class="text-2xl font-extrabold text-slate-800 tracking-tight truncate">Loading Subject...</h1>
+                            <p class="text-sm text-slate-400 font-medium mt-1">แจ้งโดย: <span id="reporterName" class="text-indigo-600 font-bold">-</span> • <span id="createdAt">-</span></p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                             <button onclick="toggleEditStatus()" class="btn-primary flex items-center gap-2">
+                                <i data-lucide="check-circle" class="w-4 h-4"></i> อัปเดตสถานะ
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div class="md:col-span-2 space-y-6">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">รายละเอียดปัญหา (Description)</label>
+                                <div id="ticketDescription" class="bg-slate-50 p-6 rounded-2xl text-slate-700 text-sm leading-relaxed whitespace-pre-wrap border border-slate-100 italic">
+                                    -
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-6 lg:border-l lg:border-slate-100 lg:pl-8">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">ทรัพย์สินที่เกี่ยวข้อง</label>
+                                <div id="assetInfo" class="bg-white p-4 rounded-2xl border border-slate-200 hover:border-indigo-300 transition-all cursor-pointer group">
+                                    <p id="assetTag" class="text-xs font-bold text-indigo-600 mb-1">IT-XXXXX</p>
+                                    <p id="assetName" class="text-sm font-bold text-slate-700 truncate">Asset Name</p>
+                                    <div class="mt-3 flex items-center justify-end">
+                                        <span class="text-[10px] text-slate-400 font-bold group-hover:text-indigo-600 transition-colors">ดูข้อมูลขยะ <i data-lucide="chevron-right" class="w-3 h-3 inline"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">ช่างที่ได้รับมอบหมาย</label>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500" id="techInitial">?</div>
+                                    <p id="assignedTech" class="text-sm font-bold text-slate-700">รอมอบหมาย</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline Section -->
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+                    <h2 class="text-lg font-bold text-slate-800 mb-8 flex items-center gap-2">
+                        <i data-lucide="list-tree" class="w-5 h-5 text-indigo-500"></i> ไทม์ไลน์การทำงาน (Timeline)
+                    </h2>
+                    <div id="timelineList" class="space-y-6">
+                        <!-- Timeline entries loaded here -->
+                        <div class="animate-pulse space-y-6">
+                            <div class="flex gap-4 border-l-2 border-slate-100 pl-4 ml-2">
+                                <div class="w-4 h-4 rounded-full bg-slate-100 -ml-[25px]"></div>
+                                <div class="flex-1 h-10 bg-slate-50 rounded-xl"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Status Edit Modal Placeholder -->
+    <div id="statusModal" class="modal-overlay hidden">
+        <div class="modal-content max-w-sm shadow-2xl overflow-hidden anim-pop">
+            <div class="p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-4">อัปเดตสถานะงาน</h3>
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">สถานะปัจจุบัน</label>
+                    <select id="newStatus" class="form-input w-full">
+                        <option value="Open">เปิดงาน (Open)</option>
+                        <option value="In Progress">กำลังดำเนินการ (In Progress)</option>
+                        <option value="On Hold">พักงาน (On Hold)</option>
+                        <option value="Resolved">เสร็จสิ้น (Resolved)</option>
+                        <option value="Closed">ปิดเคส (Closed)</option>
+                    </select>
+                </div>
+                <div class="mt-6 flex gap-3">
+                    <button onclick="toggleEditStatus()" class="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl">ยกเลิก</button>
+                    <button onclick="saveStatus()" class="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20">บันทึก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="/assets/js/app.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const ticketId = urlParams.get('id');
+
+        if (!ticketId) {
+            window.location.replace('/tickets.html');
+        }
+
+        async function loadTicketDetail() {
+            try {
+                const response = await apiFetch(`/api/tickets?action=getDetail&id=${ticketId}`);
+                if (!response.ok) throw new Error('Failed to load ticket');
+                const t = await response.json();
+
+                // Render Info
+                document.getElementById('ticketSubject').innerText = t.subject;
+                document.getElementById('ticketDescription').innerText = t.description || 'ไม่มีรายละเอียดเพิ่มเติม';
+                document.getElementById('reporterName').innerText = t.reporter_name;
+                document.getElementById('createdAt').innerText = new Date(t.created_at).toLocaleString('th-TH');
+                
+                const statusEl = document.getElementById('ticketStatus');
+                statusEl.innerText = t.status;
+                statusEl.className = ui.getBadgeClass('status', t.status);
+
+                const pEl = document.getElementById('ticketPriority');
+                pEl.innerText = t.priority;
+                pEl.className = ui.getBadgeClass('priority', t.priority);
+                
+                // Asset Info
+                if (t.asset_id) {
+                    document.getElementById('assetTag').innerText = t.asset_tag;
+                    document.getElementById('assetName').innerText = t.asset_name;
+                    document.getElementById('assetInfo').onclick = () => window.location.href = `/asset-detail.html?id=${t.asset_id}`;
+                } else {
+                    document.getElementById('assetInfo').innerHTML = '<p class="text-xs text-slate-400 italic">ไม่ระบุทรัพย์สิน</p>';
+                }
+
+                // Tech Info
+                document.getElementById('assignedTech').innerText = t.technician_name || 'รอมอบหมาย';
+                document.getElementById('techInitial').innerText = (t.technician_name || '?').charAt(0);
+
+                // Load Timeline from Logs
+                loadTicketTimeline();
+            } catch (error) {
+                console.error(error);
+                notify.error('ไม่สามารถโหลดข้อมูลได้');
+            }
+        }
+
+        async function loadTicketTimeline() {
+             try {
+                // Optimized: Filter by target_id at database level
+                const response = await apiFetch(`/api/logs?module=Tickets&target_id=${ticketId}&limit=20`, { silent: true });
+                if (!response.ok) return;
+                const logs = await response.json();
+                
+                const timeline = document.getElementById('timelineList');
+                
+                if (logs.length > 0) {
+                    timeline.innerHTML = logs.map((l, i) => `
+                        <div class="flex gap-4 relative ${i === logs.length - 1 ? '' : 'pb-8 border-l-2 border-slate-100 ml-2 pl-6'}">
+                             <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-indigo-400 z-10"></div>
+                             <div class="flex-1">
+                                <p class="text-sm font-bold text-slate-800">${l.action} ${l.module}</p>
+                                <p class="text-xs text-slate-500 mt-1">
+                                    อัปเดตสถานะเป็น <span class="${ui.getBadgeClass('status', l.details.status || 'ดำเนินการ')}">${l.details.status || 'กำลังดำเนินการ'}</span>
+                                </p>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <div class="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[8px] font-bold text-slate-500">${(l.user_name || 'S').charAt(0)}</div>
+                                    <span class="text-[10px] text-slate-400 font-medium">${l.user_name || 'System'} • ${new Date(l.created_at).toLocaleString('th-TH')}</span>
+                                </div>
+                             </div>
+                        </div>
+                    `).join('');
+                } else {
+                     timeline.innerHTML = '<p class="text-center py-10 text-slate-400 text-sm italic">ไม่มีประวัติการแจ้งซ่อม</p>';
+                }
+            } catch (err) {}
+        }
+
+        function toggleEditStatus() {
+            const modal = document.getElementById('statusModal');
+            modal.classList.toggle('hidden');
+        }
+
+        async function saveStatus() {
+            const status = document.getElementById('newStatus').value;
+             try {
+                const response = await apiFetch(`/api/tickets`, {
+                    method: 'POST',
+                    body: JSON.stringify({ id: ticketId, status, subject: document.getElementById('ticketSubject').innerText })
+                });
+                if (response.ok) {
+                    notify.success('อัปเดตสถานะสำเร็จ');
+                    toggleEditStatus();
+                    loadTicketDetail();
+                }
+            } catch (err) {
+                notify.error('เกิดข้อผิดพลาด');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            ui.renderHeader('รายละเอียดการแจ้งซ่อม', true);
+            loadTicketDetail();
+        });
+    </script>
+</body>
+</html>

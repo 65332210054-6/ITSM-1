@@ -1,340 +1,4 @@
-<!DOCTYPE html>
-<html lang="th" class="h-full bg-slate-50">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>จัดการผู้ใช้งาน | ITSM Admin</title>
-    <script>
-        if (!localStorage.getItem('token')) {
-            window.location.replace('/login.html');
-        }
-    </script>
-    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.454.0/lucide.min.css" rel="stylesheet">
-    <!-- Choices.js CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
-    <link rel="stylesheet" href="/assets/css/styles.css">
-</head>
-<body class="h-full flex overflow-hidden">
-    <!-- Mobile Sidebar Overlay -->
-    <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden transition-opacity lg:hidden"></div>
-
-    <!-- Sidebar Container (Client-side rendered) -->
-    <div id="sidebar-container" class="lg:static"></div>
-
-    <!-- Main Content -->
-    <div class="flex-1 flex flex-col overflow-hidden">
-        <!-- Header Container (Client-side rendered) -->
-        <div id="header-container"></div>
-
-        <main class="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-10 bg-slate-50/50">
-            <div class="max-w-6xl mx-auto space-y-6 sm:space-y-10">
-                <!-- Role Summary Panel -->
-                <div id="roleSummaryContainer" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 hidden">
-                    <!-- Dynamic Stat Cards will be injected here -->
-                </div>
-
-                <!-- Action Bar: Search and Add User -->
-                <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
-                    <div class="relative w-full md:w-96 flex gap-2">
-                        <div class="relative flex-1">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                                <i data-lucide="search" class="w-5 h-5"></i>
-                            </div>
-                            <input type="text" id="userSearch" placeholder="ค้นหาชื่อ หรืออีเมลพนักงาน..." 
-                                class="block w-full pl-12 pr-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all shadow-sm bg-white">
-                        </div>
-                        <button id="exportUsersBtn" class="p-3 bg-white border border-slate-200 rounded-2xl text-slate-600 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm group" title="ส่งออก CSV">
-                            <i data-lucide="download" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
-                        </button>
-                    </div>
-                    
-                    <div id="addUserBtnContainer" class="w-full md:w-auto">
-                        <button onclick="openAddModal()" class="w-full md:w-auto btn-primary">
-                            <i data-lucide="user-plus" class="w-5 h-5"></i> เพิ่มผู้ใช้งานใหม่
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Filter Bar -->
-                <div id="filterBarContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-white p-4 rounded-3xl shadow-sm border border-slate-100">
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1">บทบาท</label>
-                        <select id="filterRole" class="form-input text-sm">
-                            <option value="">ทั้งหมด (All Roles)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1">สาขา</label>
-                        <select id="filterBranch" class="form-input text-sm">
-                            <option value="">ทั้งหมด (All Branches)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1">แผนก</label>
-                        <select id="filterDept" class="form-input text-sm">
-                            <option value="">ทั้งหมด (All Departments)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-1">สถานะ</label>
-                        <select id="filterStatus" class="form-input text-sm">
-                            <option value="">ทั้งหมด (All Status)</option>
-                            <option value="active">ใช้งานปกติ</option>
-                            <option value="inactive">ระงับการใช้งาน</option>
-                            <option value="suspended">หยุดใช้งานชั่วคราว</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse min-w-[600px]">
-                            <thead>
-                                <tr class="bg-slate-50 border-b border-slate-200">
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">ชื่อ-นามสกุล</th>
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">อีเมล</th>
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">บทบาท</th>
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">สาขา</th>
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">แผนก</th>
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">สถานะ</th>
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">แก้ไข</th>
-                                </tr>
-                            </thead>
-                            <tbody id="userTableBody" class="divide-y divide-slate-100">
-                                <script>document.write(`<tr><td colspan="7" class="px-6 py-10"></td></tr>`);</script>
-                            </tbody>
-                        </table>
-                    </div>
-                    <!-- Pagination Footer -->
-                    <div class="pagination-footer">
-                        <div class="flex items-center gap-4">
-                            <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                แสดง <span id="showingStart">0</span> - <span id="showingEnd">0</span> จาก <span id="totalItems">0</span> รายการ
-                            </div>
-                            <div class="flex items-center gap-2 border-l border-slate-200 pl-4">
-                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">แสดงหน้าละ:</span>
-                                <select id="itemsPerPageSelect">
-                                    <option value="10">10</option>
-                                    <option value="20">20</option>
-                                    <option value="30">30</option>
-                                    <option value="50">50</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button id="prevPage" class="pagination-btn-nav" disabled>
-                                <i data-lucide="chevron-left" class="w-5 h-5"></i>
-                            </button>
-                            <div id="pageNumbers" class="flex items-center gap-1">
-                                <!-- Page numbers will be injected here -->
-                            </div>
-                            <button id="nextPage" class="pagination-btn-nav" disabled>
-                                <i data-lucide="chevron-right" class="w-5 h-5"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Edit User Modal -->
-    <div id="editModal" class="modal-overlay hidden">
-        <div class="modal-content max-w-lg animate-in fade-in zoom-in duration-200">
-            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-3xl">
-                <h2 class="text-xl font-bold text-slate-800 tracking-tight">แก้ไขข้อมูลผู้ใช้งาน</h2>
-                <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-            <form id="editForm" class="p-8 space-y-5">
-                <input type="hidden" id="editUserId">
-                <div>
-                    <label class="form-label">ชื่อ-นามสกุล</label>
-                    <input type="text" id="editName" required class="form-input">
-                </div>
-                <div>
-                    <label class="form-label">ชื่อผู้ใช้งาน / อีเมล</label>
-                    <input type="text" id="editEmail" required class="form-input">
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="form-label">บทบาท</label>
-                        <select id="editRole" required class="form-input">
-                            <!-- Roles populated by JS -->
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label">สถานะการใช้งาน</label>
-                        <select id="editStatus" class="form-input">
-                            <option value="active">ใช้งานปกติ</option>
-                            <option value="inactive">ระงับการใช้งาน</option>
-                            <option value="suspended">หยุดใช้งานชั่วคราว</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                    <div>
-                        <label class="form-label">สาขา</label>
-                        <select id="editBranch" class="form-input" onchange="cascadeDepartments('edit')">
-                            <option value="">ไม่มีสาขา</option>
-                            <!-- Branches populated by JS -->
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label">แผนก</label>
-                        <select id="editDept" class="form-input">
-                            <option value="">ไม่มีแผนก</option>
-                            <!-- Departments populated by JS -->
-                        </select>
-                    </div>
-                </div>
-                <div class="pt-4 flex gap-3">
-                    <button type="button" onclick="closeEditModal()" class="flex-1 px-6 py-3 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all active:scale-95">ยกเลิก</button>
-                    <button type="submit" class="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all active:scale-95 flex items-center justify-center gap-2">
-                        <i data-lucide="save" class="w-5 h-5"></i> บันทึกการแก้ไข
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Add User Modal -->
-    <div id="addModal" class="modal-overlay hidden">
-        <div class="modal-content max-w-xl animate-in fade-in zoom-in duration-200">
-            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-3xl">
-                <h2 class="text-xl font-bold text-slate-800 tracking-tight">เพิ่มผู้ใช้งานใหม่</h2>
-                <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-            
-            <!-- Tabs -->
-            <div class="flex border-b border-slate-100">
-                <button onclick="switchAddTab('manual')" id="tabManual" class="flex-1 py-4 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 transition-all">
-                    <i data-lucide="user" class="inline-block w-4 h-4 mr-2"></i> เพิ่มทีละคน
-                </button>
-                <button onclick="switchAddTab('import')" id="tabImport" class="flex-1 py-4 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-600 transition-all">
-                    <i data-lucide="file-up" class="inline-block w-4 h-4 mr-2"></i> Import ไฟล์ CSV
-                </button>
-            </div>
-
-            <!-- Manual Form -->
-            <form id="addManualForm" class="p-8 space-y-5">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div>
-                        <label class="form-label">ชื่อ-นามสกุล</label>
-                        <input type="text" id="addName" required class="form-input" placeholder="สมชาย ใจดี">
-                    </div>
-                    <div>
-                        <label class="form-label">ชื่อผู้ใช้งาน / อีเมล</label>
-                        <input type="text" id="addEmail" required class="form-input" placeholder="somchai.j">
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                    <div>
-                        <label class="form-label">บทบาท</label>
-                        <select id="addRole" required class="form-input">
-                            <!-- Roles populated by JS -->
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label">สาขา</label>
-                        <select id="addBranch" class="form-input">
-                            <option value="">ไม่มีสาขา</option>
-                            <!-- Branches populated by JS -->
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label">แผนก</label>
-                        <select id="addDept" class="form-input">
-                            <option value="">ไม่มีแผนก</option>
-                            <!-- Departments populated by JS -->
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="form-label">รหัสผ่านเริ่มต้น</label>
-                    <div class="relative group">
-                        <input type="password" id="addPassword" required class="block w-full px-4 pr-12 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all" placeholder="••••••••">
-                        <button type="button" id="toggleAddPassword" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-indigo-600 transition-colors">
-                            <i data-lucide="eye" id="addEyeIcon" class="h-5 w-5"></i>
-                        </button>
-                    </div>
-                    <p class="mt-2 text-[10px] text-slate-400 font-medium italic">* ผู้ใช้ควรเปลี่ยนรหัสผ่านทันทีหลังเข้าใช้งานครั้งแรก</p>
-                </div>
-                <div class="pt-4 flex gap-3">
-                    <button type="button" onclick="closeAddModal()" class="flex-1 px-6 py-3 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all active:scale-95">ยกเลิก</button>
-                    <button type="submit" class="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all active:scale-95 flex items-center justify-center gap-2">
-                        <i data-lucide="user-plus" class="w-5 h-5"></i> เพิ่มผู้ใช้งาน
-                    </button>
-                </div>
-            </form>
-
-            <!-- Import Form -->
-            <div id="addImportSection" class="p-8 hidden space-y-6">
-                <div class="border-2 border-dashed border-slate-200 rounded-3xl p-10 text-center space-y-4 hover:border-indigo-300 transition-colors bg-slate-50/50">
-                    <div class="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 mx-auto mb-4">
-                        <i data-lucide="upload-cloud" class="w-8 h-8 text-indigo-500"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-slate-800">เลือกไฟล์ CSV เพื่อ Import</h3>
-                        <p class="text-xs text-slate-400 mt-1">ขนาดไฟล์ไม่เกิน 2MB (สูงสุด 100 รายชื่อต่อครั้ง)</p>
-                    </div>
-                    <input type="file" id="csvFileInput" accept=".csv" class="hidden">
-                    <button onclick="document.getElementById('csvFileInput').click()" class="bg-white border border-slate-200 px-6 py-3 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
-                        เลือกไฟล์จากเครื่อง
-                    </button>
-                </div>
-                
-                <div class="bg-indigo-50/50 rounded-2xl p-5 border border-indigo-100">
-                    <h4 class="text-sm font-bold text-indigo-900 flex items-center gap-2 mb-3">
-                        <i data-lucide="info" class="w-4 h-4"></i> คำแนะนำการ Import
-                    </h4>
-                    <ul class="text-xs text-indigo-700 space-y-2 leading-relaxed">
-                        <li>1. ดาวน์โหลด Template และกรอกข้อมูลให้ครบถ้วน</li>
-                        <li>2. คอลัมน์ที่จำเป็น: <span class="font-bold">name, email, role, branch, department, password</span></li>
-                        <li>3. ชื่อบทบาท สาขา และแผนกต้องสะกดให้ตรงกับที่มีในระบบ</li>
-                    </ul>
-                    <button onclick="downloadCSVTemplate()" class="mt-4 text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group">
-                        ดาวน์โหลดไฟล์ Template <i data-lucide="download" class="w-3 h-3 group-hover:translate-y-0.5 transition-transform"></i>
-                    </button>
-                </div>
-
-                <div id="importPreview" class="hidden space-y-4">
-                    <h4 class="text-sm font-bold text-slate-800">รายการที่ตรวจพบ (<span id="importCount">0</span> รายการ)</h4>
-                    <div class="max-h-40 overflow-y-auto rounded-xl border border-slate-100 text-[10px]">
-                        <table class="w-full text-left">
-                            <thead class="bg-slate-50 sticky top-0">
-                                <tr>
-                                    <th class="px-3 py-2 font-bold text-slate-500">ชื่อ</th>
-                                    <th class="px-3 py-2 font-bold text-slate-500">อีเมล</th>
-                                    <th class="px-3 py-2 font-bold text-slate-500">สถานะ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="importPreviewBody" class="divide-y divide-slate-50"></tbody>
-                        </table>
-                    </div>
-                    <div class="flex gap-3">
-                        <button onclick="resetImport()" class="flex-1 px-6 py-3 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all">ยกเลิก</button>
-                        <button onclick="processBulkImport()" id="confirmImportBtn" class="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all flex items-center justify-center gap-2">
-                            ยืนยันการนำเข้า
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Choices.js JS -->
-    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-    <script src="/assets/js/app.js"></script>
-    <script>
-        // UI Elements
+// UI Elements
         const editModal = document.getElementById('editModal');
         const editForm = document.getElementById('editForm');
         const addModal = document.getElementById('addModal');
@@ -538,26 +202,10 @@
             e.preventDefault();
             const name = document.getElementById('addName').value;
             const email = document.getElementById('addEmail').value;
+            const role_id = document.getElementById('addRole').value;
+            const branch_id = document.getElementById('addBranch').value || null;
+            const department_id = document.getElementById('addDept').value || null;
             const password = document.getElementById('addPassword').value;
-
-            // Read from Choices.js instances first (more reliable), fallback to native select
-            const getChoiceVal = (key) => {
-                const inst = ui.choicesInstances[key];
-                if (inst) {
-                    const val = inst.getValue(true);
-                    return Array.isArray(val) ? val[0] : val;
-                }
-                return document.getElementById(key)?.value || '';
-            };
-
-            const role_id       = getChoiceVal('addRole') || null;
-            const branch_id     = getChoiceVal('addBranch') || null;
-            const department_id = getChoiceVal('addDept') || null;
-
-            if (!role_id) {
-                notify.error('กรุณาเลือกบทบาท (Role)');
-                return;
-            }
 
             try {
                 const response = await apiFetch('/api/users?action=create', {
@@ -698,26 +346,10 @@
             const id = document.getElementById('editUserId').value;
             const name = document.getElementById('editName').value;
             const email = document.getElementById('editEmail').value;
-
-            // Read from Choices.js instances first (more reliable), fallback to native select
-            const getChoiceVal = (key) => {
-                const inst = ui.choicesInstances[key];
-                if (inst) {
-                    const val = inst.getValue(true);
-                    return Array.isArray(val) ? val[0] : val;
-                }
-                return document.getElementById(key)?.value || '';
-            };
-
-            const role_id    = getChoiceVal('editRole') || null;
-            const branch_id  = getChoiceVal('editBranch') || null;
-            const department_id = getChoiceVal('editDept') || null;
-            const status     = getChoiceVal('editStatus') || 'active';
-
-            if (!role_id) {
-                notify.error('กรุณาเลือกบทบาท (Role)');
-                return;
-            }
+            const role_id = document.getElementById('editRole').value;
+            const branch_id = document.getElementById('editBranch').value || null;
+            const department_id = document.getElementById('editDept').value || null;
+            const status = document.getElementById('editStatus').value;
 
             try {
                 const response = await apiFetch('/api/users', {
@@ -729,7 +361,6 @@
                     notify.success('แก้ไขข้อมูลสำเร็จ!');
                     closeEditModal();
                     loadUsers();
-                    ui.verifySession(); // Sync local session if we edited ourselves
                 } else {
                     const err = await response.json();
                     notify.error(err.message || 'เกิดข้อผิดพลาด');
@@ -741,10 +372,20 @@
 
         // Data Loading
         async function loadUsers() {
-            const tableBodyId = 'userTableBody';
-            ui.renderTableLoading(tableBodyId, 7, 'กำลังโหลดข้อมูล...');
-            const tableBody = document.getElementById(tableBodyId);
+            const tableBody = document.getElementById('userTableBody');
             if (!tableBody) return;
+
+            // Show loading state
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="px-6 py-10 text-center text-slate-400">
+                        <div class="flex flex-col items-center justify-center gap-3">
+                            <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                            <p class="font-medium">กำลังโหลดข้อมูล...</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
 
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             const isAdmin = user.role === 'Admin';
@@ -985,6 +626,3 @@
                 notify.success('กำลังดาวน์โหลดข้อมูล...');
             });
         });
-    </script>
-</body>
-</html>

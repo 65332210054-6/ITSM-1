@@ -1,146 +1,4 @@
-<!DOCTYPE html>
-<html lang="th" class="h-full bg-slate-50">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แดชบอร์ด | ITSM Admin</title>
-    <script>
-        if (!localStorage.getItem('token')) {
-            window.location.replace('/login.html');
-        }
-    </script>
-    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.454.0/lucide.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body class="h-full flex overflow-hidden">
-    <!-- Mobile Sidebar Overlay -->
-    <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden transition-opacity lg:hidden"></div>
-
-    <!-- Sidebar Container (Client-side rendered) -->
-    <div id="sidebar-container" class="lg:static"></div>
-
-    <!-- Main Content -->
-    <div class="flex-1 flex flex-col overflow-hidden">
-        <!-- Header Container (Client-side rendered) -->
-        <div id="header-container"></div>
-
-        <!-- Main Area -->
-        <main id="app" class="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-10 bg-slate-50/50">
-            <div class="max-w-6xl mx-auto space-y-6 sm:space-y-10">
-                <!-- Welcome Card -->
-                <div class="bg-gradient-to-br from-indigo-600 to-blue-500 rounded-2xl sm:rounded-3xl shadow-2xl shadow-indigo-600/20 p-6 sm:p-12 text-white relative overflow-hidden">
-                    <div class="relative z-10 mb-8 sm:mb-12">
-                        <h2 class="text-2xl sm:text-4xl font-extrabold tracking-tight">ยินดีต้อนรับเข้าสู่ระบบ</h2>
-                        <p class="text-indigo-100 mt-2 sm:mt-4 text-sm sm:text-lg font-medium opacity-90">สวัสดีคุณ <span id="welcomeName" class="text-white underline underline-offset-4 decoration-indigo-300">...</span></p>
-                    </div>
-
-                    <div id="welcomeGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 relative z-10">
-                        <div id="btnUsers" class="p-6 sm:p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 transition-all cursor-pointer group hidden" onclick="window.location.href='/users.html'">
-                            <div class="flex items-center gap-4 mb-3">
-                                <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <i data-lucide="users" class="h-5 w-5 text-white"></i>
-                                </div>
-                                <h3 class="font-bold text-white text-lg sm:text-xl">จัดการผู้ใช้งาน</h3>
-                            </div>
-                            <p class="text-indigo-100 text-xs sm:text-sm font-medium opacity-80 leading-relaxed">เพิ่ม แก้ไข หรือระงับสิทธิ์การใช้งานพนักงาน</p>
-                        </div>
-                        <div id="btnAssets" class="p-6 sm:p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 transition-all cursor-pointer group hidden" onclick="window.location.href='/assets.html'">
-                            <div class="flex items-center gap-4 mb-3">
-                                <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <i data-lucide="monitor" class="h-5 w-5 text-white"></i>
-                                </div>
-                                <h3 class="font-bold text-white text-lg sm:text-xl">จัดการทรัพย์สิน</h3>
-                            </div>
-                            <p class="text-indigo-100 text-xs sm:text-sm font-medium opacity-80 leading-relaxed">ดูแลรักษารายการคอมพิวเตอร์และอุปกรณ์ไอที</p>
-                        </div>
-                        <div id="btnTickets" class="p-6 sm:p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 transition-all cursor-pointer group hidden" onclick="window.location.href='/tickets.html'">
-                            <div class="flex items-center gap-4 mb-3">
-                                <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <i data-lucide="ticket" class="h-5 w-5 text-white"></i>
-                                </div>
-                                <h3 class="font-bold text-white text-lg sm:text-xl">ระบบแจ้งซ่อม</h3>
-                            </div>
-                            <p class="text-indigo-100 text-xs sm:text-sm font-medium opacity-80 leading-relaxed">ติดตามงานซ่อมและบริการด้านไอทีทั้งหมด</p>
-                        </div>
-                        <div id="btnSettings" class="p-6 sm:p-8 bg-slate-900/10 backdrop-blur-md border border-white/10 rounded-2xl hover:bg-slate-900/20 transition-all cursor-pointer group hidden" onclick="window.location.href='/settings.html'">
-                            <div class="flex items-center gap-4 mb-3">
-                                <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <i data-lucide="settings" class="h-5 w-5 text-white"></i>
-                                </div>
-                                <h3 class="font-bold text-white text-lg sm:text-xl">ตั้งค่าระบบ</h3>
-                            </div>
-                            <p class="text-indigo-100 text-xs sm:text-sm font-medium opacity-80 leading-relaxed">จัดการโครงสร้างสาขา และแผนกต่างๆ</p>
-                        </div>
-                    </div>
-                    <!-- Decorative Circle -->
-                    <div class="absolute -right-20 -bottom-20 w-40 sm:w-80 h-40 sm:h-80 bg-white/10 rounded-full blur-3xl"></div>
-                </div>
-
-                <!-- Simple Stats -->
-                <div id="statsGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    <div class="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 animate-pulse">
-                        <div class="h-10 w-10 bg-slate-100 rounded-xl mb-4"></div>
-                        <div class="h-4 w-20 bg-slate-100 rounded mb-2"></div>
-                        <div class="h-8 w-12 bg-slate-100 rounded"></div>
-                    </div>
-                </div>
-
-                <!-- Charts & Activity Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Charts (Col Span 2) -->
-                    <div class="lg:col-span-2 space-y-6">
-                        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                            <div class="flex items-center justify-between mb-6">
-                                <h3 class="font-bold text-slate-800">ทรัพย์สินแยกตามประเภท (Asset categories)</h3>
-                                <i data-lucide="pie-chart" class="text-slate-400 w-5 h-5"></i>
-                            </div>
-                            <div class="h-[300px] flex items-center justify-center">
-                                <canvas id="categoryChart"></canvas>
-                            </div>
-                        </div>
-                        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                            <div class="flex items-center justify-between mb-6">
-                                <h3 class="font-bold text-slate-800">แนวโน้มการแจ้งซ่อม (6 เดือนล่าสุด)</h3>
-                                <i data-lucide="trending-up" class="text-slate-400 w-5 h-5"></i>
-                            </div>
-                            <div class="h-[300px] flex items-center justify-center">
-                                <canvas id="trendChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Activity Feed (Col Span 1) -->
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="font-bold text-slate-800">กิจกรรมล่าสุด (Recent Activity)</h3>
-                            <i data-lucide="activity" class="text-slate-400 w-5 h-5"></i>
-                        </div>
-                        <div id="activityFeed" class="space-y-4">
-                            <!-- Activities will be loaded here -->
-                            <div class="animate-pulse space-y-4">
-                                <div class="flex gap-3">
-                                    <div class="w-8 h-8 bg-slate-100 rounded-full"></div>
-                                    <div class="flex-1 space-y-2">
-                                        <div class="h-3 bg-slate-100 rounded w-1/2"></div>
-                                        <div class="h-2 bg-slate-50 rounded w-1/4"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <button onclick="window.location.href='/settings.html'" class="w-full mt-6 py-3 text-xs font-bold text-slate-400 hover:text-indigo-600 border border-dashed border-slate-200 rounded-xl hover:border-indigo-200 transition-all">ดูประวัติทั้งหมด</button>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="/assets/js/app.js"></script>
-    <script>
-        // Load Dashboard Stats
+// Load Dashboard Stats
         async function loadDashboardStats() {
             const statsGrid = document.getElementById('statsGrid');
             try {
@@ -334,20 +192,20 @@
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
                 const isAdmin = user.role === 'Admin';
 
-                // Update Welcome Message (Wait for elements to exist)
-                const welcomeName = document.getElementById('welcomeName');
-                if (welcomeName) welcomeName.innerText = user.name || 'User';
-
-                // Show/Hide buttons based on modules
+                // Show/Hide buttons based on modules with centralized ui.checkAccess
                 const btnUsers = document.getElementById('btnUsers');
                 const btnAssets = document.getElementById('btnAssets');
                 const btnTickets = document.getElementById('btnTickets');
                 const btnSettings = document.getElementById('btnSettings');
 
                 if (btnUsers && ui.checkAccess('module_users_enabled', settings, user)) btnUsers.classList.remove('hidden');
-                if (btnAssets && ui.checkAccess('module_assets_enabled', settings, user)) btnAssets.classList.remove('hidden'); 
+                if (btnAssets && ui.checkAccess('module_assets_enabled', settings, user)) btnAssets.classList.remove('hidden', 'md:flex'); // Restore flow
                 if (btnTickets && ui.checkAccess('module_tickets_enabled', settings, user)) btnTickets.classList.remove('hidden');
                 if (btnSettings && isAdmin) btnSettings.classList.remove('hidden');
+
+                // Adjust grid based on visible buttons
+                const welcomeGrid = btnUsers.parentElement;
+                welcomeGrid.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-8 sm:mt-12 relative z-10";
 
                 loadDashboardStats();
                 loadDashboardCharts();
@@ -358,6 +216,3 @@
         }
 
         document.addEventListener('DOMContentLoaded', initDashboard);
-    </script>
-</body>
-</html>

@@ -22,25 +22,8 @@
 
     <!-- Main Content -->
     <div class="flex-1 flex flex-col overflow-hidden">
-        <header class="page-header">
-            <div class="flex items-center gap-4">
-                <button id="openSidebar" class="lg:hidden text-slate-500 hover:text-indigo-600 p-2 rounded-xl hover:bg-slate-50 transition-all"><i data-lucide="menu" class="h-6 w-6"></i></button>
-                <h1 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">ข้อมูลส่วนตัว</h1>
-            </div>
-            <div class="flex items-center gap-2 sm:gap-4">
-                <div class="text-right hidden md:block">
-                    <p id="userName" class="text-sm font-bold text-slate-800 leading-tight">Loading...</p>
-                    <p id="userRole" class="text-[10px] text-slate-500 font-bold uppercase tracking-wider leading-tight">System Admin</p>
-                    <p id="currentTime" class="text-[10px] font-semibold text-slate-500 mt-0.5">30/03/2026</p>
-                </div>
-                <button class="flex items-center gap-3 p-1 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
-                    <div id="userAvatar" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-500/20">U</div>
-                </button>
-                <button id="logoutBtn" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all group" title="ออกจากระบบ">
-                    <i data-lucide="log-out" class="h-5 w-5 group-hover:translate-x-0.5 transition-transform"></i>
-                </button>
-            </div>
-        </header>
+        <!-- Header Container (Client-side rendered) -->
+        <div id="header-container"></div>
 
         <main class="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-10 bg-slate-50/50">
             <div class="max-w-3xl mx-auto">
@@ -71,9 +54,25 @@
                                     <label class="form-label">ชื่อผู้ใช้งาน / อีเมล</label>
                                     <input type="text" id="profileEmail" required class="form-input">
                                 </div>
+                                <div>
+                                    <label class="form-label">ตำแหน่ง / บทบาท</label>
+                                    <input type="text" id="profileRole" readonly class="form-input bg-slate-50 text-slate-500 cursor-not-allowed" title="แก้ไขได้โดยผู้ดูแลระบบเท่านั้น">
+                                </div>
+                                <div>
+                                    <label class="form-label">เบอร์โทรศัพท์</label>
+                                    <input type="text" id="profilePhone" class="form-input" placeholder="0xxxxxxxx">
+                                </div>
+                                <div>
+                                    <label class="form-label">สาขา</label>
+                                    <input type="text" id="profileBranch" readonly class="form-input bg-slate-50 text-slate-500 cursor-not-allowed">
+                                </div>
+                                <div>
+                                    <label class="form-label">แผนก</label>
+                                    <input type="text" id="profileDept" readonly class="form-input bg-slate-50 text-slate-500 cursor-not-allowed">
+                                </div>
                             </div>
 
-                            <div>
+                            <div class="pt-4 border-t border-slate-100">
                                 <label class="form-label">เปลี่ยนรหัสผ่านใหม่ (ปล่อยว่างหากไม่ต้องการเปลี่ยน)</label>
                                 <div class="relative">
                                     <input type="password" id="profilePassword" class="form-input" placeholder="••••••••">
@@ -81,7 +80,7 @@
                             </div>
 
                             <div class="pt-4 border-t border-slate-100 flex justify-end">
-                                <button type="submit" class="bg-indigo-600 text-white px-8 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all active:scale-95 flex items-center gap-2">
+                                <button type="submit" class="bg-indigo-600 text-white px-8 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all active:scale-95 flex items-center gap-2 cursor-pointer">
                                     <i data-lucide="save" class="w-5 h-5"></i> บันทึกข้อมูล
                                 </button>
                             </div>
@@ -96,18 +95,37 @@
     <script src="/assets/js/app.js"></script>
     <script>
 
-        // Load Current Profile
-        function loadProfile() {
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            document.getElementById('profileName').value = user.name || '';
-            document.getElementById('profileEmail').value = user.email || '';
-            
-            if (user.avatar_url) {
-                document.getElementById('profileAvatarLarge').innerHTML = `<img src="${user.avatar_url}" class="w-full h-full rounded-2xl object-cover">`;
+        // Load Current Profile from API for fresh data
+        async function loadProfile() {
+            try {
+                const response = await apiFetch('/api/profile');
+                if (!response.ok) throw new Error('Failed to fetch');
+                const { user } = await response.json();
+                
+                document.getElementById('profileName').value = user.name || '';
+                document.getElementById('profileEmail').value = user.email || '';
+                document.getElementById('profilePhone').value = user.phone || '';
+                document.getElementById('profileRole').value = user.role || user.role_name || 'User';
+                document.getElementById('profileBranch').value = user.branch_name || '-';
+                document.getElementById('profileDept').value = user.department_name || '-';
+                
+                if (user.avatar_url) {
+                    document.getElementById('profileAvatarLarge').innerHTML = `<img src="${user.avatar_url}" class="w-full h-full rounded-2xl object-cover">`;
+                }
+                
+                // Also update header if data changed
+                localStorage.setItem('user', JSON.stringify({ ...JSON.parse(localStorage.getItem('user') || '{}'), ...user }));
+            } catch (err) {
+                console.error('Load Profile Error:', err);
+                // Fallback to LocalStorage
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                document.getElementById('profileName').value = user.name || '';
+                document.getElementById('profileEmail').value = user.email || '';
+                document.getElementById('profilePhone').value = user.phone || '';
             }
         }
 
-        // Handle Avatar Upload (Base64 for simplicity in this demo)
+        // Handle Avatar Upload
         document.getElementById('avatarInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
@@ -115,7 +133,6 @@
                 reader.onload = function(event) {
                     const base64 = event.target.result;
                     document.getElementById('profileAvatarLarge').innerHTML = `<img src="${base64}" class="w-full h-full rounded-2xl object-cover">`;
-                    // In a real app, you'd upload this to a server/S3
                 };
                 reader.readAsDataURL(file);
             }
@@ -127,6 +144,7 @@
             const userObj = JSON.parse(localStorage.getItem('user') || '{}');
             const name = document.getElementById('profileName').value;
             const email = document.getElementById('profileEmail').value;
+            const phone = document.getElementById('profilePhone').value;
             const password = document.getElementById('profilePassword').value;
             const avatarImg = document.querySelector('#profileAvatarLarge img');
             const avatarUrl = avatarImg ? avatarImg.src : null;
@@ -134,12 +152,12 @@
             try {
                 const response = await apiFetch('/api/profile', {
                     method: 'POST',
-                    body: JSON.stringify({ id: userObj.id, name, email, password, avatar_url: avatarUrl })
+                    body: JSON.stringify({ id: userObj.id, name, email, phone, password, avatar_url: avatarUrl })
                 });
 
                 if (response.ok) {
                     const result = await response.json();
-                    localStorage.setItem('user', JSON.stringify(result.user));
+                    localStorage.setItem('user', JSON.stringify({ ...userObj, ...result.user }));
                     notify.success('บันทึกข้อมูลส่วนตัวสำเร็จ!');
                     setTimeout(() => window.location.reload(), 1500);
                 } else {
