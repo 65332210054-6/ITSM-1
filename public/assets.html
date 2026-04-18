@@ -132,13 +132,7 @@
                     <div>
                         <label class="form-label">หมวดหมู่</label>
                         <select id="assetCategory" required class="form-input">
-                            <option value="Laptop">Laptop</option>
-                            <option value="Desktop">Desktop</option>
-                            <option value="Monitor">Monitor</option>
-                            <option value="Printer">Printer</option>
-                            <option value="Mobile">Mobile Phone</option>
-                            <option value="Network">Network Device</option>
-                            <option value="Other">Other</option>
+                            <option value="">-- กำลังโหลด --</option>
                         </select>
                     </div>
                     <div>
@@ -207,21 +201,32 @@
         let searchTimer = null;
 
         async function loadInitialData() {
-            // Initialize Choices first
-            ui.initChoices();
-            
+            // Load settings
+            const settings = await ui.getSystemSettings();
+
+            // Check Permissions
+            if (!ui.checkAccess('assets', settings, null, 'create')) {
+                const btn = document.querySelector('button[onclick="openAssetModal()"]');
+                if (btn) btn.classList.add('hidden');
+            }
+            if (!ui.checkAccess('assets', settings, null, 'view')) {
+                document.getElementById('exportAssetsBtn')?.classList.add('hidden');
+            }
+
             // Load main data immediately
             loadAssets();
 
-            // Load meta data in background (silent to ignore 403 if modules are restricted)
+            // Load meta data in background
             try {
                 const results = await Promise.allSettled([
                     apiFetch('/api/users?action=getOptions', { silent: true }),
-                    apiFetch('/api/departments', { silent: true })
+                    apiFetch('/api/departments', { silent: true }),
+                    apiFetch('/api/categories', { silent: true })
                 ]);
                 
                 const userRes = results[0].status === 'fulfilled' ? results[0].value : null;
                 const deptRes = results[1].status === 'fulfilled' ? results[1].value : null;
+                const catRes  = results[2].status === 'fulfilled' ? results[2].value : null;
  
                 if (userRes && userRes.ok) {
                     allUsers = await userRes.json().catch(() => ({ roles: [], branches: [], departments: [] }));
@@ -230,7 +235,6 @@
                     if (userSelect) {
                         userSelect.innerHTML = '<option value="">ไม่มี (Stock)</option>' + 
                             usersArray.map(u => `<option value="${u.id}">${escapeHTML(u.name)}</option>`).join('');
-                        // Re-init Choices
                         ui.initChoices();
                     }
                 }
@@ -241,7 +245,15 @@
                     if (deptSelect) {
                         deptSelect.innerHTML = '<option value="">ไม่มีแผนก</option>' + 
                             allDepts.map(d => `<option value="${d.id}">${escapeHTML(d.name)}</option>`).join('');
-                        // Re-init Choices
+                        ui.initChoices();
+                    }
+                }
+
+                if (catRes && catRes.ok) {
+                    const cats = await catRes.json().catch(() => []);
+                    const catSelect = document.getElementById('assetCategory');
+                    if (catSelect && cats.length > 0) {
+                        catSelect.innerHTML = cats.map(c => `<option value="${escapeHTML(c.name)}">${escapeHTML(c.name)}</option>`).join('');
                         ui.initChoices();
                     }
                 }
@@ -305,6 +317,9 @@
             pagedAssets.forEach(a => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition-colors';
+                
+                const canEdit = ui.checkAccess('assets', null, null, 'edit');
+                
                 tr.innerHTML = `
                     <td class="px-6 py-4">
                         <div class="font-bold text-slate-800 text-sm">${escapeHTML(a.asset_tag)}</div>
@@ -331,9 +346,10 @@
                             <button onclick="window.location.href='/asset-detail.html?id=${a.id}'" class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all active:scale-95" title="ดูรายละเอียด">
                                 <i data-lucide="search" class="w-4 h-4"></i>
                             </button>
+                            ${canEdit ? `
                             <button onclick="editAsset('${a.id}')" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all active:scale-95" title="แก้ไข">
                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
-                            </button>
+                            </button>` : ''}
                         </div>
                     </td>
                 `;
@@ -411,7 +427,12 @@
                 document.getElementById('assetPurchaseDate').value = '';
             }
 
-            document.getElementById('deleteAssetBtn').classList.remove('hidden');
+            const canDelete = ui.checkAccess('assets', null, null, 'delete');
+            if (canDelete) {
+                document.getElementById('deleteAssetBtn').classList.remove('hidden');
+            } else {
+                document.getElementById('deleteAssetBtn').classList.add('hidden');
+            }
             document.getElementById('assetModal').classList.remove('hidden');
         }
 

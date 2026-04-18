@@ -11,7 +11,7 @@ export async function onRequest(context) {
   }
 
   try {
-    const userSession = await checkModuleAccess(context, 'module_assets_enabled');
+    const userSession = await checkModuleAccess(context, 'assets', 'view');
     if (userSession === null) {
       return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
     }
@@ -84,7 +84,13 @@ export async function onRequest(context) {
       }
 
       if (action === "getOptions") {
-        const assets = await sql`SELECT id, asset_tag, name FROM assets ORDER BY asset_tag ASC`;
+        const statusFilter = url.searchParams.get("status") || "";
+        let assets;
+        if (statusFilter) {
+          assets = await sql`SELECT id, asset_tag, name, status FROM assets WHERE status = ${statusFilter} ORDER BY asset_tag ASC`;
+        } else {
+          assets = await sql`SELECT id, asset_tag, name, status FROM assets ORDER BY asset_tag ASC`;
+        }
         return new Response(JSON.stringify(assets), { 
           status: 200,
           headers: { "Content-Type": "application/json" }
@@ -198,14 +204,13 @@ export async function onRequest(context) {
       });
     }
 
-    // 2. Add/Edit/Delete Asset (Admin/Technician only)
+    // 2. Add/Edit/Delete Asset
     if (request.method === "POST") {
-      if (userSession.role_name !== "Admin" && userSession.role_name !== "Technician") {
-        return new Response(JSON.stringify({ message: "Forbidden: Unauthorized to manage assets" }), { status: 403 });
-      }
-
-      // Handle Delete (Doesn't require body)
+      // Handle Delete
       if (action === "delete") {
+        if (!await checkModuleAccess(context, 'assets', 'delete', sql)) {
+          return new Response(JSON.stringify({ message: "Forbidden: No permission to delete assets" }), { status: 403 });
+        }
         const id = url.searchParams.get("id");
         if (!id) return new Response(JSON.stringify({ message: "ID is required" }), { status: 400 });
         await sql`DELETE FROM assets WHERE id = ${id}`;
@@ -214,11 +219,13 @@ export async function onRequest(context) {
       }
       
       const data = await request.json();
-
       const { id, asset_tag, serial_number, name, category, model, status, assigned_to, department_id, purchase_date } = data;
 
       if (id) {
         // Update
+        if (!await checkModuleAccess(context, 'assets', 'edit', sql)) {
+          return new Response(JSON.stringify({ message: "Forbidden: No permission to edit assets" }), { status: 403 });
+        }
         await sql`
           UPDATE assets 
           SET asset_tag = ${asset_tag}, serial_number = ${serial_number}, name = ${name}, 
@@ -230,11 +237,11 @@ export async function onRequest(context) {
         await logAction(sql, userSession.user_id, 'Assets', 'Update', { asset_id: id, asset_tag, name, status });
         return new Response(JSON.stringify({ message: "Asset updated successfully" }), { status: 200 });
       } else {
-        // Create - Check for existing tag
-        const existing = await sql`SELECT id FROM assets WHERE asset_tag = ${asset_tag} LIMIT 1`;
-        if (existing.length > 0) {
-          return new Response(JSON.stringify({ message: "Asset Tag นี้มีอยู่ในระบบแล้ว" }), { status: 400 });
+        // Create
+        if (!await checkModuleAccess(context, 'assets', 'create', sql)) {
+          return new Response(JSON.stringify({ message: "Forbidden: No permission to create assets" }), { status: 403 });
         }
+        // ... (rest of Create logic)
 
         const newId = crypto.randomUUID();
         await sql`

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รายงานและ Export | ITSM Admin</title>
+    <script>
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (!localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        } else if (!['Admin', 'Technician'].includes(user.role)) {
+            window.location.replace('/index.html');
+        }
+    </script>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.454.0/lucide.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <style type="text/tailwindcss">
+        .stat-card { @apply bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow; }
+        .export-card { @apply bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex items-center justify-between hover:border-indigo-200 hover:shadow-md transition-all; }
+        .bar-item { @apply flex items-center gap-3 py-2; }
+        .bar-fill { @apply h-2.5 rounded-full transition-all duration-700; }
+    </style>
+</head>
+<body class="h-full flex overflow-hidden">
+    <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden transition-opacity lg:hidden"></div>
+    <div id="sidebar-container" class="lg:static"></div>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <div id="header-container"></div>
+
+        <main class="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-10 bg-slate-50/50">
+            <div class="max-w-6xl mx-auto space-y-8">
+
+                <!-- Page Header -->
+                <div class="flex items-center justify-end">
+                    <div class="flex items-center gap-2 text-xs text-slate-400 font-medium">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        <span id="lastUpdated">กำลังโหลด...</span>
+                    </div>
+                </div>
+
+                <!-- Summary Stats -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="stat-card col-span-2 lg:col-span-1">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                                <i data-lucide="monitor" class="w-5 h-5"></i>
+                            </div>
+                            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">ทรัพย์สิน</p>
+                        </div>
+                        <p class="text-3xl font-bold text-slate-800 mb-1" id="totalAssets">-</p>
+                        <div class="space-y-1 mt-3">
+                            <div class="flex justify-between text-xs text-slate-500"><span>พร้อมใช้</span><span id="assetAvail" class="font-bold text-emerald-600">-</span></div>
+                            <div class="flex justify-between text-xs text-slate-500"><span>กำลังใช้งาน</span><span id="assetInUse" class="font-bold text-blue-600">-</span></div>
+                            <div class="flex justify-between text-xs text-slate-500"><span>ส่งซ่อม</span><span id="assetRepair" class="font-bold text-amber-600">-</span></div>
+                            <div class="flex justify-between text-xs text-slate-500"><span>ยืม</span><span id="assetBorrowed" class="font-bold text-violet-600">-</span></div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card col-span-2 lg:col-span-1">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
+                                <i data-lucide="ticket" class="w-5 h-5"></i>
+                            </div>
+                            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">แจ้งซ่อม</p>
+                        </div>
+                        <p class="text-3xl font-bold text-slate-800 mb-1" id="totalTickets">-</p>
+                        <div class="space-y-1 mt-3">
+                            <div class="flex justify-between text-xs text-slate-500"><span>รอดำเนินการ</span><span id="ticketOpen" class="font-bold text-red-600">-</span></div>
+                            <div class="flex justify-between text-xs text-slate-500"><span>กำลังดำเนินการ</span><span id="ticketInProgress" class="font-bold text-amber-600">-</span></div>
+                            <div class="flex justify-between text-xs text-slate-500"><span>แก้ไขแล้ว</span><span id="ticketResolved" class="font-bold text-emerald-600">-</span></div>
+                            <div class="flex justify-between text-xs text-slate-500"><span>ปิดแล้ว</span><span id="ticketClosed" class="font-bold text-slate-600">-</span></div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card col-span-2">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 bg-violet-50 rounded-xl flex items-center justify-center text-violet-600">
+                                <i data-lucide="arrow-right-from-line" class="w-5 h-5"></i>
+                            </div>
+                            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">ยืม-คืนอุปกรณ์</p>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="text-center">
+                                <p class="text-2xl font-bold text-amber-600" id="borrowTotal">-</p>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase">กำลังยืม</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-2xl font-bold text-emerald-600" id="borrowReturned">-</p>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase">คืนแล้ว</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-2xl font-bold text-red-600" id="borrowOverdue">-</p>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase">เกินกำหนด</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Asset by Category Chart -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                        <h3 class="font-bold text-slate-800 mb-5 flex items-center gap-2">
+                            <i data-lucide="pie-chart" class="w-5 h-5 text-indigo-500"></i> ทรัพย์สินแยกตามหมวดหมู่
+                        </h3>
+                        <div id="categoryChart" class="space-y-3">
+                            <div class="text-center text-slate-400 py-8 font-medium text-sm">กำลังโหลด...</div>
+                        </div>
+                    </div>
+
+                    <!-- Ticket Status Summary -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                        <h3 class="font-bold text-slate-800 mb-5 flex items-center gap-2">
+                            <i data-lucide="bar-chart-2" class="w-5 h-5 text-amber-500"></i> สถานะ Ticket ปัจจุบัน
+                        </h3>
+                        <div id="ticketChart" class="space-y-4">
+                            <div class="text-center text-slate-400 py-8 font-medium text-sm">กำลังโหลด...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Section -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <h3 class="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                        <i data-lucide="download-cloud" class="w-5 h-5 text-emerald-500"></i> ดาวน์โหลดข้อมูล (Export CSV)
+                    </h3>
+                    <p class="text-sm text-slate-400 font-medium mb-6">ไฟล์ CSV รองรับ Microsoft Excel (UTF-8 BOM)</p>
+                    <div class="space-y-4">
+
+                        <!-- Assets Export -->
+                        <div class="export-card">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 shrink-0">
+                                    <i data-lucide="monitor" class="w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-slate-800">ทรัพย์สินทั้งหมด</p>
+                                    <p class="text-xs text-slate-400 font-medium">Asset Tag, S/N, ผู้ครอบครอง, แผนก, สถานะ <span id="assetExportCount" class="text-indigo-500 font-bold"></span></p>
+                                </div>
+                            </div>
+                            <button onclick="exportData('assets')" class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95 shrink-0">
+                                <i data-lucide="download" class="w-4 h-4"></i> Export
+                            </button>
+                        </div>
+
+                        <!-- Tickets Export -->
+                        <div class="export-card">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600 shrink-0">
+                                    <i data-lucide="ticket" class="w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-slate-800">รายการแจ้งซ่อมทั้งหมด</p>
+                                    <p class="text-xs text-slate-400 font-medium">หัวข้อ, ผู้แจ้ง, ช่าง, สถานะ, ความเร่งด่วน <span id="ticketExportCount" class="text-indigo-500 font-bold"></span></p>
+                                </div>
+                            </div>
+                            <button onclick="exportData('tickets')" class="flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white text-sm font-bold rounded-xl hover:bg-amber-700 transition-all shadow-lg shadow-amber-600/20 active:scale-95 shrink-0">
+                                <i data-lucide="download" class="w-4 h-4"></i> Export
+                            </button>
+                        </div>
+
+                        <!-- Borrows Export -->
+                        <div class="export-card">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-violet-50 rounded-xl flex items-center justify-center text-violet-600 shrink-0">
+                                    <i data-lucide="arrow-right-from-line" class="w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-slate-800">ประวัติยืม-คืนอุปกรณ์</p>
+                                    <p class="text-xs text-slate-400 font-medium">ผู้ยืม, วันยืม, วันคืน, สถานะ <span id="borrowExportCount" class="text-indigo-500 font-bold"></span></p>
+                                </div>
+                            </div>
+                            <button onclick="exportData('borrows')" class="flex items-center gap-2 px-5 py-2.5 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 transition-all shadow-lg shadow-violet-600/20 active:scale-95 shrink-0">
+                                <i data-lucide="download" class="w-4 h-4"></i> Export
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="/assets/js/app.js"></script>
+    <script>
+        const TICKET_COLORS = {
+            'open': { bar: 'bg-red-500', label: 'รอดำเนินการ' },
+            'in_progress': { bar: 'bg-amber-500', label: 'กำลังดำเนินการ' },
+            'resolved': { bar: 'bg-emerald-500', label: 'แก้ไขแล้ว' },
+            'closed': { bar: 'bg-slate-400', label: 'ปิดแล้ว' },
+        };
+
+        const CAT_COLORS = ['bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-emerald-500', 'bg-amber-500', 'bg-cyan-500', 'bg-pink-500', 'bg-red-500', 'bg-orange-500', 'bg-slate-500'];
+
+        async function loadReports() {
+            try {
+                const res = await apiFetch('/api/reports?action=summary');
+                if (!res || !res.ok) throw new Error('API Error');
+                const data = await res.json();
+
+                // Assets
+                const a = data.assets || {};
+                document.getElementById('totalAssets').textContent = a.total ?? '-';
+                document.getElementById('assetAvail').textContent = a.available ?? 0;
+                document.getElementById('assetInUse').textContent = a.in_use ?? 0;
+                document.getElementById('assetRepair').textContent = a.repairing ?? 0;
+                document.getElementById('assetBorrowed').textContent = a.borrowed ?? 0;
+                document.getElementById('assetExportCount').textContent = a.total ? `(${a.total} รายการ)` : '';
+
+                // Tickets
+                const t = data.tickets || {};
+                document.getElementById('totalTickets').textContent = t.total ?? '-';
+                document.getElementById('ticketOpen').textContent = t.open ?? 0;
+                document.getElementById('ticketInProgress').textContent = t.in_progress ?? 0;
+                document.getElementById('ticketResolved').textContent = t.resolved ?? 0;
+                document.getElementById('ticketClosed').textContent = t.closed ?? 0;
+                document.getElementById('ticketExportCount').textContent = t.total ? `(${t.total} รายการ)` : '';
+
+                // Borrows
+                const b = data.borrows || {};
+                document.getElementById('borrowTotal').textContent = b.borrowed ?? '-';
+                document.getElementById('borrowReturned').textContent = b.returned ?? '-';
+                document.getElementById('borrowOverdue').textContent = b.overdue ?? '-';
+                document.getElementById('borrowExportCount').textContent = b.total ? `(${b.total} รายการ)` : '';
+
+                // Category Chart
+                const cats = data.assetByCategory || [];
+                const maxCat = Math.max(...cats.map(c => c.count), 1);
+                document.getElementById('categoryChart').innerHTML = cats.length === 0
+                    ? '<div class="text-center text-slate-400 py-8 text-sm">ไม่มีข้อมูล</div>'
+                    : cats.map((cat, i) => `
+                        <div class="bar-item">
+                            <div class="text-xs font-bold text-slate-600 w-32 truncate shrink-0">${escapeHTML(cat.category)}</div>
+                            <div class="flex-1 bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                                <div class="bar-fill ${CAT_COLORS[i % CAT_COLORS.length]}" style="width: ${Math.round((cat.count / maxCat) * 100)}%"></div>
+                            </div>
+                            <div class="text-xs font-bold text-slate-500 w-8 text-right">${cat.count}</div>
+                        </div>
+                    `).join('');
+
+                // Ticket Chart
+                const ticketData = [
+                    { key: 'open', count: t.open || 0 },
+                    { key: 'in_progress', count: t.in_progress || 0 },
+                    { key: 'resolved', count: t.resolved || 0 },
+                    { key: 'closed', count: t.closed || 0 },
+                ];
+                const maxT = Math.max(...ticketData.map(d => d.count), 1);
+                document.getElementById('ticketChart').innerHTML = ticketData.map(d => `
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs text-slate-500">
+                            <span class="font-bold">${TICKET_COLORS[d.key]?.label || d.key}</span>
+                            <span class="font-bold text-slate-700">${d.count}</span>
+                        </div>
+                        <div class="bg-slate-100 rounded-full h-3 overflow-hidden">
+                            <div class="h-3 rounded-full ${TICKET_COLORS[d.key]?.bar || 'bg-slate-400'} transition-all duration-700" style="width: ${Math.round((d.count / maxT) * 100)}%"></div>
+                        </div>
+                    </div>
+                `).join('');
+
+                document.getElementById('lastUpdated').textContent = `อัปเดตเมื่อ ${new Date().toLocaleTimeString('th-TH')}`;
+
+            } catch (err) {
+                console.error('Reports Error:', err);
+                notify.error('ไม่สามารถโหลดข้อมูลรายงานได้');
+            }
+        }
+
+        function exportData(type) {
+            const token = localStorage.getItem('token');
+            if (!token) return notify.error('เซสชันหมดอายุ');
+            const actionMap = { assets: 'export-assets', tickets: 'export-tickets', borrows: 'export-borrows' };
+            const action = actionMap[type];
+            if (!action) return;
+            window.location.href = `/api/reports?action=${action}&token=${token}`;
+            notify.toast(`กำลังดาวน์โหลด ${type.toUpperCase()} CSV...`);
+        }
+
+        document.addEventListener('DOMContentLoaded', loadReports);
+    </script>
+</body>
+</html>

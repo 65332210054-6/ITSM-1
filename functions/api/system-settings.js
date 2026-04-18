@@ -37,12 +37,39 @@ export async function onRequest(context) {
         return new Response(JSON.stringify({ message: "Setting key is required" }), { status: 400 });
       }
 
+      // Fetch old setting before updating
+      const oldSettingRows = await sql`SELECT setting_value FROM system_settings WHERE setting_key = ${setting_key}`;
+      const oldSettingValue = oldSettingRows.length > 0 ? oldSettingRows[0].setting_value : '';
+
       await sql`
         INSERT INTO system_settings (setting_key, setting_value, updated_at) 
         VALUES (${setting_key}, ${String(setting_value)}, NOW())
         ON CONFLICT (setting_key) DO UPDATE 
         SET setting_value = EXCLUDED.setting_value, updated_at = NOW()
       `;
+
+      // Smart Session Invalidation: Only log out users whose roles were actually changed
+      if (setting_key.includes('_roles_') || setting_key.endsWith('_enabled')) {
+          const oldRoles = oldSettingValue ? String(oldSettingValue).split(',').map(r => r.trim()) : [];
+          const newRoles = setting_value ? String(setting_value).split(',').map(r => r.trim()) : [];
+          
+          const changedRoles = [
+              ...oldRoles.filter(r => !newRoles.includes(r)),
+              ...newRoles.filter(r => !oldRoles.includes(r))
+          ];
+
+          if (changedRoles.length > 0) {
+              await sql`
+                  DELETE FROM sessions
+                  WHERE user_id IN (
+                      SELECT u.id FROM users u
+                      JOIN roles r ON u.role_id = r.id
+                      WHERE r.name = ANY(${changedRoles})
+                  )
+                  AND user_id != ${session.user_id}
+              `;
+          }
+      }
 
       return new Response(JSON.stringify({ message: "Setting updated successfully" }), { status: 200 });
     }

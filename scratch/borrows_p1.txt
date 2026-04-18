@@ -1,0 +1,346 @@
+﻿<!DOCTYPE html>
+<html lang="th" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>à¸¢à¸·à¸¡-à¸„à¸·à¸™à¸­à¸¸à¸›à¸à¸£à¸“à¹Œ | ITSM Admin</title>
+    <script>
+        if (!localStorage.getItem('token')) { window.location.replace('/login.html'); }
+    </script>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.454.0/lucide.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+    <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body class="h-full flex overflow-hidden">
+    <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden transition-opacity lg:hidden"></div>
+    <div id="sidebar-container" class="lg:static"></div>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <div id="header-container"></div>
+
+        <main class="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-10 bg-slate-50/50">
+            <div class="max-w-6xl mx-auto space-y-6 sm:space-y-8">
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600 shrink-0">
+                            <i data-lucide="arrow-right-from-line" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-slate-800" id="statBorrowed">-</p>
+                            <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">à¸à¸³à¸¥à¸±à¸‡à¸¢à¸·à¸¡à¸­à¸¢à¸¹à¹ˆ</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 shrink-0">
+                            <i data-lucide="arrow-left-to-line" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-slate-800" id="statReturned">-</p>
+                            <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">à¸„à¸·à¸™à¹à¸¥à¹‰à¸§</p>
+                        </div>
+                    </div>
+                    <div class="col-span-2 sm:col-span-1 bg-white rounded-2xl border border-red-100 p-5 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center text-red-600 shrink-0">
+                            <i data-lucide="alarm-clock" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-red-600" id="statOverdue">-</p>
+                            <p class="text-xs text-red-400 font-bold uppercase tracking-wider">à¹€à¸à¸´à¸™à¸à¸³à¸«à¸™à¸”</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Toolbar -->
+                <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+                    <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                        <div class="relative flex-1">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                                <i data-lucide="search" class="w-5 h-5"></i>
+                            </div>
+                            <input type="text" id="borrowSearch" placeholder="à¸„à¹‰à¸™à¸«à¸² Asset Tag, à¸Šà¸·à¹ˆà¸­, à¸œà¸¹à¹‰à¸¢à¸·à¸¡..."
+                                class="block w-full pl-12 pr-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all shadow-sm bg-white">
+                        </div>
+                        <select id="statusFilter" onchange="filterChanged()" class="form-input w-full sm:w-40 h-[50px]">
+                            <option value="">à¸—à¸¸à¸à¸ªà¸–à¸²à¸™à¸°</option>
+                            <option value="Borrowed">à¸à¸³à¸¥à¸±à¸‡à¸¢à¸·à¸¡</option>
+                            <option value="Returned">à¸„à¸·à¸™à¹à¸¥à¹‰à¸§</option>
+                            <option value="Overdue">à¹€à¸à¸´à¸™à¸à¸³à¸«à¸™à¸”</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <button onclick="exportBorrows()" class="flex-1 md:flex-none p-3 bg-white border border-slate-200 rounded-2xl text-slate-600 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm group" title="à¸ªà¹ˆà¸‡à¸­à¸­à¸ CSV">
+                            <i data-lucide="download" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                        </button>
+                        <button onclick="openBorrowModal()" class="flex-1 md:flex-none btn-primary">
+                            <i data-lucide="plus-circle" class="w-5 h-5"></i> à¸šà¸±à¸™à¸—à¸¶à¸à¸à¸²à¸£à¸¢à¸·à¸¡à¹ƒà¸«à¸¡à¹ˆ
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="card">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[800px]">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200">
+                                    <th class="th-cell">à¸—à¸£à¸±à¸žà¸¢à¹Œà¸ªà¸´à¸™</th>
+                                    <th class="th-cell">à¸œà¸¹à¹‰à¸¢à¸·à¸¡</th>
+                                    <th class="th-cell">à¸§à¸±à¸™à¸—à¸µà¹ˆà¸¢à¸·à¸¡</th>
+                                    <th class="th-cell">à¸à¸³à¸«à¸™à¸”à¸„à¸·à¸™</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">à¸ªà¸–à¸²à¸™à¸°</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">à¸à¸²à¸£à¸”à¸³à¹€à¸™à¸´à¸™à¸à¸²à¸£</th>
+                                </tr>
+                            </thead>
+                            <tbody id="borrowTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-footer">
+                        <div class="flex items-center gap-4">
+                            <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                à¹à¸ªà¸”à¸‡ <span id="showingStart">0</span> - <span id="showingEnd">0</span> à¸ˆà¸²à¸ <span id="totalItems">0</span> à¸£à¸²à¸¢à¸à¸²à¸£
+                            </div>
+                            <div class="flex items-center gap-2 border-l border-slate-200 pl-4">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">à¹à¸ªà¸”à¸‡à¸«à¸™à¹‰à¸²à¸¥à¸°:</span>
+                                <select id="itemsPerPageSelect">
+                                    <option value="10">10</option>
+                                    <option value="20">20</option>
+                                    <option value="30">30</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="prevPage" class="pagination-btn-nav" disabled><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                            <div id="pageNumbers" class="flex items-center gap-1"></div>
+                            <button id="nextPage" class="pagination-btn-nav" disabled><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Borrow Modal -->
+    <div id="borrowModal" class="modal-overlay hidden">
+        <div class="modal-content animate-in fade-in zoom-in duration-200">
+            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-3xl">
+                <h2 class="text-xl font-bold text-slate-800 tracking-tight">à¸šà¸±à¸™à¸—à¸¶à¸à¸à¸²à¸£à¸¢à¸·à¸¡à¸­à¸¸à¸›à¸à¸£à¸“à¹Œ</h2>
+                <button onclick="closeBorrowModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <form id="borrowForm" class="p-8 space-y-5">
+                <div>
+                    <label class="form-label">à¸—à¸£à¸±à¸žà¸¢à¹Œà¸ªà¸´à¸™à¸—à¸µà¹ˆà¸¢à¸·à¸¡ <span class="text-red-500">*</span></label>
+                    <select id="borrowAsset" required class="form-input">
+                        <option value="">-- à¹€à¸¥à¸·à¸­à¸à¸—à¸£à¸±à¸žà¸¢à¹Œà¸ªà¸´à¸™ --</option>
+                    </select>
+                    <div id="borrowAssetLoading" class="mt-1 min-h-[20px]"></div>
+                </div>
+                <div>
+                    <label class="form-label">à¸œà¸¹à¹‰à¸¢à¸·à¸¡ <span class="text-red-500">*</span></label>
+                    <select id="borrowUser" required class="form-input">
+                        <option value="">-- à¹€à¸¥à¸·à¸­à¸à¸œà¸¹à¹‰à¸¢à¸·à¸¡ --</option>
+                    </select>
+                    <div id="borrowUserLoading" class="mt-1 min-h-[20px]"></div>
+                </div>
+                <div>
+                    <label class="form-label">à¸§à¸±à¸™à¸à¸³à¸«à¸™à¸”à¸„à¸·à¸™</label>
+                    <input type="date" id="borrowDueDate" class="form-input">
+                </div>
+                <div>
+                    <label class="form-label">à¸«à¸¡à¸²à¸¢à¹€à¸«à¸•à¸¸</label>
+                    <textarea id="borrowNotes" rows="3" class="form-input w-full resize-none" placeholder="à¸£à¸²à¸¢à¸¥à¸°à¹€à¸­à¸µà¸¢à¸”à¹€à¸žà¸´à¹ˆà¸¡à¹€à¸•à¸´à¸¡..."></textarea>
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="closeBorrowModal()" class="flex-1 px-6 py-3 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all">à¸¢à¸à¹€à¸¥à¸´à¸</button>
+                    <button type="submit" id="submitBorrowBtn" class="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 hover:shadow-indigo-600/40 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
+                        <i data-lucide="save" class="w-5 h-5"></i>
+                        <span>à¸šà¸±à¸™à¸—à¸¶à¸à¸à¸²à¸£à¸¢à¸·à¸¡</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <script src="/assets/js/app.js"></script>
+    <script>
+        let currentPage = 1, itemsPerPage = 10, totalItemsCount = 0, totalPagesCount = 1;
+        let searchTimer = null, allBorrows = [];
+
+        // Modal Choices instances â€” managed separately from ui.choicesInstances
+        let choiceAsset = null, choiceUser = null;
+
+        function filterChanged() { currentPage = 1; loadBorrows(); }
+
+        // â”€â”€ Stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        async function loadStats() {
+            try {
+                const res = await apiFetch('/api/borrows?action=stats');
+                if (res && res.ok) {
+                    const s = await res.json();
+                    document.getElementById('statBorrowed').textContent = s.borrowed ?? 0;
+                    document.getElementById('statReturned').textContent = s.returned ?? 0;
+                    document.getElementById('statOverdue').textContent  = s.overdue  ?? 0;
+                }
+            } catch (e) {}
+        }
+
+        // â”€â”€ Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        async function loadBorrows() {
+            ui.renderTableLoading('borrowTableBody', 6, 'à¸à¸³à¸¥à¸±à¸‡à¹‚à¸«à¸¥à¸”à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸à¸²à¸£à¸¢à¸·à¸¡...');
+            const search = document.getElementById('borrowSearch')?.value || '';
+            const status = document.getElementById('statusFilter')?.value || '';
+            try {
+                const start = (currentPage - 1) * itemsPerPage + 1;
+                const end   = currentPage * itemsPerPage;
+                const params = new URLSearchParams({ start, end, search, status });
+                const res = await apiFetch(`/api/borrows?${params}`);
+                if (!res || !res.ok) throw new Error('API Error');
+                const data = await res.json();
+                allBorrows = data.borrows;
+                totalItemsCount = data.totalCount;
+                totalPagesCount = data.totalPages;
+                renderBorrows();
+            } catch (err) {
+                document.getElementById('borrowTableBody').innerHTML =
+                    `<tr><td colspan="6" class="px-6 py-10 text-center text-red-500 font-medium">à¹€à¸à¸´à¸”à¸‚à¹‰à¸­à¸œà¸´à¸”à¸žà¸¥à¸²à¸”à¹ƒà¸™à¸à¸²à¸£à¹‚à¸«à¸¥à¸”à¸‚à¹‰à¸­à¸¡à¸¹à¸¥</td></tr>`;
+            }
+        }
+
+        function statusBadge(s) {
+            const map = { Borrowed:'bg-amber-100 text-amber-700 border border-amber-200', Returned:'bg-emerald-100 text-emerald-700 border border-emerald-200', Overdue:'bg-red-100 text-red-700 border border-red-200' };
+            const lbl = { Borrowed:'à¸à¸³à¸¥à¸±à¸‡à¸¢à¸·à¸¡', Returned:'à¸„à¸·à¸™à¹à¸¥à¹‰à¸§', Overdue:'à¹€à¸à¸´à¸™à¸à¸³à¸«à¸™à¸”' };
+            return `<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${map[s]||'bg-slate-100 text-slate-600'}">${lbl[s]||s}</span>`;
+        }
+
+        function renderBorrows() {
+            const tbody = document.getElementById('borrowTableBody');
+            if (!allBorrows || !allBorrows.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400 font-medium">à¹„à¸¡à¹ˆà¸žà¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸à¸²à¸£à¸¢à¸·à¸¡</td></tr>';
+                ui.renderPagination('pageNumbers', currentPage, totalPagesCount, totalItemsCount, itemsPerPage);
+                return;
+            }
+            const { role } = JSON.parse(localStorage.getItem('user') || '{}');
+            const isStaff = role === 'Admin' || role === 'Technician';
+            const frag = document.createDocumentFragment();
+            allBorrows.forEach(b => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition-colors';
+                const due = b.due_date ? new Date(b.due_date).toLocaleDateString('th-TH') : '-';
+                const borrowed = b.borrowed_at ? new Date(b.borrowed_at).toLocaleDateString('th-TH') : '-';
+                const overdueFlag = b.status === 'Overdue';
+                const safeTag = escapeHTML(b.asset_tag).replace(/'/g, "\\'");
+                tr.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-slate-800 text-sm">${escapeHTML(b.asset_tag)}</div>
+                        <div class="text-[10px] text-slate-400">${escapeHTML(b.asset_name)}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-semibold text-slate-700">${escapeHTML(b.borrower_name)}</div>
+                        <div class="text-[10px] text-slate-400">${escapeHTML(b.department_name||'-')}</div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-600 font-medium">${borrowed}</td>
+                    <td class="px-6 py-4">
+                        <span class="text-sm font-medium ${overdueFlag?'text-red-600 font-bold':'text-slate-600'}">${due}</span>
+                        ${overdueFlag?'<div class="text-[10px] text-red-500 font-bold mt-0.5">âš  à¹€à¸à¸´à¸™à¸à¸³à¸«à¸™à¸”</div>':''}
+                    </td>
+                    <td class="px-6 py-4 text-center">${statusBadge(b.status)}</td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex justify-end gap-1">
+                            ${b.status!=='Returned'&&isStaff?`<button onclick="confirmReturn('${b.id}','${safeTag}')" class="px-3 py-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-all active:scale-95"><i data-lucide="check-circle" class="w-3.5 h-3.5 inline mr-0.5"></i>à¸„à¸·à¸™</button>`:''}
+                            ${isStaff?`<button onclick="confirmDeleteBorrow('${b.id}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`:''}
+                        </div>
+                    </td>`;
+                frag.appendChild(tr);
+            });
+            tbody.innerHTML = '';
+            tbody.appendChild(frag);
+            lucide.createIcons();
+            ui.renderPagination('pageNumbers', currentPage, totalPagesCount, totalItemsCount, itemsPerPage);
+        }
+
+        function goToPage(p) { if (p<1||p>totalPagesCount) return; currentPage=p; loadBorrows(); }
+
+        // â”€â”€ Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        async function confirmReturn(id, tag) {
+            if (!await notify.confirm('à¸šà¸±à¸™à¸—à¸¶à¸à¸à¸²à¸£à¸„à¸·à¸™', `à¸¢à¸·à¸™à¸¢à¸±à¸™à¸à¸²à¸£à¸„à¸·à¸™à¸­à¸¸à¸›à¸à¸£à¸“à¹Œ "${tag}"?`)) return;
+            const res = await apiFetch(`/api/borrows?action=return&id=${id}`, { method:'POST' });
+            if (res && res.ok) { notify.success('à¸šà¸±à¸™à¸—à¸¶à¸à¸à¸²à¸£à¸„à¸·à¸™à¸ªà¸³à¹€à¸£à¹‡à¸ˆ'); loadBorrows(); loadStats(); }
+            else { const e = await res?.json().catch(()=>({})); notify.error(e.message||'à¹€à¸à¸´à¸”à¸‚à¹‰à¸­à¸œà¸´à¸”à¸žà¸¥à¸²à¸”'); }
+        }
+
+        async function confirmDeleteBorrow(id) {
+            if (!await notify.confirm('à¸¥à¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥', 'à¸¢à¸·à¸™à¸¢à¸±à¸™à¸à¸²à¸£à¸¥à¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸à¸²à¸£à¸¢à¸·à¸¡à¸™à¸µà¹‰?')) return;
+            const res = await apiFetch(`/api/borrows?action=delete&id=${id}`, { method:'POST' });
+            if (res && res.ok) { notify.success('à¸¥à¸šà¸ªà¸³à¹€à¸£à¹‡à¸ˆ'); loadBorrows(); loadStats(); }
+            else { const e = await res?.json().catch(()=>({})); notify.error(e.message||'à¹€à¸à¸´à¸”à¸‚à¹‰à¸­à¸œà¸´à¸”à¸žà¸¥à¸²à¸”'); }
+        }
+
+        function exportBorrows() {
+            const token = localStorage.getItem('token');
+            if (!token) return notify.error('à¹€à¸‹à¸ªà¸Šà¸±à¸™à¸«à¸¡à¸”à¸­à¸²à¸¢à¸¸');
+            window.location.href = `/api/borrows?action=export&token=${token}`;
+            notify.toast('à¸à¸³à¸¥à¸±à¸‡à¸”à¸²à¸§à¸™à¹Œà¹‚à¸«à¸¥à¸” CSV...');
+        }
+
+        // â”€â”€ Modal (Choices.js managed separately) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        function destroyModalChoices() {
+            if (choiceAsset) { try { choiceAsset.destroy(); } catch(e){} choiceAsset = null; }
+            if (choiceUser)  { try { choiceUser.destroy();  } catch(e){} choiceUser  = null; }
+        }
+
+        async function openBorrowModal() {
+            // 1. Destroy existing Choices instances first
+            destroyModalChoices();
+
+            // 2. Reset form & show loading
+            document.getElementById('borrowDueDate').value = '';
+            document.getElementById('borrowNotes').value   = '';
+            const spinner = '<span class="text-xs text-slate-400 flex items-center gap-1"><span class="inline-block w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></span> à¸à¸³à¸¥à¸±à¸‡à¹‚à¸«à¸¥à¸”...</span>';
+            document.getElementById('borrowAssetLoading').innerHTML = spinner;
+            document.getElementById('borrowUserLoading').innerHTML  = spinner;
+
+            // 3. Reset select to bare (no Choices wrapper yet)
+            const assetEl = document.getElementById('borrowAsset');
+            const userEl  = document.getElementById('borrowUser');
+            assetEl.innerHTML = '';
+            userEl.innerHTML  = '';
+
+            document.getElementById('borrowModal').classList.remove('hidden');
+
+            try {
+                // 4. Fetch data
+                const [assetRes, userRes] = await Promise.all([
+                    apiFetch('/api/assets?action=getOptions&status=Available', { silent: true }),
+                    apiFetch('/api/users?action=getUsers', { silent: true })
+                ]);
+
+                // 5a. Set asset options directly on <select> DOM (BEFORE Choices init)
+                let assets = [];
+                if (assetRes && assetRes.ok) assets = await assetRes.json();
+                assetEl.innerHTML =
+                    '<option value="">-- à¹€à¸¥à¸·à¸­à¸à¸—à¸£à¸±à¸žà¸¢à¹Œà¸ªà¸´à¸™ --</option>' +
+                    assets.map(a =>
+                        `<option value="${a.id}">${a.asset_tag} â€” ${a.name}</option>`
+                    ).join('');
+                document.getElementById('borrowAssetLoading').innerHTML =
+                    `<span class="text-xs ${assets.length ? 'text-emerald-600' : 'text-amber-500'} font-medium">${assets.length ? 'âœ“ à¸žà¸£à¹‰à¸­à¸¡à¹ƒà¸«à¹‰à¸¢à¸·à¸¡ ' + assets.length + ' à¸£à¸²à¸¢à¸à¸²à¸£' : 'âš  à¹„à¸¡à¹ˆà¸¡à¸µà¸—à¸£à¸±à¸žà¸¢à¹Œà¸ªà¸´à¸™à¸žà¸£à¹‰à¸­à¸¡à¹ƒà¸«à¹‰à¸¢à¸·à¸¡'}</span>`;
+
+                // 5b. Set user options directly on <select> DOM (BEFORE Choices init)
+                let users = [];
+                if (userRes && userRes.ok) {
+                    const raw = await userRes.json();
+                    users = Array.isArray(raw) ? raw : (raw.users || []);
+                }
+                userEl.innerHTML =
+                    '<option value="">-- à¹€à¸¥à¸·à¸­à¸à¸œà¸¹à¹‰à¸¢à¸·à¸¡ --</option>' +
+                    users.map(u =>
+                        `<option value="${u.id}">${u.name}</option>`
+                    ).join('');
+                document.getElementById('borrowUserLoading').innerHTML =
+                    `<span class="text-xs ${users.length ? 'text-emerald-600' : 'text-red-500'} font-medium">${users.length ? 'âœ“ ' + users.length + ' à¸„à¸™' : 'âš  à¹‚à¸«à¸¥à¸”à¸£à¸²à¸¢à¸Šà¸·à¹ˆà¸­à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ'}</span>`;
+

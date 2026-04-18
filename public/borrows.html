@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ยืม-คืนอุปกรณ์ | ITSM Admin</title>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.454.0/lucide.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body class="h-full flex overflow-hidden">
+    <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden transition-opacity lg:hidden"></div>
+    <div id="sidebar-container" class="lg:static"></div>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <div id="header-container"></div>
+
+        <main class="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-10 bg-slate-50/50">
+            <div class="max-w-7xl mx-auto space-y-8">
+                <!-- Header Section -->
+                <div class="flex flex-col md:flex-row md:items-center justify-end gap-4">
+                    <div class="flex items-center gap-3">
+                        <button onclick="exportBorrows()" class="btn-secondary">
+                            <i data-lucide="download" class="w-5 h-5"></i> Export
+                        </button>
+                        <button onclick="openBorrowModal()" class="btn-primary">
+                            <i data-lucide="plus-circle" class="w-5 h-5"></i> บันทึกการยืมใหม่
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex items-center gap-5">
+                        <div class="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shrink-0">
+                            <i data-lucide="book-open" class="w-7 h-7"></i>
+                        </div>
+                        <div>
+                            <p class="text-3xl font-black text-slate-800" id="statBorrowed">-</p>
+                            <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">กำลังยืม</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex items-center gap-5">
+                        <div class="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shrink-0">
+                            <i data-lucide="arrow-left-to-line" class="w-7 h-7"></i>
+                        </div>
+                        <div>
+                            <p class="text-3xl font-black text-slate-800" id="statReturned">-</p>
+                            <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">คืนแล้ว</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex items-center gap-5">
+                        <div class="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 shrink-0">
+                            <i data-lucide="alarm-clock" class="w-7 h-7"></i>
+                        </div>
+                        <div>
+                            <p class="text-3xl font-black text-slate-800" id="statOverdue">-</p>
+                            <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">เกินกำหนดคืน</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Content Card -->
+                <div class="card">
+                    <div class="p-6 border-b border-slate-100 bg-white flex flex-col sm:flex-row gap-4 justify-between items-center">
+                        <div class="relative w-full sm:w-96">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                                <i data-lucide="search" class="w-5 h-5"></i>
+                            </div>
+                            <input type="text" id="borrowSearch" class="form-input pl-12 shadow-none bg-slate-50 border-transparent focus:bg-white focus:border-indigo-500" placeholder="ค้นหาตาม Tag, อุปกรณ์, หรือผู้ยืม...">
+                        </div>
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <div class="w-full sm:w-48">
+                                <select id="statusFilter" onchange="filterChanged()">
+                                    <option value="">ทุกสถานะ</option>
+                                    <option value="Borrowed">กำลังยืม</option>
+                                    <option value="Returned">คืนแล้ว</option>
+                                    <option value="Overdue">เกินกำหนดคืน</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50/50 border-b border-slate-100">
+                                    <th class="th-cell">อุปกรณ์ / TAG</th>
+                                    <th class="th-cell">ผู้ยืม / แผนก</th>
+                                    <th class="th-cell">วันที่ยืม</th>
+                                    <th class="th-cell">กำหนดคืน</th>
+                                    <th class="th-cell text-center">สถานะ</th>
+                                    <th class="th-cell text-right">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="borrowTableBody" class="divide-y divide-slate-50">
+                                <!-- Data will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination Footer -->
+                    <div class="pagination-footer">
+                        <div class="flex items-center gap-4">
+                            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                                แสดง <span id="showingStart" class="text-indigo-600">0</span> - <span id="showingEnd" class="text-indigo-600">0</span> จาก <span id="totalItems" class="text-slate-800">0</span> รายการ
+                            </div>
+                            <div class="flex items-center gap-2 border-l border-slate-200 pl-4">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">แสดงหน้าละ:</span>
+                                <div class="choices-compact-wrapper">
+                                    <select id="itemsPerPageSelect">
+                                        <option value="10">10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="prevPage" class="pagination-btn-nav" disabled>
+                                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                            </button>
+                            <div id="pageNumbers" class="flex items-center gap-1"></div>
+                            <button id="nextPage" class="pagination-btn-nav" disabled>
+                                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Borrow Modal -->
+    <div id="borrowModal" class="modal-overlay hidden">
+        <div class="modal-content animate-in fade-in zoom-in duration-300">
+            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white">
+                <h3 class="text-xl font-black text-slate-800 tracking-tight">บันทึกการยืมครุภัณฑ์</h3>
+                <button onclick="closeBorrowModal()" class="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-all">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <form id="borrowForm" class="p-8 space-y-6">
+                <div>
+                    <label class="form-label">เลือกอุปกรณ์ที่ว่าง <span class="text-red-500">*</span></label>
+                    <select id="borrowAsset" required></select>
+                    <div id="borrowAssetLoading" class="mt-2 ml-1"></div>
+                </div>
+                <div>
+                    <label class="form-label">เลือกผู้ใช้งาน <span class="text-red-500">*</span></label>
+                    <select id="borrowUser" required></select>
+                    <div id="borrowUserLoading" class="mt-2 ml-1"></div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="form-label">วันที่ยืมครุภัณฑ์ <span class="text-red-500">*</span></label>
+                        <input type="date" id="borrowDate" required class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">กำหนดคืนครุภัณฑ์</label>
+                        <input type="date" id="borrowDueDate" class="form-input">
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label">บันทึกเพิ่มเติม</label>
+                    <textarea id="borrowNotes" rows="3" class="form-input resize-none" placeholder="ระบุเหตุผลการยืม หรือรายละเอียดเพิ่มเติม..."></textarea>
+                </div>
+
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="closeBorrowModal()" class="flex-1 btn-secondary">
+                        ยกเลิก
+                    </button>
+                    <button type="submit" id="submitBorrowBtn" class="flex-1 btn-primary">
+                        <i data-lucide="save" class="w-5 h-5"></i> บันทึกการยืม
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="/assets/js/app.js"></script>
+    <script>
+        let currentPage = 1, itemsPerPage = 10, totalItemsCount = 0, totalPagesCount = 1;
+        let searchTimer = null, allBorrows = [];
+        let choiceAsset = null, choiceUser = null;
+
+        function filterChanged() { currentPage = 1; loadBorrows(); }
+
+        async function loadStats() {
+            try {
+                const res = await apiFetch('/api/borrows?action=stats');
+                if (res && res.ok) {
+                    const s = await res.json();
+                    document.getElementById('statBorrowed').textContent = s.borrowed ?? 0;
+                    document.getElementById('statReturned').textContent = s.returned ?? 0;
+                    document.getElementById('statOverdue').textContent  = s.overdue  ?? 0;
+                }
+            } catch (e) {}
+        }
+
+        async function loadBorrows() {
+            ui.renderTableLoading('borrowTableBody', 6, 'กำลังโหลดข้อมูลการยืม-คืน...');
+            const search = document.getElementById('borrowSearch')?.value || '';
+            const status = document.getElementById('statusFilter')?.value || '';
+            try {
+                const start = (currentPage - 1) * itemsPerPage + 1;
+                const end   = currentPage * itemsPerPage;
+                const params = new URLSearchParams({ start, end, search, status });
+                const res = await apiFetch('/api/borrows?' + params.toString());
+                if (!res || !res.ok) throw new Error('API Error');
+                const data = await res.json();
+                allBorrows = data.borrows;
+                totalItemsCount = data.totalCount;
+                totalPagesCount = data.totalPages;
+                renderBorrows();
+            } catch (err) {
+                document.getElementById('borrowTableBody').innerHTML =
+                    '<tr><td colspan="6" class="px-6 py-10 text-center text-red-500 font-medium font-bold">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+            }
+        }
+
+        async function renderBorrows() {
+            const tbody = document.getElementById('borrowTableBody');
+            if (!allBorrows || !allBorrows.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-slate-400 font-medium">ไม่พบข้อมูลการยืม</td></tr>';
+                updatePaginationDisplay();
+                return;
+            }
+            
+            const settings = await ui.getSystemSettings();
+            const canEdit = ui.checkAccess('borrows', settings, null, 'edit');
+            const canDelete = ui.checkAccess('borrows', settings, null, 'delete');
+
+            const frag = document.createDocumentFragment();
+            allBorrows.forEach(b => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/50 transition-colors';
+                const due = b.due_date ? new Date(b.due_date).toLocaleDateString('th-TH') : '-';
+                const borrowed = b.borrowed_at ? new Date(b.borrowed_at).toLocaleDateString('th-TH') : '-';
+                const statusBadge = (s) => {
+                    const classes = { 
+                        Borrowed: 'status-badge status-warning', 
+                        Returned: 'status-badge status-success', 
+                        Overdue: 'status-badge status-danger' 
+                    };
+                    const labels = { Borrowed: 'กำลังยืม', Returned: 'คืนแล้ว', Overdue: 'เกินกำหนดคืน' };
+                    return `<span class="${classes[s]||'status-badge status-neutral'}">${labels[s]||s}</span>`;
+                };
+
+                const safeTag = escapeHTML(b.asset_tag).replace(/'/g, "\\'");
+                tr.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-slate-800 text-sm">${escapeHTML(b.asset_tag)}</div>
+                        <div class="text-[10px] text-slate-400 font-medium">${escapeHTML(b.asset_name)}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-semibold text-slate-700">${escapeHTML(b.borrower_name)}</div>
+                        <div class="text-[10px] text-slate-400">${escapeHTML(b.department_name||'-')}</div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-600 font-medium">${borrowed}</td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-medium ${b.status==='Overdue'?'text-rose-600 font-bold':'text-slate-600'}">${due}</div>
+                        ${b.status==='Overdue'?'<div class="text-[9px] text-rose-500 font-black uppercase mt-0.5">⚠ OVERDUE</div>':''}
+                    </td>
+                    <td class="px-6 py-4 text-center">${statusBadge(b.status)}</td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex justify-end gap-1">
+                            ${b.status!=='Returned'&&canEdit?`<button onclick="confirmReturn('${b.id}','${safeTag}')" class="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-all active:scale-95">คืน</button>`:''}
+                            ${canDelete?`<button onclick="confirmDeleteBorrow('${b.id}')" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`:''}
+                        </div>
+                    </td>`;
+                frag.appendChild(tr);
+            });
+            tbody.innerHTML = '';
+            tbody.appendChild(frag);
+            lucide.createIcons();
+            updatePaginationDisplay();
+        }
+
+        function updatePaginationDisplay() {
+            ui.renderPagination('pageNumbers', currentPage, totalPagesCount, totalItemsCount, itemsPerPage);
+            document.getElementById('showingStart').textContent = totalItemsCount ? (currentPage - 1) * itemsPerPage + 1 : 0;
+            document.getElementById('showingEnd').textContent = Math.min(currentPage * itemsPerPage, totalItemsCount);
+            document.getElementById('totalItems').textContent = totalItemsCount;
+            document.getElementById('prevPage').disabled = currentPage <= 1;
+            document.getElementById('nextPage').disabled = currentPage >= totalPagesCount;
+        }
+
+        function goToPage(page) {
+            if (page < 1 || page > totalPagesCount) return;
+            currentPage = page;
+            loadBorrows();
+        }
+
+        async function confirmReturn(id, tag) {
+            if (!await notify.confirm('ยืนยันการคืน', `ยืนยันการรับคืนอุปกรณ์ "${tag}"?`)) return;
+            const res = await apiFetch(`/api/borrows?action=return&id=${id}`, { method:'POST' });
+            if (res && res.ok) { notify.success('บันทึกการคืนสำเร็จ'); loadBorrows(); loadStats(); }
+            else { const e = await res?.json().catch(()=>({})); notify.error(e.message||'เกิดข้อผิดพลาด'); }
+        }
+
+        async function confirmDeleteBorrow(id) {
+            if (!await notify.confirm('ลบข้อมูล', 'ยืนยันการลบข้อมูลการยืมนี้หรือไม่?')) return;
+            const res = await apiFetch(`/api/borrows?action=delete&id=${id}`, { method:'POST' });
+            if (res && res.ok) { notify.success('ลบข้อมูลสำเร็จ'); loadBorrows(); loadStats(); }
+            else { const e = await res?.json().catch(()=>({})); notify.error(e.message||'เกิดข้อผิดพลาด'); }
+        }
+
+        function exportBorrows() {
+            const token = localStorage.getItem('token');
+            if (!token) return notify.error('กรุณาเข้าสู่ระบบ');
+            window.location.href = `/api/borrows?action=export&token=${token}`;
+            notify.toast('กำลังดาวน์โหลด CSV...');
+        }
+
+        function destroyModalChoices() {
+            if (choiceAsset) { try { choiceAsset.destroy(); } catch(e){} choiceAsset = null; }
+            if (choiceUser)  { try { choiceUser.destroy();  } catch(e){} choiceUser  = null; }
+        }
+
+        async function openBorrowModal() {
+            destroyModalChoices();
+            document.getElementById('borrowDate').value    = new Date().toISOString().split('T')[0];
+            document.getElementById('borrowDueDate').value = '';
+            document.getElementById('borrowNotes').value   = '';
+            const spinner = '<span class="text-[10px] text-slate-400 font-bold flex items-center gap-1.5"><span class="inline-block w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></span> LOADING DATA...</span>';
+            document.getElementById('borrowAssetLoading').innerHTML = spinner;
+            document.getElementById('borrowUserLoading').innerHTML  = spinner;
+
+            const assetEl = document.getElementById('borrowAsset');
+            const userEl  = document.getElementById('borrowUser');
+            assetEl.innerHTML = '';
+            userEl.innerHTML  = '';
+
+            document.getElementById('borrowModal').classList.remove('hidden');
+
+            try {
+                const [assetRes, userRes] = await Promise.all([
+                    apiFetch('/api/assets?action=getOptions&status=Available', { silent: true }),
+                    apiFetch('/api/users?action=getUsers', { silent: true })
+                ]);
+
+                let assets = [];
+                if (assetRes && assetRes.ok) assets = await assetRes.json();
+                assetEl.innerHTML = '<option value="">-- เลือกอุปกรณ์ที่ว่าง --</option>' +
+                    assets.map(a => `<option value="${a.id}">${a.asset_tag} - ${a.name}</option>`).join('');
+                document.getElementById('borrowAssetLoading').innerHTML = 
+                    `<span class="text-[10px] ${assets.length ? 'text-emerald-600' : 'text-amber-500'} font-black uppercase">✔ ${assets.length ? 'READY TO BORROW: ' + assets.length : 'NO ASSETS AVAILABLE'}</span>`;
+
+                let users = [];
+                if (userRes && userRes.ok) {
+                    const raw = await userRes.json();
+                    users = Array.isArray(raw) ? raw : (raw.users || []);
+                }
+                userEl.innerHTML = '<option value="">-- เลือกผู้ยืม --</option>' +
+                    users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+                document.getElementById('borrowUserLoading').innerHTML = 
+                    `<span class="text-[10px] ${users.length ? 'text-emerald-600' : 'text-rose-500'} font-black uppercase">✔ ${users.length ? 'USERS LOADED: ' + users.length : 'LOAD FAILED'}</span>`;
+
+                if (typeof Choices !== 'undefined') {
+                    choiceAsset = new Choices(assetEl, { searchEnabled: true, itemSelectText: '', placeholder: true, placeholderValue: 'ค้นหาอุปกรณ์...', noResultsText: 'ไม่พบข้อมูล', allowHTML: false });
+                    choiceUser = new Choices(userEl, { searchEnabled: true, itemSelectText: '', placeholder: true, placeholderValue: 'ค้นหาผู้ใช้งาน...', noResultsText: 'ไม่พบข้อมูล', allowHTML: false });
+                }
+            } catch (err) {
+                console.error('openBorrowModal:', err);
+                notify.error('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+            }
+        }
+
+        function closeBorrowModal() {
+            document.getElementById('borrowModal').classList.add('hidden');
+            destroyModalChoices();
+            document.getElementById('borrowAssetLoading').innerHTML = '';
+            document.getElementById('borrowUserLoading').innerHTML  = '';
+        }
+
+        document.getElementById('borrowForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBorrowBtn');
+            const originalHtml = btn.innerHTML;
+            const asset_id    = document.getElementById('borrowAsset').value;
+            const borrower_id = document.getElementById('borrowUser').value;
+            const borrowed_at = document.getElementById('borrowDate').value;
+            const due_date    = document.getElementById('borrowDueDate').value;
+            const notes       = document.getElementById('borrowNotes').value;
+
+            if (!asset_id)    return notify.error('กรุณาเลือกอุปกรณ์');
+            if (!borrower_id) return notify.error('กรุณาเลือกผู้ใช้งาน');
+            if (!borrowed_at) return notify.error('กรุณาระบุวันที่ยืม');
+
+            btn.disabled = true;
+            btn.innerHTML = `<span class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> <span>SAVING...</span>`;
+
+            try {
+                const res = await apiFetch('/api/borrows', {
+                    method: 'POST',
+                    body: JSON.stringify({ asset_id, borrower_id, borrowed_at, due_date: due_date || null, notes })
+                });
+                if (res && res.ok) {
+                    notify.success('บันทึกการยืมสำเร็จ');
+                    closeBorrowModal();
+                    loadBorrows();
+                    loadStats();
+                } else {
+                    const err = await res?.json().catch(() => ({}));
+                    notify.error(err.message || 'เกิดข้อผิดพลาด');
+                }
+            } catch (e) {
+                notify.error('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                lucide.createIcons();
+            }
+        });
+
+        document.getElementById('borrowSearch').addEventListener('input', () => {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => { currentPage = 1; loadBorrows(); }, 800);
+        });
+        document.getElementById('prevPage').addEventListener('click', () => { if (currentPage > 1) { currentPage--; loadBorrows(); } });
+        document.getElementById('nextPage').addEventListener('click', () => { if (currentPage < totalPagesCount) { currentPage++; loadBorrows(); } });
+        document.getElementById('itemsPerPageSelect').addEventListener('change', e => { itemsPerPage = parseInt(e.target.value); currentPage = 1; loadBorrows(); });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const settings = await ui.getSystemSettings();
+            
+            // Check Permissions
+            if (!ui.checkAccess('borrows', settings, null, 'create')) {
+                const btn = document.querySelector('button[onclick="openBorrowModal()"]');
+                if (btn) btn.classList.add('hidden');
+            }
+            if (!ui.checkAccess('borrows', settings, null, 'view')) {
+                const btn = document.querySelector('button[onclick="exportBorrows()"]');
+                if (btn) btn.classList.add('hidden');
+            }
+
+            ['statusFilter', 'itemsPerPageSelect'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && typeof Choices !== 'undefined') {
+                    const isCompact = id === 'itemsPerPageSelect';
+                    try { 
+                        ui.choicesInstances[id] = new Choices(el, { 
+                            searchEnabled:false, 
+                            itemSelectText:'', 
+                            shouldSort:false, 
+                            allowHTML:false,
+                            classNames: isCompact ? { containerOuter: 'choices choices-compact-wrapper' } : undefined
+                        }); 
+                    } catch(e) {}
+                }
+            });
+            loadStats();
+            loadBorrows();
+        });
+    </script>
+</body>
+</html>

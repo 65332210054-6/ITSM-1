@@ -1,0 +1,74 @@
+                // 6. NOW init Choices (reads existing <option> - correct pattern)
+                if (typeof Choices !== 'undefined') {
+                    choiceAsset = new Choices(assetEl, {
+                        searchEnabled: true,
+                        itemSelectText: '',
+                        placeholder: true,
+                        placeholderValue: 'ค้นหาอุปกรณ์...',
+                        noResultsText: 'ไม่พบข้อมูล',
+                        allowHTML: false
+                    });
+                    choiceUser = new Choices(userEl, {
+                        searchEnabled: true,
+                        itemSelectText: '',
+                        placeholder: true,
+                        placeholderValue: 'ค้นหาผู้ใช้งาน...',
+                        noResultsText: 'ไม่พบข้อมูล',
+                        allowHTML: false
+                    });
+                }
+
+            } catch (err) {
+                console.error('openBorrowModal:', err);
+                notify.error('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+            }
+        }
+
+        function closeBorrowModal() {
+            document.getElementById('borrowModal').classList.add('hidden');
+            destroyModalChoices();
+            document.getElementById('borrowAssetLoading').innerHTML = '';
+            document.getElementById('borrowUserLoading').innerHTML  = '';
+        }
+
+        // 🔘 Form Submit 🔘
+        document.getElementById('borrowForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBorrowBtn');
+            const originalHtml = btn.innerHTML;
+
+            const asset_id    = document.getElementById('borrowAsset').value;
+            const borrower_id = document.getElementById('borrowUser').value;
+            const due_date    = document.getElementById('borrowDueDate').value;
+            const notes       = document.getElementById('borrowNotes').value;
+
+            if (!asset_id)    return notify.error('กรุณาเลือกอุปกรณ์');
+            if (!borrower_id) return notify.error('กรุณาเลือกผู้ใช้งาน');
+
+            // Show loading state
+            btn.disabled = true;
+            btn.innerHTML = `<span class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> <span>กำลังบันทึก...</span>`;
+
+            try {
+                const res = await apiFetch('/api/borrows', {
+                    method: 'POST',
+                    body: JSON.stringify({ asset_id, borrower_id, due_date: due_date || null, notes })
+                });
+                if (res && res.ok) {
+                    notify.success('บันทึกการยืมสำเร็จ');
+                    closeBorrowModal();
+                    loadBorrows();
+                    loadStats();
+                } else {
+                    const err = await res?.json().catch(() => ({}));
+                    notify.error(err.message || 'เกิดข้อผิดพลาด');
+                }
+            } catch (e) {
+                notify.error('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+            } finally {
+                // Restore button state
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                lucide.createIcons();
+            }
+        });

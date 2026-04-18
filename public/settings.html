@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th" class="h-full bg-slate-50">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,6 +21,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
     <link rel="stylesheet" href="/assets/css/styles.css">
 </head>
+
 <body class="h-full flex overflow-hidden">
     <!-- Mobile Sidebar Overlay -->
     <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden transition-opacity lg:hidden"></div>
@@ -37,30 +39,42 @@
                 <!-- General Settings -->
                 <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 p-4 sm:p-8">
                     <div class="mb-6 sm:mb-8">
-                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">ตั้งค่าทั่วไป (General)</h2>
-                        <p class="text-xs sm:text-sm text-slate-400 mt-1 font-medium leading-relaxed">เปิด/ปิด ฟังก์ชันต่างๆ ในระบบ</p>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">ตั้งค่าทั่วไป (General)
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1 font-medium leading-relaxed">เปิด/ปิด
+                            ฟังก์ชันต่างๆ ในระบบ</p>
                     </div>
                     <div class="space-y-6 max-w-2xl">
                         <!-- Toggle items -->
-                        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div
+                            class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                             <div>
                                 <h3 class="text-sm font-bold text-slate-800">สรุปจำนวนบทบาท (User Management)</h3>
-                                <p class="text-xs text-slate-500 mt-1">แสดงกล่องสรุปสถิติบทบาทของผู้ใช้งานที่ด้านบนของตาราง</p>
+                                <p class="text-xs text-slate-500 mt-1">
+                                    แสดงกล่องสรุปสถิติบทบาทของผู้ใช้งานที่ด้านบนของตาราง</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="toggleUserRoles" class="sr-only peer" onchange="toggleSetting('show_user_roles', this.checked)">
-                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                <input type="checkbox" id="toggleUserRoles" class="sr-only peer"
+                                    onchange="toggleSetting('show_user_roles', this.checked)">
+                                <div
+                                    class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600">
+                                </div>
                             </label>
                         </div>
 
-                        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div
+                            class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                             <div>
                                 <h3 class="text-sm font-bold text-slate-800">ตัวกรองข้อมูล (User Management)</h3>
-                                <p class="text-xs text-slate-500 mt-1">แสดงแถบตัวกรองบทบาท สาขา และแผนกในหน้าจัดการผู้ใช้งาน</p>
+                                <p class="text-xs text-slate-500 mt-1">แสดงแถบตัวกรองบทบาท สาขา
+                                    และแผนกในหน้าจัดการผู้ใช้งาน</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="toggleUserFilter" class="sr-only peer" onchange="toggleSetting('show_user_filter', this.checked)">
-                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                <input type="checkbox" id="toggleUserFilter" class="sr-only peer"
+                                    onchange="toggleSetting('show_user_filter', this.checked)">
+                                <div
+                                    class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600">
+                                </div>
                             </label>
                         </div>
                     </div>
@@ -69,165 +83,116 @@
                 <!-- Module Management -->
                 <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 p-4 sm:p-8">
                     <div class="mb-6 sm:mb-8">
-                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">การจัดการโมดูล (Module Management)</h2>
-                        <p class="text-xs sm:text-sm text-slate-400 mt-1 font-medium leading-relaxed">เปิด/ปิด การเข้าถึงโมดูลต่างๆ สำหรับผู้ใช้ทั่วไป</p>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">การจัดการโมดูล (Module
+                            Management)</h2>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1 font-medium leading-relaxed">เปิด/ปิด
+                            การเข้าถึงโมดูลต่างๆ สำหรับผู้ใช้ทั่วไป</p>
                     </div>
-                    <div class="space-y-6">
-                        <!-- Module Grid -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <!-- User Module -->
-                            <div class="bg-slate-50 rounded-2xl border border-slate-100 p-6">
-                                <div class="flex items-center gap-3 mb-4">
-                                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-sm border border-slate-200">
-                                        <i data-lucide="users" class="w-5 h-5"></i>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-sm font-bold text-slate-800">จัดการผู้ใช้งาน</h3>
-                                        <p class="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Users Module</p>
-                                    </div>
-                                </div>
-                                <div class="space-y-3">
-                                    <label class="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100 cursor-not-allowed opacity-60">
-                                        <span class="text-xs font-bold text-slate-600">Admin</span>
-                                        <input type="checkbox" checked disabled class="rounded border-slate-300 text-indigo-600">
-                                    </label>
-                                    <label class="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
-                                        <span class="text-xs font-bold text-slate-600">Technician</span>
-                                        <input type="checkbox" id="role-users-Technician" onchange="updateModuleAccess('module_users_enabled', 'Technician', this.checked)" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                                    </label>
-                                    <label class="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
-                                        <span class="text-xs font-bold text-slate-600">User</span>
-                                        <input type="checkbox" id="role-users-User" onchange="updateModuleAccess('module_users_enabled', 'User', this.checked)" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Asset Module -->
-                            <div class="bg-slate-50 rounded-2xl border border-slate-100 p-6">
-                                <div class="flex items-center gap-3 mb-4">
-                                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm border border-slate-200">
-                                        <i data-lucide="monitor" class="w-5 h-5"></i>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-sm font-bold text-slate-800">จัดการทรัพย์สิน</h3>
-                                        <p class="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Assets Module</p>
-                                    </div>
-                                </div>
-                                <div class="space-y-3">
-                                    <label class="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100 cursor-not-allowed opacity-60">
-                                        <span class="text-xs font-bold text-slate-600">Admin</span>
-                                        <input type="checkbox" checked disabled class="rounded border-slate-300 text-indigo-600">
-                                    </label>
-                                    <label class="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
-                                        <span class="text-xs font-bold text-slate-600">Technician</span>
-                                        <input type="checkbox" id="role-assets-Technician" onchange="updateModuleAccess('module_assets_enabled', 'Technician', this.checked)" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                                    </label>
-                                    <label class="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
-                                        <span class="text-xs font-bold text-slate-600">User</span>
-                                        <input type="checkbox" id="role-assets-User" onchange="updateModuleAccess('module_assets_enabled', 'User', this.checked)" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Ticket Module -->
-                            <div class="bg-slate-50 rounded-2xl border border-slate-100 p-6">
-                                <div class="flex items-center gap-3 mb-4">
-                                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-amber-600 shadow-sm border border-slate-200">
-                                        <i data-lucide="ticket" class="w-5 h-5"></i>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-sm font-bold text-slate-800">ระบบแจ้งซ่อม</h3>
-                                        <p class="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Tickets Module</p>
-                                    </div>
-                                </div>
-                                <div class="space-y-3">
-                                    <label class="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100 cursor-not-allowed opacity-60">
-                                        <span class="text-xs font-bold text-slate-600">Admin</span>
-                                        <input type="checkbox" checked disabled class="rounded border-slate-300 text-indigo-600">
-                                    </label>
-                                    <label class="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
-                                        <span class="text-xs font-bold text-slate-600">Technician</span>
-                                        <input type="checkbox" id="role-tickets-Technician" onchange="updateModuleAccess('module_tickets_enabled', 'Technician', this.checked)" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                                    </label>
-                                    <label class="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
-                                        <span class="text-xs font-bold text-slate-600">User</span>
-                                        <input type="checkbox" id="role-tickets-User" onchange="updateModuleAccess('module_tickets_enabled', 'User', this.checked)" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="space-y-6" id="moduleGrid">
+                        <!-- Module Grid will be rendered dynamically -->
+                        <div class="p-10 text-center text-slate-400 font-medium">กำลังโหลดโมดูล...</div>
                     </div>
                 </div>
+
+                <!-- Role Management -->
+                <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 p-4 sm:p-8">
+                    <div class="flex flex-col sm:flex-row items-center justify-between mb-6 sm:mb-8 gap-4">
+                        <div>
+                            <h2 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">จัดการบทบาทผู้ใช้งาน (Roles)</h2>
+                            <p class="text-xs sm:text-sm text-slate-400 mt-1 font-medium leading-relaxed">กำหนดบทบาทที่ใช้ในระบบ (เช่น Manager, Support, Auditor)</p>
+                        </div>
+                        <button onclick="openRoleModal()" class="w-full sm:w-auto btn-primary">
+                            <i data-lucide="plus" class="w-5 h-5"></i> เพิ่มบทบาทใหม่
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6" id="roleGrid">
+                        <!-- Roles will be loaded here -->
+                        <div class="p-10 text-center text-slate-400 col-span-full">กำลังโหลดข้อมูลบทบาท...</div>
+                    </div>
                 </div>
 
                 <!-- Branch Management -->
-                <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 p-4 sm:p-8">
-                    <div class="flex flex-col sm:flex-row items-center justify-between mb-6 sm:mb-8 gap-4">
-                        <div>
-                            <h2 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">จัดการสาขา</h2>
-                            <p class="text-xs sm:text-sm text-slate-400 mt-1 font-medium leading-relaxed">ข้อมูลที่ตั้งและสาขาต่างๆ</p>
-                        </div>
-                        <button onclick="openBranchModal()" class="w-full sm:w-auto btn-primary">
-                            <i data-lucide="plus" class="w-5 h-5"></i> เพิ่มสาขาใหม่
-                        </button>
+            <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 p-4 sm:p-8">
+                <div class="flex flex-col sm:flex-row items-center justify-between mb-6 sm:mb-8 gap-4">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">จัดการสาขา</h2>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1 font-medium leading-relaxed">
+                            ข้อมูลที่ตั้งและสาขาต่างๆ</p>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6" id="branchGrid">
-                        <!-- Branches will be loaded here -->
-                        <div class="p-10 text-center text-slate-400 col-span-full">กำลังโหลดข้อมูลสาขา...</div>
-                    </div>
+                    <button onclick="openBranchModal()" class="w-full sm:w-auto btn-primary">
+                        <i data-lucide="plus" class="w-5 h-5"></i> เพิ่มสาขาใหม่
+                    </button>
                 </div>
-
-                <!-- Department Management -->
-                <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 p-4 sm:p-8">
-                    <div class="flex flex-col sm:flex-row items-center justify-between mb-6 sm:mb-8 gap-4">
-                        <div>
-                            <h2 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">จัดการแผนก</h2>
-                            <p class="text-xs sm:text-sm text-slate-400 mt-1 font-medium leading-relaxed">โครงสร้างแผนกงานภายในบริษัท</p>
-                        </div>
-                        <button onclick="openDeptModal()" class="w-full sm:w-auto btn-primary">
-                            <i data-lucide="plus" class="w-5 h-5"></i> เพิ่มแผนกใหม่
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6" id="deptGrid">
-                        <!-- Departments will be loaded here -->
-                        <div class="p-10 text-center text-slate-400 col-span-full">กำลังโหลดข้อมูลแผนก...</div>
-                    </div>
-                </div>
-                <!-- Audit Logs Management (Admin Only) -->
-                <div id="auditLogsSection" class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 p-4 sm:p-8 hidden">
-                    <div class="flex flex-col sm:flex-row items-center justify-between mb-6 sm:mb-8 gap-4">
-                        <div>
-                            <h2 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">ประวัติการใช้งาน (Audit Logs)</h2>
-                            <p class="text-xs sm:text-sm text-slate-400 mt-1 font-medium leading-relaxed">บันทึกกิจกรรมและการแก้ไขข้อมูลทั้งหมดในระบบ</p>
-                        </div>
-                        <div class="flex gap-2 w-full sm:w-auto">
-                           <select id="filterLogModule" class="form-input text-xs w-full sm:w-32 h-10 py-0" onchange="loadAuditLogs()">
-                               <option value="">ทุกโมดูล</option>
-                               <option value="Users">Users</option>
-                               <option value="Assets">Assets</option>
-                               <option value="Tickets">Tickets</option>
-                           </select>
-                        </div>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead>
-                                <tr class="border-b border-slate-100">
-                                    <th class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">วัน-เวลา</th>
-                                    <th class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">ผู้กระทำ</th>
-                                    <th class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">โมดูล</th>
-                                    <th class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">การกระทำ</th>
-                                    <th class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 text-right">รายละเอียด</th>
-                                </tr>
-                            </thead>
-                            <tbody id="auditLogsBody" class="divide-y divide-slate-50">
-                                <!-- Logs will be loaded here -->
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6" id="branchGrid">
+                    <!-- Branches will be loaded here -->
+                    <div class="p-10 text-center text-slate-400 col-span-full">กำลังโหลดข้อมูลสาขา...</div>
                 </div>
             </div>
-        </main>
+
+            <!-- Department Management -->
+            <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 p-4 sm:p-8">
+                <div class="flex flex-col sm:flex-row items-center justify-between mb-6 sm:mb-8 gap-4">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">จัดการแผนก</h2>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1 font-medium leading-relaxed">
+                            โครงสร้างแผนกงานภายในบริษัท</p>
+                    </div>
+                    <button onclick="openDeptModal()" class="w-full sm:w-auto btn-primary">
+                        <i data-lucide="plus" class="w-5 h-5"></i> เพิ่มแผนกใหม่
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6" id="deptGrid">
+                    <!-- Departments will be loaded here -->
+                    <div class="p-10 text-center text-slate-400 col-span-full">กำลังโหลดข้อมูลแผนก...</div>
+                </div>
+            </div>
+            <!-- Audit Logs Management (Admin Only) -->
+            <div id="auditLogsSection"
+                class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 p-4 sm:p-8 hidden">
+                <div class="flex flex-col sm:flex-row items-center justify-between mb-6 sm:mb-8 gap-4">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">ประวัติการใช้งาน (Audit
+                            Logs)</h2>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1 font-medium leading-relaxed">
+                            บันทึกกิจกรรมและการแก้ไขข้อมูลทั้งหมดในระบบ</p>
+                    </div>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <select id="filterLogModule" class="form-input text-xs w-full sm:w-32 h-10 py-0"
+                            onchange="loadAuditLogs()">
+                            <option value="">ทุกโมดูล</option>
+                            <option value="Users">Users</option>
+                            <option value="Assets">Assets</option>
+                            <option value="Tickets">Tickets</option>
+                            <option value="Borrows">Borrows</option>
+                            <option value="Categories">Categories</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="border-b border-slate-100">
+                                <th class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">
+                                    วัน-เวลา</th>
+                                <th class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">
+                                    ผู้กระทำ</th>
+                                <th class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">
+                                    โมดูล</th>
+                                <th class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">
+                                    การกระทำ</th>
+                                <th
+                                    class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 text-right">
+                                    รายละเอียด</th>
+                            </tr>
+                        </thead>
+                        <tbody id="auditLogsBody" class="divide-y divide-slate-50">
+                            <!-- Logs will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+    </div>
+    </main>
     </div>
 
     <!-- Modals -->
@@ -236,7 +201,8 @@
         <div class="modal-content max-w-md animate-in fade-in zoom-in duration-200 overflow-hidden">
             <div class="bg-indigo-600 p-6 text-white flex justify-between items-center">
                 <h3 class="text-lg font-bold">เพิ่มสาขาใหม่</h3>
-                <button onclick="toggleModal('branchModal', false)" class="text-white/80 hover:text-white transition-colors">
+                <button onclick="toggleModal('branchModal', false)"
+                    class="text-white/80 hover:text-white transition-colors">
                     <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
             </div>
@@ -247,12 +213,16 @@
                     <input type="text" id="branchName" class="form-input" placeholder="เช่น สำนักงานใหญ่, สาขาระยอง">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ที่อยู่ / รายละเอียด</label>
-                    <textarea id="branchLocation" class="form-input w-full resize-none" rows="3" placeholder="กรอกที่อยู่แบบเต็ม เช่น 123 อาคาร ABC ชั้น 2 ถนน..."></textarea>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ที่อยู่ /
+                        รายละเอียด</label>
+                    <textarea id="branchLocation" class="form-input w-full resize-none" rows="3"
+                        placeholder="กรอกที่อยู่แบบเต็ม เช่น 123 อาคาร ABC ชั้น 2 ถนน..."></textarea>
                 </div>
                 <div class="flex gap-3 pt-4">
-                    <button onclick="toggleModal('branchModal', false)" class="flex-1 px-4 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all">ยกเลิก</button>
-                    <button onclick="saveBranch()" class="flex-1 px-4 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all">บันทึกสาขา</button>
+                    <button onclick="toggleModal('branchModal', false)"
+                        class="flex-1 px-4 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all">ยกเลิก</button>
+                    <button onclick="saveBranch()"
+                        class="flex-1 px-4 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all">บันทึกสาขา</button>
                 </div>
             </div>
         </div>
@@ -263,7 +233,8 @@
         <div class="modal-content max-w-md animate-in fade-in zoom-in duration-200 overflow-hidden">
             <div class="bg-indigo-600 p-6 text-white flex justify-between items-center">
                 <h3 class="text-lg font-bold">เพิ่มแผนกใหม่</h3>
-                <button onclick="toggleModal('deptModal', false)" class="text-white/80 hover:text-white transition-colors">
+                <button onclick="toggleModal('deptModal', false)"
+                    class="text-white/80 hover:text-white transition-colors">
                     <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
             </div>
@@ -274,14 +245,17 @@
                     <input type="text" id="deptName" class="form-input" placeholder="เช่น ฝ่ายบุคคล, ฝ่ายไอที">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">สังกัดสาขา</label>
+                    <label
+                        class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">สังกัดสาขา</label>
                     <select id="parentBranch" class="form-input">
                         <!-- Options loaded here -->
                     </select>
                 </div>
                 <div class="flex gap-3 pt-4">
-                    <button onclick="toggleModal('deptModal', false)" class="flex-1 px-4 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all">ยกเลิก</button>
-                    <button onclick="saveDept()" class="flex-1 px-4 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all">บันทึกแผนก</button>
+                    <button onclick="toggleModal('deptModal', false)"
+                        class="flex-1 px-4 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all">ยกเลิก</button>
+                    <button onclick="saveDept()"
+                        class="flex-1 px-4 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all">บันทึกแผนก</button>
                 </div>
             </div>
         </div>
@@ -289,8 +263,29 @@
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="/assets/js/app.js"></script>
+    <!-- Role Modal -->
+    <div id="roleModal" class="modal-overlay hidden">
+        <div class="modal-content max-w-md animate-in fade-in zoom-in duration-200 overflow-hidden">
+            <div class="bg-indigo-600 p-6 text-white flex justify-between items-center">
+                <h3 class="text-lg font-bold">เพิ่มบทบาทใหม่</h3>
+                <button onclick="toggleModal('roleModal', false)" class="text-white/80 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ชื่อบทบาท</label>
+                    <input type="hidden" id="editRoleId" value="">
+                    <input type="text" id="roleName" class="form-input" placeholder="เช่น Support, Manager">
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button onclick="toggleModal('roleModal', false)" class="flex-1 px-4 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all">ยกเลิก</button>
+                    <button onclick="saveRole()" class="flex-1 px-4 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all">บันทึกบทบาท</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <script>
-
         function toggleModal(id, show) {
             const modal = document.getElementById(id);
             if (show) {
@@ -312,7 +307,7 @@
             document.getElementById('editDeptId').value = id;
             document.getElementById('deptName').value = name;
             document.querySelector('#deptModal h3').textContent = id ? 'แก้ไขแผนก' : 'เพิ่มแผนกใหม่';
-            
+
             try {
                 const response = await apiFetch('/api/branches');
                 const branches = await response.json();
@@ -432,50 +427,121 @@
         // Settings Logic
         async function loadGeneralSettings() {
             try {
+                // Fetch roles first to render dynamic module grid
+                const rolesRes = await apiFetch('/api/roles');
+                const allRoles = await rolesRes.json();
+                const nonAdminRoles = allRoles.filter(r => r.name !== 'Admin');
+
                 const response = await apiFetch('/api/system-settings');
                 if (response.ok) {
                     const settings = await response.json();
-                    document.getElementById('toggleUserRoles').checked = settings.show_user_roles !== false; 
-                    document.getElementById('toggleUserFilter').checked = settings.show_user_filter !== false;
                     
-                    // Helper to set checkboxes from role list
-                    const setCheckboxes = (key, rolePrefix) => {
-                        const val = settings[key];
-                        // Backward compatibility: if 'true' or not set, all are checked. If 'false', none are checked.
-                        let allowedRoles = ['Technician', 'User'];
-                        if (val === false || val === 'false') {
-                            allowedRoles = [];
-                        } else if (typeof val === 'string' && val !== 'true') {
-                            allowedRoles = val.split(',').map(r => r.trim());
-                        }
+                    // Robust boolean check
+                    const isTrue = (val) => val === true || val === 'true' || val === null || val === undefined;
+                    
+                    document.getElementById('toggleUserRoles').checked = isTrue(settings.show_user_roles);
+                    document.getElementById('toggleUserFilter').checked = isTrue(settings.show_user_filter);
+                    
+                    const modules = ui.modules;
 
-                        ['Technician', 'User'].forEach(role => {
-                            const el = document.getElementById(`role-${rolePrefix}-${role}`);
-                            if (el) el.checked = allowedRoles.includes(role);
-                        });
-                    };
+                    const moduleGrid = document.getElementById('moduleGrid');
+                    moduleGrid.innerHTML = `
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            ${modules.map(m => {
+                                const baseKey = m.id; // e.g. 'users'
+                                const actions = ['view', 'create', 'edit', 'delete'];
+                                const actionLabels = { view: 'View', create: 'Add', edit: 'Edit', delete: 'Del' };
 
-                    setCheckboxes('module_users_enabled', 'users');
-                    setCheckboxes('module_assets_enabled', 'assets');
-                    setCheckboxes('module_tickets_enabled', 'tickets');
+                                return `
+                                <div class="bg-slate-50 rounded-2xl border border-slate-100 p-6 flex flex-col h-full">
+                                    <div class="flex items-center gap-3 mb-4">
+                                        <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center ${m.color} shadow-sm border border-slate-200">
+                                            <i data-lucide="${m.icon}" class="w-5 h-5"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-sm font-bold text-slate-800">${m.name}</h3>
+                                            <p class="text-[10px] text-slate-500 uppercase tracking-wider font-bold">${m.id} Module</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex-1 space-y-4">
+                                        <!-- Header row for permissions -->
+                                        <div class="grid grid-cols-5 gap-1 px-1">
+                                            <div class="col-span-1"></div>
+                                            ${actions.map(a => `<div class="text-[9px] font-bold text-slate-400 text-center uppercase tracking-tighter">${actionLabels[a]}</div>`).join('')}
+                                        </div>
+
+                                        <!-- Admin Row (Always enabled) -->
+                                        <div class="grid grid-cols-5 gap-1 items-center p-2 bg-white rounded-xl border border-slate-100 opacity-60">
+                                            <span class="text-[11px] font-bold text-slate-600 truncate">Admin</span>
+                                            ${actions.map(() => `
+                                                <div class="flex justify-center">
+                                                    <input type="checkbox" checked disabled class="rounded w-3.5 h-3.5 border-slate-300 text-indigo-600">
+                                                </div>
+                                            `).join('')}
+                                        </div>
+
+                                        <!-- Custom Role Rows -->
+                                        ${nonAdminRoles.map(role => {
+                                            return `
+                                            <div class="grid grid-cols-5 gap-1 items-center p-2 bg-white rounded-xl border border-slate-100 hover:bg-indigo-50/30 transition-colors">
+                                                <span class="text-[11px] font-bold text-slate-600 truncate" title="${escapeHTML(role.name)}">${escapeHTML(role.name)}</span>
+                                                ${actions.map(action => {
+                                                    const key = `module_${baseKey}_roles_${action}`;
+                                                    const legacyKey = `module_${baseKey}_enabled`;
+                                                    const val = settings[key] || (action === 'view' ? settings[legacyKey] : 'false');
+                                                    
+                                                    let isAllowed = false;
+                                                    if (val === true || val === 'true' || val === null || val === undefined) {
+                                                        isAllowed = true;
+                                                    } else if (val !== 'false') {
+                                                        const allowedRoles = String(val).split(',').map(r => r.trim());
+                                                        isAllowed = allowedRoles.includes(role.name);
+                                                    }
+
+                                                    return `
+                                                    <div class="flex justify-center">
+                                                        <input type="checkbox" 
+                                                            onchange="updateModuleAccess('${baseKey}', '${action}', '${role.name}', this.checked)"
+                                                            ${isAllowed ? 'checked' : ''} 
+                                                            class="rounded w-3.5 h-3.5 border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
+                                                    </div>
+                                                    `;
+                                                }).join('')}
+                                            </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    `;
+                    if (window.lucide) lucide.createIcons();
                 }
             } catch (err) {
                 console.error("Failed to load settings", err);
             }
         }
 
-        async function updateModuleAccess(key, role, isChecked) {
+        async function updateModuleAccess(baseKey, action, role, isChecked) {
             try {
-                // Get current settings first
-                const settings = await ui.getSystemSettings();
-                let val = settings[key];
+                const key = `module_${baseKey}_roles_${action}`;
+                const legacyKey = `module_${baseKey}_enabled`;
                 
-                // Construct standard role list based on current value
-                let allowedRoles = ['Admin', 'Technician', 'User'];
-                if (val === false || val === 'false') {
+                // Fetch roles first to preserve Admin and others
+                const rolesRes = await apiFetch('/api/roles');
+                const allRoles = await rolesRes.json();
+                
+                const settings = await ui.getSystemSettings(true); // Always get fresh for this
+                let val = settings[key] || (action === 'view' ? settings[legacyKey] : 'false');
+
+                // Construct allowed list
+                let allowedRoles = [];
+                if (val === true || val === 'true' || val === null || val === undefined) {
+                    allowedRoles = allRoles.map(r => r.name);
+                } else if (val === false || val === 'false') {
                     allowedRoles = ['Admin'];
-                } else if (val === true || val === 'true' || !val) {
-                    allowedRoles = ['Admin', 'Technician', 'User'];
                 } else {
                     allowedRoles = String(val).split(',').map(r => r.trim());
                 }
@@ -498,10 +564,9 @@
                 });
 
                 if (response.ok) {
-                    // Update cache and sidebar instantly
                     await ui.getSystemSettings(true);
                     ui.renderSidebar('sidebar-container');
-                    notify.toast('อัปเดตสิทธิ์การเข้าถึงแล้ว');
+                    notify.toast(`อัปเดตสิทธิ์ ${action} แล้ว`);
                 }
             } catch (err) {
                 notify.error('ไม่สามารถอัปเดตสิทธิ์ได้');
@@ -529,15 +594,86 @@
             }
         }
 
+        // Roles Management
+        function openRoleModal(id = '', name = '') {
+            document.getElementById('editRoleId').value = id;
+            document.getElementById('roleName').value = name;
+            document.querySelector('#roleModal h3').textContent = id ? 'แก้ไขบทบาท' : 'เพิ่มบทบาทใหม่';
+            toggleModal('roleModal', false); // Hide first to reset
+            toggleModal('roleModal', true);
+        }
+
+        async function saveRole() {
+            const id = document.getElementById('editRoleId').value;
+            const name = document.getElementById('roleName').value.trim();
+            if (!name) return notify.error('กรุณาระบุชื่อบทบาท');
+
+            try {
+                const response = await apiFetch('/api/roles', {
+                    method: id ? 'PUT' : 'POST',
+                    body: JSON.stringify({ id, name })
+                });
+                if (response.ok) {
+                    notify.success(id ? 'แก้ไขบทบาทสำเร็จ' : 'เพิ่มบทบาทสำเร็จ');
+                    toggleModal('roleModal', false);
+                    loadSettings();
+                } else {
+                    const res = await response.json();
+                    notify.error(res.message || 'เกิดข้อผิดพลาด');
+                }
+            } catch (err) {
+                notify.error('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+            }
+        }
+
+        async function deleteRole(id, name) {
+            if (name === 'Admin') return notify.error('ไม่สามารถลบบทบาท Admin ได้');
+            
+            Swal.fire({
+                title: 'ยืนยันการลบบทบาท?',
+                text: `คุณกำลังลบบทบาท "${name}" ข้อมูลผู้ใช้ในบทบาทนี้จะไม่ถูกลบ แต่จะไม่สามารถใช้งานระบบได้จนกว่าจะเปลี่ยนบทบาทใหม่`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#4f46e5',
+                cancelButtonColor: '#94a3b8',
+                confirmButtonText: 'ยืนยันการลบ',
+                cancelButtonText: 'ยกเลิก'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const response = await apiFetch(`/api/roles?action=delete&id=${id}`, { method: 'POST' });
+                        if (response.ok) {
+                            notify.success('ลบบทบาทสำเร็จ');
+                            loadSettings();
+                        } else {
+                            let errorMessage = 'ไม่สามารถลบบทบาทได้';
+                            try {
+                                const res = await response.json();
+                                errorMessage = res.message || errorMessage;
+                            } catch (e) {
+                                // If not JSON, get raw text
+                                const text = await response.text().catch(() => '');
+                                console.error('Server error (non-JSON):', text);
+                                errorMessage = 'เกิดข้อผิดพลาดที่เซิร์ฟเวอร์ (Internal Server Error)';
+                            }
+                            notify.error(errorMessage);
+                        }
+                    } catch (err) {
+                        notify.error('เกิดข้อผิดพลาด');
+                    }
+                }
+            });
+        }
+
         async function loadAuditLogs() {
             const body = document.getElementById('auditLogsBody');
             const module = document.getElementById('filterLogModule').value;
-            
+
             try {
                 const response = await apiFetch(`/api/logs?module=${module}`);
                 if (!response.ok) throw new Error('API Error');
                 const logs = await response.json();
-                
+
                 if (logs.length === 0) {
                     body.innerHTML = '<tr><td colspan="5" class="py-10 text-center text-slate-400 font-medium">ไม่พบประวัติการใช้งาน</td></tr>';
                     return;
@@ -593,13 +729,48 @@
 
             loadGeneralSettings();
 
+            // Load Roles
+            const roleGrid = document.getElementById('roleGrid');
+            try {
+                const roleResponse = await apiFetch('/api/roles');
+                if (!roleResponse.ok) throw new Error('API Error');
+                const roles = await roleResponse.json();
+                
+                if (roles.length === 0) {
+                    roleGrid.innerHTML = '<div class="p-10 text-center text-slate-400 col-span-full font-medium">ไม่พบข้อมูลบทบาท</div>';
+                } else {
+                    roleGrid.innerHTML = roles.map(role => {
+                        const safeName = escapeHTML(role.name).replace(/'/g, "\\'");
+                        const isAdmin = role.name === 'Admin';
+                        return `
+                        <div class="bg-white border border-slate-200 rounded-2xl p-5 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 transition-all relative text-center group">
+                            ${!isAdmin ? `
+                            <button onclick="deleteRole('${role.id}', '${safeName}')" class="absolute top-2 right-2 w-8 h-8 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 z-10 cursor-pointer">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                            ` : ''}
+                            <div class="${!isAdmin ? 'cursor-pointer' : ''}" onclick="${!isAdmin ? `openRoleModal('${role.id}', '${safeName}')` : ''}">
+                                <div class="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 mx-auto mb-3 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-all">
+                                    <i data-lucide="shield-check" class="w-6 h-6"></i>
+                                </div>
+                                <h3 class="font-bold text-slate-700 text-sm mb-1">${escapeHTML(role.name)}</h3>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">${isAdmin ? 'System Role' : 'Custom Role'}</p>
+                            </div>
+                        </div>
+                    `}).join('');
+                }
+            } catch (error) {
+                console.error('Error loading roles:', error);
+                roleGrid.innerHTML = '<div class="p-10 text-center text-red-500 font-bold col-span-full">ไม่สามารถโหลดข้อมูลบทบาทได้</div>';
+            }
+
             // Load Branches
             const branchGrid = document.getElementById('branchGrid');
             try {
                 const branchResponse = await apiFetch('/api/branches');
                 if (!branchResponse.ok) throw new Error('API Error');
                 const branches = await branchResponse.json();
-                
+
                 if (branches.length === 0) {
                     branchGrid.innerHTML = '<div class="p-10 text-center text-slate-400 col-span-full font-medium">ไม่พบข้อมูลสาขา</div>';
                 } else {
@@ -640,7 +811,7 @@
                 const deptResponse = await apiFetch('/api/departments');
                 if (!deptResponse.ok) throw new Error('API Error');
                 const depts = await deptResponse.json();
-                
+
                 if (depts.length === 0) {
                     deptGrid.innerHTML = '<div class="p-10 text-center text-slate-400 col-span-full font-medium">ไม่พบข้อมูลแผนก</div>';
                 } else {
@@ -679,4 +850,5 @@
         document.addEventListener('DOMContentLoaded', loadSettings);
     </script>
 </body>
+
 </html>

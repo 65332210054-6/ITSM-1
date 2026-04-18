@@ -29,29 +29,50 @@ export async function validateSession(context, sqlInstance = null) {
   return sessions[0] || null;
 }
 
-export async function checkModuleAccess(context, moduleKey, sqlInstance = null) {
+export async function checkModuleAccess(context, moduleKey, action = 'view', sqlInstance = null) {
   const sql = sqlInstance || (await import('@neondatabase/serverless')).neon(context.env.DATABASE_URL);
   const userSession = await validateSession(context, sql);
   if (!userSession) return null; // Unauthorized
 
+  // Admin always has access to everything
   if (userSession.role_name === "Admin") return userSession;
 
   try {
-    const settings = await sql`SELECT setting_value FROM system_settings WHERE setting_key = ${moduleKey} LIMIT 1`;
-    let allowedRoles = ['Admin', 'Technician', 'User'];
-    
-    if (settings.length > 0) {
-      const val = settings[0].setting_value;
-      if (val === 'false') {
-        allowedRoles = ['Admin'];
-      } else if (val !== 'true') {
-        allowedRoles = val.split(',').map(r => r.trim());
-      }
+    // Handle legacy calls that pass 'module_xxx_enabled'
+    let baseKey = moduleKey;
+    if (moduleKey.startsWith('module_') && moduleKey.endsWith('_enabled')) {
+      baseKey = moduleKey.replace('module_', '').replace('_enabled', '');
     }
 
+    // Setting key pattern: module_users_roles_view, module_users_roles_create, etc.
+    const settingKey = `module_${baseKey}_roles_${action}`;
+    const legacyKey = `module_${baseKey}_enabled`;
+
+    const settings = await sql`
+      SELECT setting_key, setting_value 
+      FROM system_settings 
+      WHERE setting_key IN (${settingKey}, ${legacyKey})
+    `;
+    
+    const settingsMap = {};
+    settings.forEach(s => settingsMap[s.setting_key] = s.setting_value);
+
+    const val = settingsMap[settingKey] || settingsMap[legacyKey];
+
+    // If no setting is found, default to true for 'view' if legacyKey doesn't exist either
+    if (val === undefined) {
+      return action === 'view' ? userSession : false;
+    }
+    
+    if (val === 'true' || val === '') return userSession;
+    if (val === 'false') return false;
+
+    // Check specific roles
+    const allowedRoles = String(val).split(',').map(r => r.trim());
     if (allowedRoles.includes(userSession.role_name)) return userSession;
+    
   } catch (error) {
-    console.error(`Error checking module access (${moduleKey}):`, error);
+    console.error(`Error checking module access (${moduleKey}, ${action}):`, error);
   }
 
   return false; // Forbidden

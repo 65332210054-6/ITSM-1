@@ -38,42 +38,7 @@
                     </div>
 
                     <div id="welcomeGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 relative z-10">
-                        <div id="btnUsers" class="p-6 sm:p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 transition-all cursor-pointer group hidden" onclick="window.location.href='/users.html'">
-                            <div class="flex items-center gap-4 mb-3">
-                                <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <i data-lucide="users" class="h-5 w-5 text-white"></i>
-                                </div>
-                                <h3 class="font-bold text-white text-lg sm:text-xl">จัดการผู้ใช้งาน</h3>
-                            </div>
-                            <p class="text-indigo-100 text-xs sm:text-sm font-medium opacity-80 leading-relaxed">เพิ่ม แก้ไข หรือระงับสิทธิ์การใช้งานพนักงาน</p>
-                        </div>
-                        <div id="btnAssets" class="p-6 sm:p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 transition-all cursor-pointer group hidden" onclick="window.location.href='/assets.html'">
-                            <div class="flex items-center gap-4 mb-3">
-                                <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <i data-lucide="monitor" class="h-5 w-5 text-white"></i>
-                                </div>
-                                <h3 class="font-bold text-white text-lg sm:text-xl">จัดการทรัพย์สิน</h3>
-                            </div>
-                            <p class="text-indigo-100 text-xs sm:text-sm font-medium opacity-80 leading-relaxed">ดูแลรักษารายการคอมพิวเตอร์และอุปกรณ์ไอที</p>
-                        </div>
-                        <div id="btnTickets" class="p-6 sm:p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 transition-all cursor-pointer group hidden" onclick="window.location.href='/tickets.html'">
-                            <div class="flex items-center gap-4 mb-3">
-                                <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <i data-lucide="ticket" class="h-5 w-5 text-white"></i>
-                                </div>
-                                <h3 class="font-bold text-white text-lg sm:text-xl">ระบบแจ้งซ่อม</h3>
-                            </div>
-                            <p class="text-indigo-100 text-xs sm:text-sm font-medium opacity-80 leading-relaxed">ติดตามงานซ่อมและบริการด้านไอทีทั้งหมด</p>
-                        </div>
-                        <div id="btnSettings" class="p-6 sm:p-8 bg-slate-900/10 backdrop-blur-md border border-white/10 rounded-2xl hover:bg-slate-900/20 transition-all cursor-pointer group hidden" onclick="window.location.href='/settings.html'">
-                            <div class="flex items-center gap-4 mb-3">
-                                <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <i data-lucide="settings" class="h-5 w-5 text-white"></i>
-                                </div>
-                                <h3 class="font-bold text-white text-lg sm:text-xl">ตั้งค่าระบบ</h3>
-                            </div>
-                            <p class="text-indigo-100 text-xs sm:text-sm font-medium opacity-80 leading-relaxed">จัดการโครงสร้างสาขา และแผนกต่างๆ</p>
-                        </div>
+                        <!-- Module cards will be rendered here dynamically -->
                     </div>
                     <!-- Decorative Circle -->
                     <div class="absolute -right-20 -bottom-20 w-40 sm:w-80 h-40 sm:h-80 bg-white/10 rounded-full blur-3xl"></div>
@@ -338,16 +303,42 @@
                 const welcomeName = document.getElementById('welcomeName');
                 if (welcomeName) welcomeName.innerText = user.name || 'User';
 
-                // Show/Hide buttons based on modules
-                const btnUsers = document.getElementById('btnUsers');
-                const btnAssets = document.getElementById('btnAssets');
-                const btnTickets = document.getElementById('btnTickets');
-                const btnSettings = document.getElementById('btnSettings');
+                // Render Module Cards Dynamically
+                const welcomeGrid = document.getElementById('welcomeGrid');
+                if (welcomeGrid) {
+                    let gridHTML = ui.modules.map(m => {
+                        if (ui.checkAccess(m.key, settings, user)) {
+                            return `
+                                <div class="p-6 sm:p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 transition-all cursor-pointer group" onclick="window.location.href='${m.path}'">
+                                    <div class="flex items-center gap-4 mb-3">
+                                        <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                            <i data-lucide="${m.icon}" class="h-5 w-5 text-white"></i>
+                                        </div>
+                                        <h3 class="font-bold text-white text-lg sm:text-xl">${m.name}</h3>
+                                    </div>
+                                    <p class="text-indigo-100 text-xs sm:text-sm font-medium opacity-80 leading-relaxed">${m.desc}</p>
+                                </div>
+                            `;
+                        }
+                        return '';
+                    }).join('');
 
-                if (btnUsers && ui.checkAccess('module_users_enabled', settings, user)) btnUsers.classList.remove('hidden');
-                if (btnAssets && ui.checkAccess('module_assets_enabled', settings, user)) btnAssets.classList.remove('hidden'); 
-                if (btnTickets && ui.checkAccess('module_tickets_enabled', settings, user)) btnTickets.classList.remove('hidden');
-                if (btnSettings && isAdmin) btnSettings.classList.remove('hidden');
+                    // Add Settings card for Admin
+                    if (isAdmin) {
+                        gridHTML += `
+                            <div class="p-6 sm:p-8 bg-slate-900/10 backdrop-blur-md border border-white/10 rounded-2xl hover:bg-slate-900/20 transition-all cursor-pointer group" onclick="window.location.href='/settings.html'">
+                                <div class="flex items-center gap-4 mb-3">
+                                    <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        <i data-lucide="settings" class="h-5 w-5 text-white"></i>
+                                    </div>
+                                    <h3 class="font-bold text-white text-lg sm:text-xl">ตั้งค่าระบบ</h3>
+                                </div>
+                                <p class="text-indigo-100 text-xs sm:text-sm font-medium opacity-80 leading-relaxed">จัดการโครงสร้างสาขา แผนก และสิทธิ์การใช้งาน</p>
+                            </div>
+                        `;
+                    }
+                    welcomeGrid.innerHTML = gridHTML;
+                }
 
                 loadDashboardStats();
                 loadDashboardCharts();

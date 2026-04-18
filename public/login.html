@@ -120,6 +120,8 @@
                 if (response.ok) {
                     localStorage.setItem('user', JSON.stringify(result.user));
                     localStorage.setItem('token', result.token);
+                    localStorage.removeItem('system_settings');
+                    localStorage.removeItem('system_settings_time');
                     window.location.href = '/';
                 } else {
                     let message = result.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';

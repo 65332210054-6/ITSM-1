@@ -14,29 +14,32 @@ export async function onRequest(context) {
   try {
     const url = new URL(request.url);
     const action = url.searchParams.get("action");
-
     const sql = neon(databaseUrl);
 
-    // Secure Auth Check
-    const userSession = await checkModuleAccess(context, 'module_users_enabled', sql);
+    // 1. Session & Access Control
+    // Actions "getUsers" and "getOptions" are bypassable for general authenticated users (for dropdowns)
+    let userSession = null;
+    if (action === "getUsers" || action === "getOptions") {
+      userSession = await validateSession(context, sql);
+    } else {
+      // Base check for 'view' access
+      userSession = await checkModuleAccess(context, 'users', 'view', sql);
+    }
+
     if (userSession === null) {
-      return new Response(JSON.stringify({ message: "Unauthorized" }), { 
-        status: 401,
-        headers: { "Content-Type": "application/json" }
-      });
+      return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
     }
     if (userSession === false) {
-      return new Response(JSON.stringify({ message: "Forbidden: You do not have access to the Users module" }), { status: 403 });
+      return new Response(JSON.stringify({ message: "Forbidden: No access to User Management" }), { status: 403 });
     }
-    
-    // Admin Only Check for Write Operations
-    if (request.method === "POST" && userSession.role_name !== "Admin") {
-      return new Response(JSON.stringify({ message: "Forbidden: Admin role required" }), { status: 403 });
-    }
-    
+
     // GET Users list and options
     if (request.method === "GET") {
+      // Action: Export (Requires special check or defaults to view)
       if (action === "export") {
+        if (!await checkModuleAccess(context, 'users', 'view', sql)) {
+          return new Response(JSON.stringify({ message: "Forbidden" }), { status: 403 });
+        }
         const users = await sql`
           SELECT u.id, u.name, u.email, r.name as role_name, b.name as branch_name, d.name as department_name, u.status, u.created_at
           FROM users u 
@@ -70,6 +73,21 @@ export async function onRequest(context) {
         });
       }
 
+      if (action === "getUsers") {
+        const users = await sql`
+          SELECT u.id, u.name, u.email, r.name as role_name, d.name as department_name
+          FROM users u
+          LEFT JOIN roles r ON u.role_id = r.id
+          LEFT JOIN departments d ON u.department_id = d.id
+          WHERE u.status = 'active' OR u.status IS NULL
+          ORDER BY u.name ASC
+        `;
+        return new Response(JSON.stringify(users), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
       if (action === "getOptions") {
         const roles = await sql`SELECT id, name FROM roles ORDER BY name`;
         const branches = await sql`SELECT id, name FROM branches ORDER BY name`;
@@ -80,111 +98,85 @@ export async function onRequest(context) {
         });
       }
 
-      // Auto-cleanup expired suspensions globally
-      await sql`UPDATE users SET status = 'active', lock_until = NULL WHERE status = 'suspended' AND lock_until <= NOW()`;
-
-      // Pagination & Search logic
+      // Rest of GET is main list
       let limit = 10;
       let offset = 0;
-      let page = 1;
       let startParam = url.searchParams.get("start");
       let endParam = url.searchParams.get("end");
 
       if (startParam && endParam) {
-        const startNum = parseInt(startParam, 10) || 1;
-        const endNum = parseInt(endParam, 10) || 10;
+        const startNum = parseInt(startParam, 10);
+        const endNum = parseInt(endParam, 10);
         offset = Math.max(0, startNum - 1);
         limit = Math.max(1, endNum - startNum + 1);
-        page = Math.floor(offset / limit) + 1;
-      } else {
-        page = parseInt(url.searchParams.get("page") || "1", 10) || 1;
-        limit = parseInt(url.searchParams.get("limit") || "10", 10) || 10;
-        offset = (page - 1) * limit;
       }
-
-      // Ensure they are strict numbers for the SQL tag
-      limit = Number(limit);
-      offset = Number(offset);
       
       const search = url.searchParams.get("search") || "";
-      const roleId = url.searchParams.get("role_id") || "";
-      const branchId = url.searchParams.get("branch_id") || "";
-      const deptId = url.searchParams.get("department_id") || "";
+      const role_id = url.searchParams.get("role_id") || "";
+      const branch_id = url.searchParams.get("branch_id") || "";
+      const department_id = url.searchParams.get("department_id") || "";
       const status = url.searchParams.get("status") || "";
+      const getStats = url.searchParams.get("get_stats") === 'true';
 
       const searchPattern = search ? `%${search}%` : "";
 
-      // Optimized query using the "optional param" pattern to keep SQL static
       const countResult = await sql`
-        SELECT COUNT(*) as total 
+        SELECT COUNT(*)::int as total
         FROM users u
         WHERE (${searchPattern} = '' OR u.name ILIKE ${searchPattern} OR u.email ILIKE ${searchPattern})
-          AND (${roleId} = '' OR u.role_id::text = ${roleId})
-          AND (${branchId} = '' OR u.branch_id::text = ${branchId})
-          AND (${deptId} = '' OR u.department_id::text = ${deptId})
-          AND (${status} = '' OR u.status = ${status})
+        AND (${role_id} = '' OR u.role_id = ${role_id})
+        AND (${branch_id} = '' OR u.branch_id = ${branch_id})
+        AND (${department_id} = '' OR u.department_id = ${department_id})
+        AND (${status} = '' OR u.status = ${status})
       `;
-      const totalCount = parseInt(countResult[0]?.total || "0", 10);
 
-      const users = await sql`
-        SELECT u.id, u.name, u.email, u.role_id, u.branch_id, u.department_id, u.status, r.name as role_name, b.name as branch_name, d.name as department_name 
-        FROM users u 
-        LEFT JOIN roles r ON u.role_id = r.id 
+      const usersResult = await sql`
+        SELECT u.id, u.name, u.email, u.status, u.created_at, u.login_attempts, u.lock_until,
+               r.name as role_name, b.name as branch_name, d.name as department_name
+        FROM users u
+        LEFT JOIN roles r ON u.role_id = r.id
         LEFT JOIN branches b ON u.branch_id = b.id
-        LEFT JOIN departments d ON u.department_id = d.id 
+        LEFT JOIN departments d ON u.department_id = d.id
         WHERE (${searchPattern} = '' OR u.name ILIKE ${searchPattern} OR u.email ILIKE ${searchPattern})
-          AND (${roleId} = '' OR u.role_id::text = ${roleId})
-          AND (${branchId} = '' OR u.branch_id::text = ${branchId})
-          AND (${deptId} = '' OR u.department_id::text = ${deptId})
-          AND (${status} = '' OR u.status = ${status})
+        AND (${role_id} = '' OR u.role_id = ${role_id})
+        AND (${branch_id} = '' OR u.branch_id = ${branch_id})
+        AND (${department_id} = '' OR u.department_id = ${department_id})
+        AND (${status} = '' OR u.status = ${status})
         ORDER BY u.created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `;
-      
-      // Role Stats calculation (Conditional)
-      const getStats = url.searchParams.get("get_stats") === "true";
-      let roleStats = null;
+
+      const totalCount = countResult[0]?.total || 0;
+      const totalPages = Math.ceil(totalCount / limit);
+
+      let roleStats = [];
       if (getStats) {
-        const statsResult = await sql`
-          SELECT r.name as role_name, COUNT(*)::int as count
-          FROM users u
-          LEFT JOIN roles r ON u.role_id = r.id
-          WHERE (${searchPattern} = '' OR u.name ILIKE ${searchPattern} OR u.email ILIKE ${searchPattern})
-            AND (${roleId} = '' OR u.role_id::text = ${roleId})
-            AND (${branchId} = '' OR u.branch_id::text = ${branchId})
-            AND (${deptId} = '' OR u.department_id::text = ${deptId})
-            AND (${status} = '' OR u.status = ${status})
-          GROUP BY r.name
+        roleStats = await sql`
+            SELECT r.name, COUNT(u.id)::int as count 
+            FROM users u 
+            LEFT JOIN roles r ON u.role_id = r.id 
+            GROUP BY r.name
         `;
-        roleStats = {};
-        statsResult.forEach(row => {
-          roleStats[row.role_name || 'User'] = row.count;
-        });
       }
 
-      return new Response(JSON.stringify({
-        users,
-        page,
-        limit,
-        start: offset + 1,
-        end: offset + limit,
-        totalCount: Number(totalCount),
-        totalPages: Math.ceil(Number(totalCount) / limit),
-        roleStats
-      }), { 
-        status: 200,
-        headers: { 
-          "Content-Type": "application/json",
-          "X-Frame-Options": "DENY",
-          "X-Content-Type-Options": "nosniff"
-        }
+      return new Response(JSON.stringify({ 
+          users: usersResult, 
+          totalCount, 
+          totalPages,
+          roleStats: getStats ? roleStats : undefined
+      }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
       });
     }
 
     // POST Operations
     if (request.method === "POST") {
-      // 1. Delete User (Doesn't require body)
+      // 1. Delete User
       if (action === "delete") {
+        if (!await checkModuleAccess(context, 'users', 'delete', sql)) {
+          return new Response(JSON.stringify({ message: "Forbidden: No permission to delete" }), { status: 403 });
+        }
         const id = url.searchParams.get("id");
         if (!id) {
           return new Response(JSON.stringify({ message: "User ID is required" }), { status: 400 });
@@ -195,14 +187,15 @@ export async function onRequest(context) {
         return new Response(JSON.stringify({ message: "User deleted successfully" }), { status: 200 });
       }
 
-      // Other actions require JSON body
       const data = await request.json();
 
-      // 1. Create Single User
+      // 2. Create Single User
       if (action === "create") {
+        if (!await checkModuleAccess(context, 'users', 'create', sql)) {
+          return new Response(JSON.stringify({ message: "Forbidden: No permission to create" }), { status: 403 });
+        }
         const { name, email, role_id, branch_id, department_id, password } = data;
         
-        // Check if user exists
         const existing = await sql`SELECT id FROM users WHERE email = ${email} LIMIT 1`;
         if (existing.length > 0) {
           return new Response(JSON.stringify({ message: "ชื่อผู้ใช้งานนี้มีอยู่ในระบบแล้ว" }), { status: 400 });
@@ -217,12 +210,15 @@ export async function onRequest(context) {
         `;
 
         await logAction(sql, userSession.user_id, 'Users', 'Create', { name, email, role_id });
-
         return new Response(JSON.stringify({ message: "User created successfully" }), { status: 201 });
       }
 
-      // 2. Bulk Create (Import)
+      // 3. Bulk Create
       if (action === "bulkCreate") {
+        if (!await checkModuleAccess(context, 'users', 'create', sql)) {
+          return new Response(JSON.stringify({ message: "Forbidden: No permission to create" }), { status: 403 });
+        }
+        // ... (rest of bulkCreate logic)
         const usersToImport = data;
         
         // Load roles, branches, and depts for mapping names to IDs

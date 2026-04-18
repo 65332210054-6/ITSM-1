@@ -11,7 +11,7 @@ export async function onRequest(context) {
   }
 
   try {
-    const userSession = await checkModuleAccess(context, 'module_tickets_enabled');
+    const userSession = await checkModuleAccess(context, 'tickets', 'view');
     if (userSession === null) {
       return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
     }
@@ -161,7 +161,7 @@ export async function onRequest(context) {
       const { id, subject, description, priority, asset_id, status, assigned_to } = data;
 
       if (id) {
-        // Update (Only for Admin/Technician or the original reporter)
+        // Update (Only for Admin/Technician with 'edit' permission or the original reporter)
         const existingTicket = await sql`SELECT reporter_id FROM tickets WHERE id = ${id} LIMIT 1`;
         
         if (existingTicket.length === 0) {
@@ -169,9 +169,9 @@ export async function onRequest(context) {
         }
 
         const isOwner = existingTicket[0].reporter_id === userSession.user_id;
-        const isStaff = userSession.role_name === 'Admin' || userSession.role_name === 'Technician';
+        const hasEditPerm = await checkModuleAccess(context, 'tickets', 'edit', sql);
 
-        if (!isOwner && !isStaff) {
+        if (!isOwner && !hasEditPerm) {
           return new Response(JSON.stringify({ message: "Forbidden: You do not have permission to update this ticket" }), { status: 403 });
         }
 
@@ -187,6 +187,9 @@ export async function onRequest(context) {
         return new Response(JSON.stringify({ message: "Ticket updated successfully" }), { status: 200 });
       } else {
         // Create
+        if (!await checkModuleAccess(context, 'tickets', 'create', sql)) {
+          return new Response(JSON.stringify({ message: "Forbidden: No permission to create tickets" }), { status: 403 });
+        }
         const newId = crypto.randomUUID();
         await sql`
           INSERT INTO tickets (id, subject, description, priority, reporter_id, asset_id, status, created_at, updated_at)

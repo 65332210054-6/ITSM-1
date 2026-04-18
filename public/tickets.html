@@ -180,6 +180,15 @@
             // Initialize Shared UI Components
             ui.initChoices();
             
+            // Load settings
+            const settings = await ui.getSystemSettings();
+
+            // Check Permissions
+            if (!ui.checkAccess('tickets', settings, null, 'create')) {
+                const btn = document.querySelector('button[onclick="openTicketModal()"]');
+                if (btn) btn.classList.add('hidden');
+            }
+
             // Load tickets immediately
             loadTickets();
 
@@ -301,9 +310,10 @@
                             <button onclick="window.location.href='/ticket-detail.html?id=${t.id}'" class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all active:scale-95" title="ดูรายละเอียด">
                                 <i data-lucide="search" class="w-4 h-4"></i>
                             </button>
+                            ${ui.checkAccess('tickets', null, null, 'edit') || t.reporter_id === JSON.parse(localStorage.getItem('user') || '{}').id ? `
                             <button onclick="viewTicket('${t.id}')" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all active:scale-95" title="แก้ไข">
                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
-                            </button>
+                            </button>` : ''}
                         </div>
                     </td>
                 `;
@@ -367,7 +377,8 @@
             if (ui.choicesInstances['ticketPriority']) ui.choicesInstances['ticketPriority'].setChoiceByValue(ticket.priority);
             if (ui.choicesInstances['ticketAsset']) ui.choicesInstances['ticketAsset'].setChoiceByValue(ticket.asset_id || '');
             
-            if (isAdminOrTech) {
+            const canEditStatus = ui.checkAccess('tickets', null, null, 'edit') && isAdminOrTech;
+            if (canEditStatus) {
                 document.getElementById('adminFields').classList.remove('hidden');
                 if (ui.choicesInstances['ticketStatus']) ui.choicesInstances['ticketStatus'].setChoiceByValue(ticket.status);
                 if (ui.choicesInstances['ticketAssignee']) ui.choicesInstances['ticketAssignee'].setChoiceByValue(ticket.assigned_to || '');

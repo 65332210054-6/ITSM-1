@@ -110,13 +110,15 @@ async function apiFetch(url, options = {}) {
 
     try {
         const response = await fetch(url, { ...options, headers });
-        
+
         if (response.status === 401) {
             const currentPath = window.location.pathname.replace(/\/$/, '').replace(/\.html$/, '') || '/';
             if (!_isRedirecting && currentPath !== '/login') {
                 _isRedirecting = true;
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
+                localStorage.removeItem('system_settings');
+                localStorage.removeItem('system_settings_time');
                 window.location.href = '/login.html';
             }
             return;
@@ -149,6 +151,19 @@ async function apiFetch(url, options = {}) {
 const ui = {
     choicesInstances: {},
     systemSettingsCache: null,
+    
+    // Central Module Registry
+    modules: [
+        { id: 'users', name: 'จัดการผู้ใช้งาน', icon: 'users', color: 'text-indigo-600', key: 'module_users_enabled', path: '/users.html', desc: 'จัดการข้อมูลพนักงานและสิทธิ์การใช้งาน' },
+        { id: 'assets', name: 'จัดการทรัพย์สิน', icon: 'monitor', color: 'text-blue-600', key: 'module_assets_enabled', path: '/assets.html', desc: 'ดูแลรักษาคอมพิวเตอร์และอุปกรณ์ไอที' },
+        { id: 'tickets', name: 'ระบบแจ้งซ่อม', icon: 'ticket', color: 'text-amber-600', key: 'module_tickets_enabled', path: '/tickets.html', desc: 'ติดตามงานซ่อมและบริการด้านไอทีทั้งหมด' },
+        { id: 'borrows', name: 'ยืม-คืนอุปกรณ์', icon: 'arrow-right-from-line', color: 'text-violet-600', key: 'module_borrows_enabled', path: '/borrows.html', desc: 'บันทึกการเบิกยืมและคืนอุปกรณ์ไอที' },
+        { id: 'domains', name: 'โดเมน & SSL', icon: 'globe', color: 'text-sky-600', key: 'module_domains_enabled', path: '/domains.html', desc: 'จัดการโดเมนเนม ใบรับรอง SSL และโฮสติ้ง' },
+        { id: 'cartridges', name: 'หมึกพิมพ์ & Toner', icon: 'droplets', color: 'text-pink-600', key: 'module_cartridges_enabled', path: '/cartridges.html', desc: 'จัดการสต็อกและประวัติการใช้หมึกพิมพ์' },
+        { id: 'licenses', name: 'ลิขสิทธิ์ซอฟต์แวร์', icon: 'key', color: 'text-purple-600', key: 'module_licenses_enabled', path: '/licenses.html', desc: 'จัดการคีย์และวันหมดอายุของซอฟต์แวร์' },
+        { id: 'reports', name: 'รายงาน & Export', icon: 'bar-chart-2', color: 'text-emerald-600', key: 'module_reports_enabled', path: '/reports.html', desc: 'สรุปข้อมูลทางสถิติและส่งออกไฟล์ CSV' },
+        { id: 'categories', name: 'หมวดหมู่ทรัพย์สิน', icon: 'layers', color: 'text-rose-600', key: 'module_categories_enabled', path: '/categories.html', desc: 'จัดการประเภทและหมวดหมู่ของอุปกรณ์' }
+    ],
 
     verifySession: async () => {
         try {
@@ -156,7 +171,7 @@ const ui = {
             if (res && res.ok) {
                 const data = await res.json();
                 const localUser = JSON.parse(localStorage.getItem('user') || '{}');
-                
+
                 // Robust check for any changes in the user record
                 const dataStr = JSON.stringify(data.user);
                 const localStr = JSON.stringify({
@@ -173,11 +188,11 @@ const ui = {
                 if (data.user && dataStr !== localStr) {
                     const newUser = { ...localUser, ...data.user };
                     localStorage.setItem('user', JSON.stringify(newUser));
-                    
+
                     // Trigger UI updates immediately
                     const pageTitle = document.title.split('|')[0].trim();
                     ui.renderHeader(pageTitle, window.location.pathname.includes('-detail'));
-                    
+
                     const settings = await ui.getSystemSettings();
                     if (document.getElementById('sidebar-container')) {
                         ui.renderSidebar('sidebar-container', settings);
@@ -187,13 +202,13 @@ const ui = {
                     if (data.user.role !== localUser.role) {
                         const path = window.location.pathname;
                         const normPath = path.replace(/\/$/, '').replace(/\.html$/, '') || '/';
-                        
+
                         let moduleKey = '';
                         if (normPath === '/users') moduleKey = 'module_users_enabled';
                         if (normPath === '/assets' || normPath === '/asset-detail') moduleKey = 'module_assets_enabled';
                         if (normPath === '/tickets' || normPath === '/ticket-detail') moduleKey = 'module_tickets_enabled';
 
-                        if (moduleKey && !ui.checkAccess(moduleKey, settings, data.user)) {
+                        if (moduleKey && !ui.checkAccess(moduleKey, settings, data.user, 'view')) {
                             if (!_isRedirecting) {
                                 _isRedirecting = true;
                                 window.location.replace('/index.html');
@@ -215,7 +230,7 @@ const ui = {
 
         if (localCache && !forceRefresh) {
             const settings = JSON.parse(localCache);
-            if (cacheAge > CACHE_TTL) ui.getSystemSettings(true).catch(() => {}); 
+            if (cacheAge > CACHE_TTL) ui.getSystemSettings(true).catch(() => { });
             return settings;
         }
 
@@ -273,17 +288,30 @@ const ui = {
                     placeholderValue: select.getAttribute('placeholder') || null
                 });
                 ui.choicesInstances[select.id] = instance;
-            } catch (e) {}
+            } catch (e) { }
         });
     },
 
-    checkAccess: (key, settings, user) => {
+    checkAccess: (moduleKey, settings, user, action = 'view') => {
         const u = user || JSON.parse(localStorage.getItem('user') || '{}');
+        const s = settings || JSON.parse(localStorage.getItem('system_settings') || '{}');
         if (u.role === 'Admin') return true;
-        const val = settings[key];
-        if (val === true || val === 'true') return true;
+
+        // Handle legacy keys if passed directly
+        let baseKey = moduleKey;
+        if (moduleKey.startsWith('module_') && moduleKey.endsWith('_enabled')) {
+            baseKey = moduleKey.replace('module_', '').replace('_enabled', '');
+        }
+
+        const permKey = `module_${baseKey}_roles_${action}`;
+        const legacyKey = `module_${baseKey}_enabled`;
+        
+        // Priority: Action-specific key -> Legacy enabled key (only for view) -> Default false (for other actions)
+        const val = s[permKey] || (action === 'view' ? s[legacyKey] : 'false');
+
+        if (val === true || val === 'true' || val === null || val === undefined) return true;
         if (val === false || val === 'false') return false;
-        if (!val) return true;
+
         const allowedRoles = String(val).split(',').map(r => r.trim());
         return allowedRoles.includes(u.role);
     },
@@ -306,7 +334,7 @@ const ui = {
     renderHeader: (title, showBack = false) => {
         const container = document.getElementById('header-container');
         if (!container) return;
-        
+
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         const avatarInitial = (user.name || '?').charAt(0).toUpperCase();
 
@@ -337,17 +365,17 @@ const ui = {
                                 ${user.avatar_url ? `<img src="${user.avatar_url}" class="w-full h-full object-cover">` : avatarInitial}
                             </div>
                         </button>
-                        <button id="logoutBtn" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all group">
+                        <button id="logoutBtn" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all group cursor-pointer">
                             <i data-lucide="log-out" class="h-5 w-5 group-hover:translate-x-0.5 transition-transform"></i>
                         </button>
                     </div>
                 </div>
             </header>
         `;
-        
+
         // Re-initialize sidebar toggle because we just replaced the button
         ui.initSidebar();
-        
+
         // Re-attach logout listener
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
@@ -355,6 +383,8 @@ const ui = {
                 e.preventDefault();
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
+                localStorage.removeItem('system_settings');
+                localStorage.removeItem('system_settings_time');
                 window.location.href = '/login.html';
             };
         }
@@ -365,15 +395,15 @@ const ui = {
     getBadgeClass: (type, value) => {
         const val = String(value).toLowerCase();
         if (type === 'status') {
-             if (['active', 'in use', 'resolved', 'closed', 'success'].includes(val)) return 'status-badge status-success';
-             if (['inactive', 'broken', 'repairing', 'danger'].includes(val)) return 'status-badge status-danger';
-             if (['suspended', 'on hold', 'warning', 'in progress'].includes(val)) return 'status-badge status-warning';
-             return 'status-badge status-neutral';
+            if (['active', 'in use', 'resolved', 'closed', 'success'].includes(val)) return 'status-badge status-success';
+            if (['inactive', 'broken', 'repairing', 'danger'].includes(val)) return 'status-badge status-danger';
+            if (['suspended', 'on hold', 'warning', 'in progress'].includes(val)) return 'status-badge status-warning';
+            return 'status-badge status-neutral';
         }
         if (type === 'priority') {
-             if (['critical', 'high'].includes(val)) return 'status-badge status-danger';
-             if (['medium'].includes(val)) return 'status-badge status-warning';
-             return 'status-badge status-success';
+            if (['critical', 'high'].includes(val)) return 'status-badge status-danger';
+            if (['medium'].includes(val)) return 'status-badge status-warning';
+            return 'status-badge status-success';
         }
         return 'status-badge status-neutral';
     },
@@ -415,9 +445,6 @@ const ui = {
         if (!container) return;
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         const settings = settingsFromParam || await ui.getSystemSettings();
-        const usersVisible = ui.checkAccess('module_users_enabled', settings, user);
-        const assetsVisible = ui.checkAccess('module_assets_enabled', settings, user);
-        const ticketsVisible = ui.checkAccess('module_tickets_enabled', settings, user);
         const isAdmin = user.role === 'Admin';
 
         container.innerHTML = `
@@ -435,9 +462,12 @@ const ui = {
                     <div class="px-6 mb-4"><p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em]">หลัก (Main)</p></div>
                     <div class="space-y-1 px-3">
                         <a href="/" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all"><i data-lucide="layout-dashboard" class="mr-3 h-5 w-5"></i> หน้าแรก</a>
-                        ${usersVisible ? `<a href="/users.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="users" class="mr-3 h-5 w-5"></i> จัดการผู้ใช้งาน</a>` : ''}
-                        ${assetsVisible ? `<a href="/assets.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="monitor" class="mr-3 h-5 w-5"></i> จัดการทรัพย์สิน</a>` : ''}
-                        ${ticketsVisible ? `<a href="/tickets.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="ticket" class="mr-3 h-5 w-5"></i> ระบบแจ้งซ่อม</a>` : ''}
+                        ${ui.modules.map(m => {
+                            if (ui.checkAccess(m.id, settings, user, 'view')) {
+                                return `<a href="${m.path}" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="${m.icon}" class="mr-3 h-5 w-5"></i> ${m.name}</a>`;
+                            }
+                            return '';
+                        }).join('')}
                         ${isAdmin ? `<a href="/settings.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="settings" class="mr-3 h-5 w-5"></i> ตั้งค่าระบบ</a>` : ''}
                     </div>
                 </nav>
@@ -459,7 +489,7 @@ const ui = {
         };
         if (openSidebar) openSidebar.onclick = toggleSidebar;
         if (closeSidebar) closeSidebar.onclick = toggleSidebar;
-        
+
         const path = window.location.pathname;
         const normPath = path.replace(/\/$/, '').replace(/\.html$/, '') || '/';
         document.querySelectorAll('nav a').forEach(link => {
@@ -513,7 +543,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const localUser = JSON.parse(localStorage.getItem('user') || '{}');
             const localSettings = JSON.parse(localStorage.getItem('system_settings') || '{}');
-            
+
             const pageTitle = document.title.split('|')[0].trim();
             if (document.getElementById('header-container')) {
                 ui.renderHeader(pageTitle, window.location.pathname.includes('-detail'));
@@ -533,20 +563,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const user = sessionData?.user || JSON.parse(localStorage.getItem('user') || '{}');
         const isAdmin = user.role === 'Admin';
-        
-        let moduleKey = '';
-        if (normPath === '/users') moduleKey = 'module_users_enabled';
-        else if (normPath === '/assets' || normPath === '/asset-detail') moduleKey = 'module_assets_enabled';
-        else if (normPath === '/tickets' || normPath === '/ticket-detail') moduleKey = 'module_tickets_enabled';
 
-        if (moduleKey && !ui.checkAccess(moduleKey, settings, user)) {
+        let moduleKey = '';
+        const currentModule = ui.modules.find(m => {
+            const normMPath = m.path.replace(/\.html$/, '');
+            return normPath === normMPath || (m.id === 'assets' && normPath === '/asset-detail') || (m.id === 'tickets' && normPath === '/ticket-detail');
+        });
+
+        if (currentModule) moduleKey = currentModule.key;
+
+        if (moduleKey && !ui.checkAccess(moduleKey, settings, user, 'view')) {
             window.location.replace('/index.html');
             return;
         }
 
-        if ((normPath === '/users' || normPath === '/settings') && !isAdmin) {
-             window.location.replace('/index.html');
-             return;
+        const _isAdmin = user.role === 'Admin';
+        const _isStaff = user.role === 'Admin' || user.role === 'Technician';
+
+        if ((normPath === '/settings') && !_isAdmin) {
+            window.location.replace('/index.html');
+            return;
         }
 
         // Final UI Polish (Only if data changed)
@@ -554,7 +590,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (elements.sidebar && JSON.stringify(settings) !== currentSettingsJSON) {
             ui.renderSidebar('sidebar-container', settings);
         }
-        
+
         if (elements.name) elements.name.innerText = user.name || 'User';
         if (elements.role) elements.role.innerText = user.role || 'System Admin';
         if (window.lucide) lucide.createIcons();

@@ -117,12 +117,21 @@ export async function onRequest(context) {
     }
 
     if (action === "getRecentActivity") {
-      const visibleModules = [];
-      if (usersVisible) visibleModules.push('Users');
-      if (assetsVisible) visibleModules.push('Assets');
-      if (ticketsVisible) visibleModules.push('Tickets');
+      const moduleList = [
+        { id: 'Users', key: 'module_users_enabled' },
+        { id: 'Assets', key: 'module_assets_enabled' },
+        { id: 'Tickets', key: 'module_tickets_enabled' },
+        { id: 'Borrows', key: 'module_borrows_enabled' },
+        { id: 'Domains', key: 'module_domains_enabled' },
+        { id: 'Cartridges', key: 'module_cartridges_enabled' },
+        { id: 'Licenses', key: 'module_licenses_enabled' },
+        { id: 'Reports', key: 'module_reports_enabled' },
+        { id: 'Categories', key: 'module_categories_enabled' }
+      ];
+
+      const visibleModules = moduleList.filter(m => canSee(m.key)).map(m => m.id);
       
-      // If none are visible and not admin, return empty (though sidebar would hide dashboard anyway)
+      // If none are visible and not admin, return empty
       if (visibleModules.length === 0 && userSession.role_name !== 'Admin') {
         return new Response(JSON.stringify([]), { headers: { "Content-Type": "application/json" } });
       }
