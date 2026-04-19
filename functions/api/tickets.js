@@ -69,7 +69,7 @@ export async function onRequest(context) {
 
       if (action === "getOptions") {
         const tickets = await sql`SELECT id, subject FROM tickets ORDER BY created_at DESC`;
-        return new Response(JSON.stringify(tickets), { 
+        return new Response(JSON.stringify(tickets), {
           status: 200,
           headers: { "Content-Type": "application/json" }
         });
@@ -92,7 +92,7 @@ export async function onRequest(context) {
         limit = parseInt(url.searchParams.get("limit") || "10", 10);
         offset = (page - 1) * limit;
       }
-      
+
       const search = url.searchParams.get("search") || "";
 
       const isStaff = userSession.role_name === 'Admin' || userSession.role_name === 'Technician';
@@ -137,7 +137,7 @@ export async function onRequest(context) {
         OFFSET ${offset}
       `;
 
-      return new Response(JSON.stringify({ 
+      return new Response(JSON.stringify({
         tickets,
         totalCount,
         totalPages: Math.ceil(totalCount / limit),
@@ -147,7 +147,7 @@ export async function onRequest(context) {
         end: offset + limit
       }), {
         status: 200,
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "X-Frame-Options": "DENY",
           "X-Content-Type-Options": "nosniff"
@@ -163,16 +163,15 @@ export async function onRequest(context) {
       if (id) {
         // Update (Only for Admin/Technician with 'edit' permission or the original reporter)
         const existingTicket = await sql`SELECT reporter_id FROM tickets WHERE id = ${id} LIMIT 1`;
-        
+
         if (existingTicket.length === 0) {
           return new Response(JSON.stringify({ message: "Ticket not found" }), { status: 404 });
         }
 
-        const isOwner = existingTicket[0].reporter_id === userSession.user_id;
         const hasEditPerm = await checkModuleAccess(context, 'tickets', 'edit', sql);
 
-        if (!isOwner && !hasEditPerm) {
-          return new Response(JSON.stringify({ message: "Forbidden: You do not have permission to update this ticket" }), { status: 403 });
+        if (!hasEditPerm) {
+          return new Response(JSON.stringify({ message: "Forbidden: You do not have permission to update tickets" }), { status: 403 });
         }
 
         await sql`

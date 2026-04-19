@@ -131,7 +131,7 @@
                 <div class="grid grid-cols-2 gap-5">
                     <div>
                         <label class="form-label">หมวดหมู่</label>
-                        <select id="assetCategory" required class="form-input">
+                        <select id="assetCategory" required class="form-input" data-search="true">
                             <option value="">-- กำลังโหลด --</option>
                         </select>
                     </div>
@@ -153,7 +153,7 @@
                     </div>
                     <div>
                         <label class="form-label">ผู้ครอบครอง</label>
-                        <select id="assetUser" class="form-input">
+                        <select id="assetUser" class="form-input" data-search="true">
                             <option value="">ไม่มี (Stock)</option>
                         </select>
                     </div>
@@ -207,10 +207,10 @@
             // Check Permissions
             if (!ui.checkAccess('assets', settings, null, 'create')) {
                 const btn = document.querySelector('button[onclick="openAssetModal()"]');
-                if (btn) btn.classList.add('hidden');
+                if (btn) btn.remove();
             }
             if (!ui.checkAccess('assets', settings, null, 'view')) {
-                document.getElementById('exportAssetsBtn')?.classList.add('hidden');
+                document.getElementById('exportAssetsBtn')?.remove();
             }
 
             // Load main data immediately

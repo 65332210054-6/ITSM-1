@@ -151,12 +151,12 @@
             <form id="borrowForm" class="p-8 space-y-6">
                 <div>
                     <label class="form-label">เลือกอุปกรณ์ที่ว่าง <span class="text-red-500">*</span></label>
-                    <select id="borrowAsset" required></select>
+                    <select id="borrowAsset" required data-search="true" data-search-placeholder="ค้นหาอุปกรณ์..."></select>
                     <div id="borrowAssetLoading" class="mt-2 ml-1"></div>
                 </div>
                 <div>
                     <label class="form-label">เลือกผู้ใช้งาน <span class="text-red-500">*</span></label>
-                    <select id="borrowUser" required></select>
+                    <select id="borrowUser" required data-search="true" data-search-placeholder="ค้นหาชื่อพนักงาน..."></select>
                     <div id="borrowUserLoading" class="mt-2 ml-1"></div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -437,11 +437,11 @@
             // Check Permissions
             if (!ui.checkAccess('borrows', settings, null, 'create')) {
                 const btn = document.querySelector('button[onclick="openBorrowModal()"]');
-                if (btn) btn.classList.add('hidden');
+                if (btn) btn.remove();
             }
             if (!ui.checkAccess('borrows', settings, null, 'view')) {
                 const btn = document.querySelector('button[onclick="exportBorrows()"]');
-                if (btn) btn.classList.add('hidden');
+                if (btn) btn.remove();
             }
 
             ['statusFilter', 'itemsPerPageSelect'].forEach(id => {

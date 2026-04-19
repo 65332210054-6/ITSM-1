@@ -57,9 +57,14 @@ export async function checkModuleAccess(context, moduleKey, action = 'view', sql
     const settingsMap = {};
     settings.forEach(s => settingsMap[s.setting_key] = s.setting_value);
 
-    const val = settingsMap[settingKey] || settingsMap[legacyKey];
+    let val = settingsMap[settingKey];
 
-    // If no setting is found, default to true for 'view' if legacyKey doesn't exist either
+    // Only fallback to legacyKey if action is 'view'
+    if (val === undefined && action === 'view') {
+      val = settingsMap[legacyKey];
+    }
+
+    // If no setting is found, default to true for 'view', false for others (Admin still gets access via top check)
     if (val === undefined) {
       return action === 'view' ? userSession : false;
     }

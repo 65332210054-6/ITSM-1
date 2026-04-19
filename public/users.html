@@ -163,7 +163,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="form-label">บทบาท</label>
-                        <select id="editRole" required class="form-input">
+                        <select id="editRole" required class="form-input" data-search="true">
                             <!-- Roles populated by JS -->
                         </select>
                     </div>
@@ -179,14 +179,14 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                     <div>
                         <label class="form-label">สาขา</label>
-                        <select id="editBranch" class="form-input" onchange="cascadeDepartments('edit')">
+                        <select id="editBranch" class="form-input" onchange="cascadeDepartments('edit')" data-search="true">
                             <option value="">ไม่มีสาขา</option>
                             <!-- Branches populated by JS -->
                         </select>
                     </div>
                     <div>
                         <label class="form-label">แผนก</label>
-                        <select id="editDept" class="form-input">
+                        <select id="editDept" class="form-input" data-search="true">
                             <option value="">ไม่มีแผนก</option>
                             <!-- Departments populated by JS -->
                         </select>
@@ -237,20 +237,20 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
                     <div>
                         <label class="form-label">บทบาท</label>
-                        <select id="addRole" required class="form-input">
+                        <select id="addRole" required class="form-input" data-search="true">
                             <!-- Roles populated by JS -->
                         </select>
                     </div>
                     <div>
                         <label class="form-label">สาขา</label>
-                        <select id="addBranch" class="form-input">
+                        <select id="addBranch" class="form-input" data-search="true">
                             <option value="">ไม่มีสาขา</option>
                             <!-- Branches populated by JS -->
                         </select>
                     </div>
                     <div>
                         <label class="form-label">แผนก</label>
-                        <select id="addDept" class="form-input">
+                        <select id="addDept" class="form-input" data-search="true">
                             <option value="">ไม่มีแผนก</option>
                             <!-- Departments populated by JS -->
                         </select>
@@ -388,11 +388,11 @@
 
             // Permissions Check for UI
             if (!ui.checkAccess('users', systemSettings, null, 'create')) {
-                document.getElementById('addUserBtnContainer')?.classList.add('hidden');
+                document.getElementById('addUserBtnContainer')?.remove();
             }
             if (!ui.checkAccess('users', systemSettings, null, 'view')) {
                 // Actually if they can't view they shouldn't be here, handled by app.js
-                document.getElementById('exportUsersBtn')?.classList.add('hidden');
+                document.getElementById('exportUsersBtn')?.remove();
             }
         }
 

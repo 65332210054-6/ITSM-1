@@ -220,8 +220,13 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            ui.renderHeader('รายละเอียดการแจ้งซ่อม', true);
+        document.addEventListener('DOMContentLoaded', async () => {
+            const settings = await ui.getSystemSettings();
+            if (!ui.checkAccess('tickets', settings, null, 'edit')) {
+                const btn = document.querySelector('button[onclick="toggleEditStatus()"]');
+                if (btn) btn.remove();
+            }
+
             loadTicketDetail();
         });
     </script>

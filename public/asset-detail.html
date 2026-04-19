@@ -197,8 +197,13 @@
              notify.info('ฟีเจอร์นี้เตรียมเปิดใช้งานเร็วๆ นี้');
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            ui.renderHeader('รายละเอียดทรัพย์สิน', true);
+        document.addEventListener('DOMContentLoaded', async () => {
+            const settings = await ui.getSystemSettings();
+            if (!ui.checkAccess('assets', settings, null, 'edit')) {
+                const btn = document.querySelector('button[onclick="editCurrentAsset()"]');
+                if (btn) btn.remove();
+            }
+
             loadAssetDetail();
         });
     </script>

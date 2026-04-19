@@ -11,12 +11,21 @@ export async function onRequest(context) {
   }
 
   try {
-    const userSession = await checkModuleAccess(context, 'assets', 'view');
-    if (userSession === null) {
-      return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
-    }
-    if (userSession === false) {
-      return new Response(JSON.stringify({ message: "Forbidden: You do not have access to the Assets module" }), { status: 403 });
+    const url = new URL(request.url);
+    const action = url.searchParams.get("action");
+
+    let userSession;
+    if (request.method === "GET" && action === "getOptions") {
+      userSession = await validateSession(context);
+      if (!userSession) return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
+    } else {
+      userSession = await checkModuleAccess(context, 'assets', 'view');
+      if (userSession === null) {
+        return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
+      }
+      if (userSession === false) {
+        return new Response(JSON.stringify({ message: "Forbidden: You do not have access to the Assets module" }), { status: 403 });
+      }
     }
 
     const sql = neon(databaseUrl);
@@ -44,8 +53,7 @@ export async function onRequest(context) {
       // Continue anyway, table might already exist
     }
 
-    const url = new URL(request.url);
-    const action = url.searchParams.get("action");
+    // (action and url already parsed above)
 
     // 1. Get Assets List
     if (request.method === "GET") {

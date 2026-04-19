@@ -279,10 +279,16 @@ const ui = {
             if (ui.choicesInstances[select.id]) ui.choicesInstances[select.id].destroy();
             try {
                 const instance = new Choices(select, {
-                    searchEnabled: false,
+                    searchEnabled: select.dataset.search === 'true',
+                    searchPlaceholderValue: select.dataset.searchPlaceholder || 'ค้นหา...',
                     itemSelectText: '',
                     shouldSort: false,
                     allowHTML: true,
+                    fuseOptions: {
+                        threshold: 0.1, // Stricter search but allows substrings (0.0 was too strict)
+                        distance: 100
+                    },
+                    searchResultLimit: 100, // Show more results (default is often 4)
                     position: select.id === 'itemsPerPageSelect' ? 'top' : 'auto',
                     placeholder: true,
                     placeholderValue: select.getAttribute('placeholder') || null
@@ -306,11 +312,19 @@ const ui = {
         const permKey = `module_${baseKey}_roles_${action}`;
         const legacyKey = `module_${baseKey}_enabled`;
         
-        // Priority: Action-specific key -> Legacy enabled key (only for view) -> Default false (for other actions)
-        const val = s[permKey] || (action === 'view' ? s[legacyKey] : 'false');
+        let val = s[permKey];
 
-        if (val === true || val === 'true' || val === null || val === undefined) return true;
+        // Only fallback to legacy view setting if action is 'view'
+        if (val === undefined && action === 'view') {
+            val = s[legacyKey];
+        }
+
+        // Default: If explicitly true/false, respect it. If undefined, true for view, false for others.
+        if (val === true || val === 'true') return true;
         if (val === false || val === 'false') return false;
+        if (val === null || val === undefined) {
+            return action === 'view';
+        }
 
         const allowedRoles = String(val).split(',').map(r => r.trim());
         return allowedRoles.includes(u.role);
@@ -331,9 +345,19 @@ const ui = {
         `;
     },
 
-    renderHeader: (title, showBack = false) => {
+    renderHeader: (title, showBack = false, breadcrumb = null) => {
         const container = document.getElementById('header-container');
         if (!container) return;
+
+        // Auto-detect breadcrumb if not provided and it's a detail page
+        let activeBreadcrumb = breadcrumb;
+        if (!activeBreadcrumb && showBack) {
+            if (window.location.pathname.includes('ticket-detail')) {
+                activeBreadcrumb = { parent: 'ระบบแจ้งซ่อม', url: '/tickets.html' };
+            } else if (window.location.pathname.includes('asset-detail')) {
+                activeBreadcrumb = { parent: 'จัดการทรัพย์สิน', url: '/assets.html' };
+            }
+        }
 
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         const avatarInitial = (user.name || '?').charAt(0).toUpperCase();
@@ -348,13 +372,24 @@ const ui = {
             </button>
         `;
 
+        let headerTitle = `<h1 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">${title}</h1>`;
+        if (activeBreadcrumb) {
+            headerTitle = `
+                <div class="flex items-center gap-2 text-base sm:text-xl overflow-hidden">
+                    <a href="${activeBreadcrumb.url}" class="font-bold text-slate-400 hover:text-indigo-600 transition-colors whitespace-nowrap">${activeBreadcrumb.parent}</a>
+                    <span class="text-slate-300">/</span>
+                    <h1 class="font-black text-slate-800 tracking-tight truncate">${title}</h1>
+                </div>
+            `;
+        }
+
         container.innerHTML = `
             <header class="page-header">
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
                     ${backButton}
-                    <h1 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">${title}</h1>
+                    ${headerTitle}
                 </div>
-                <div class="flex items-center gap-2 sm:gap-6">
+                <div class="flex items-center gap-2 sm:gap-6 ml-4">
                         <button onclick="window.location.href='/profile.html'" class="flex items-center gap-3 p-1 sm:p-2 rounded-2xl hover:bg-slate-100 transition-all active:scale-95 group border border-transparent hover:border-slate-200 cursor-pointer">
                             <div class="text-right hidden md:block">
                                 <p id="userName" class="text-sm font-bold text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors">${escapeHTML(user.name || 'User')}</p>
@@ -369,7 +404,6 @@ const ui = {
                             <i data-lucide="log-out" class="h-5 w-5 group-hover:translate-x-0.5 transition-transform"></i>
                         </button>
                     </div>
-                </div>
             </header>
         `;
 
@@ -389,7 +423,7 @@ const ui = {
             };
         }
 
-        if (window.lucide) lucide.createIcons();
+        try { if (window.lucide) lucide.createIcons(); } catch (e) { }
     },
 
     getBadgeClass: (type, value) => {
