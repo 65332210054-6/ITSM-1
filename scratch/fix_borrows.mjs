@@ -2,7 +2,7 @@ import fs from 'fs';
 
 const path = 'public/borrows.html';
 
-const template = \`<!DOCTYPE html>
+const template = `<!DOCTYPE html>
 <html lang="th" class="h-full bg-slate-50">
 <head>
     <meta charset="UTF-8">
@@ -222,7 +222,7 @@ const template = \`<!DOCTYPE html>
         function statusBadge(s) {
             const map = { Borrowed:'bg-amber-100 text-amber-700 border border-amber-200', Returned:'bg-emerald-100 text-emerald-700 border border-emerald-200', Overdue:'bg-red-100 text-red-700 border border-red-200' };
             const lbl = { Borrowed:'กำลังยืม', Returned:'คืนแล้ว', Overdue:'เกินกำหนดคืน' };
-            return \\\`<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider \\\${map[s]||'bg-slate-100 text-slate-600'}">\\\${lbl[s]||s}</span>\\\`;
+            return \`<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider \${map[s]||'bg-slate-100 text-slate-600'}">\${lbl[s]||s}</span>\`;
         }
 
         function renderBorrows() {
@@ -241,28 +241,28 @@ const template = \`<!DOCTYPE html>
                 const due = b.due_date ? new Date(b.due_date).toLocaleDateString('th-TH') : '-';
                 const borrowed = b.borrowed_at ? new Date(b.borrowed_at).toLocaleDateString('th-TH') : '-';
                 const overdueFlag = b.status === 'Overdue';
-                const safeTag = escapeHTML(b.asset_tag).replace(/'/g, "\\\\\\\\'");
-                tr.innerHTML = \\\`
+                const safeTag = escapeHTML(b.asset_tag).replace(/'/g, "\\\\'");
+                tr.innerHTML = \`
                     <td class="px-6 py-4">
-                        <div class="font-bold text-slate-800 text-sm">\\\${escapeHTML(b.asset_tag)}</div>
-                        <div class="text-[10px] text-slate-400">\\\${escapeHTML(b.asset_name)}</div>
+                        <div class="font-bold text-slate-800 text-sm">\${escapeHTML(b.asset_tag)}</div>
+                        <div class="text-[10px] text-slate-400">\${escapeHTML(b.asset_name)}</div>
                     </td>
                     <td class="px-6 py-4">
-                        <div class="text-sm font-semibold text-slate-700">\\\${escapeHTML(b.borrower_name)}</div>
-                        <div class="text-[10px] text-slate-400">\\\${escapeHTML(b.department_name||'-')}</div>
+                        <div class="text-sm font-semibold text-slate-700">\${escapeHTML(b.borrower_name)}</div>
+                        <div class="text-[10px] text-slate-400">\${escapeHTML(b.department_name||'-')}</div>
                     </td>
-                    <td class="px-6 py-4 text-sm text-slate-600 font-medium">\\\${borrowed}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600 font-medium">\${borrowed}</td>
                     <td class="px-6 py-4">
-                        <span class="text-sm font-medium \\\${overdueFlag?'text-red-600 font-bold':'text-slate-600'}">\\\${due}</span>
-                        \\\${overdueFlag?'<div class="text-[10px] text-red-500 font-bold mt-0.5">⚠ เกินกำหนด</div>':''}
+                        <span class="text-sm font-medium \${overdueFlag?'text-red-600 font-bold':'text-slate-600'}">\${due}</span>
+                        \${overdueFlag?'<div class="text-[10px] text-red-500 font-bold mt-0.5">⚠ เกินกำหนด</div>':''}
                     </td>
-                    <td class="px-6 py-4 text-center">\\\${statusBadge(b.status)}</td>
+                    <td class="px-6 py-4 text-center">\${statusBadge(b.status)}</td>
                     <td class="px-6 py-4 text-right">
                         <div class="flex justify-end gap-1">
-                            \\\${b.status!=='Returned'&&isStaff?\\\`<button onclick="confirmReturn('\\\${b.id}','\\\${safeTag}')" class="px-3 py-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-all active:scale-95"><i data-lucide="check-circle" class="w-3.5 h-3.5 inline mr-0.5"></i>คืน</button>\\\`:''}
-                            \\\${isStaff?\\\`<button onclick="confirmDeleteBorrow('\\\${b.id}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button>\\\`:''}
+                            \${b.status!=='Returned'&&isStaff?\`<button onclick="confirmReturn('\${b.id}','\${safeTag}')" class="px-3 py-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-all active:scale-95"><i data-lucide="check-circle" class="w-3.5 h-3.5 inline mr-0.5"></i>คืน</button>\`:''}
+                            \${isStaff?\`<button onclick="confirmDeleteBorrow('\${b.id}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button>\`:''}
                         </div>
-                    </td>\\\`;
+                    </td>\`;
                 frag.appendChild(tr);
             });
             tbody.innerHTML = '';
@@ -272,15 +272,15 @@ const template = \`<!DOCTYPE html>
         }
 
         async function confirmReturn(id, tag) {
-            if (!await notify.confirm('ยืนยันการคืน', \\\`ยืนยันการรับคืนอุปกรณ์ "\\\${tag}"?\\\`)) return;
-            const res = await apiFetch(\\\`/api/borrows?action=return&id=\\\${id}\\\`, { method:'POST' });
+            if (!await notify.confirm('ยืนยันการคืน', \`ยืนยันการรับคืนอุปกรณ์ "\${tag}"?\`)) return;
+            const res = await apiFetch(\`/api/borrows?action=return&id=\${id}\`, { method:'POST' });
             if (res && res.ok) { notify.success('บันทึกการคืนสำเร็จ'); loadBorrows(); loadStats(); }
             else { const e = await res?.json().catch(()=>({})); notify.error(e.message||'เกิดข้อผิดพลาด'); }
         }
 
         async function confirmDeleteBorrow(id) {
             if (!await notify.confirm('ลบข้อมูล', 'ยืนยันการลบข้อมูลการยืมนี้หรือไม่?')) return;
-            const res = await apiFetch(\\\`/api/borrows?action=delete&id=\\\${id}\\\`, { method:'POST' });
+            const res = await apiFetch(\`/api/borrows?action=delete&id=\${id}\`, { method:'POST' });
             if (res && res.ok) { notify.success('ลบข้อมูลสำเร็จ'); loadBorrows(); loadStats(); }
             else { const e = await res?.json().catch(()=>({})); notify.error(e.message||'เกิดข้อผิดพลาด'); }
         }
@@ -288,7 +288,7 @@ const template = \`<!DOCTYPE html>
         function exportBorrows() {
             const token = localStorage.getItem('token');
             if (!token) return notify.error('กรุณาเข้าสู่ระบบ');
-            window.location.href = \\\`/api/borrows?action=export&token=\\\${token}\\\`;
+            window.location.href = \`/api/borrows?action=export&token=\${token}\`;
             notify.toast('กำลังดาวน์โหลด CSV...');
         }
 
@@ -321,9 +321,9 @@ const template = \`<!DOCTYPE html>
                 let assets = [];
                 if (assetRes && assetRes.ok) assets = await assetRes.json();
                 assetEl.innerHTML = '<option value="">-- เลือกอุปกรณ์ที่ว่าง --</option>' +
-                    assets.map(a => \\\`<option value="\\\${a.id}">\\\${a.asset_tag} - \\\${a.name}</option>\\\`).join('');
+                    assets.map(a => \`<option value="\${a.id}">\${a.asset_tag} - \${a.name}</option>\`).join('');
                 document.getElementById('borrowAssetLoading').innerHTML = 
-                    \\\`<span class="text-xs \\\${assets.length ? 'text-emerald-600' : 'text-amber-500'} font-medium">\\\${assets.length ? '✔ พร้อมให้ยืม ' + assets.length + ' รายการ' : '⚠ ไม่มีทรัพย์สินพร้อมให้ยืม'}</span>\\\`;
+                    \`<span class="text-xs \${assets.length ? 'text-emerald-600' : 'text-amber-500'} font-medium">\${assets.length ? '✔ พร้อมให้ยืม ' + assets.length + ' รายการ' : '⚠ ไม่มีทรัพย์สินพร้อมให้ยืม'}</span>\`;
 
                 let users = [];
                 if (userRes && userRes.ok) {
@@ -331,9 +331,9 @@ const template = \`<!DOCTYPE html>
                     users = Array.isArray(raw) ? raw : (raw.users || []);
                 }
                 userEl.innerHTML = '<option value="">-- เลือกผู้ยืม --</option>' +
-                    users.map(u => \\\`<option value="\\\${u.id}">\\\${u.name}</option>\\\`).join('');
+                    users.map(u => \`<option value="\${u.id}">\${u.name}</option>\`).join('');
                 document.getElementById('borrowUserLoading').innerHTML = 
-                    \\\`<span class="text-xs \\\${users.length ? 'text-emerald-600' : 'text-red-500'} font-medium">\\\${users.length ? '✔ ' + users.length + ' คน' : '⚠ โหลดรายชื่อไม่สำเร็จ'}</span>\\\`;
+                    \`<span class="text-xs \${users.length ? 'text-emerald-600' : 'text-red-500'} font-medium">\${users.length ? '✔ ' + users.length + ' คน' : '⚠ โหลดรายชื่อไม่สำเร็จ'}</span>\`;
 
                 if (typeof Choices !== 'undefined') {
                     choiceAsset = new Choices(assetEl, { searchEnabled: true, itemSelectText: '', placeholder: true, placeholderValue: 'ค้นหาอุปกรณ์...', noResultsText: 'ไม่พบข้อมูล', allowHTML: false });
@@ -365,7 +365,7 @@ const template = \`<!DOCTYPE html>
             if (!borrower_id) return notify.error('กรุณาเลือกผู้ใช้งาน');
 
             btn.disabled = true;
-            btn.innerHTML = \\\`<span class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> <span>กำลังบันทึก...</span>\\\`;
+            btn.innerHTML = \`<span class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> <span>กำลังบันทึก...</span>\`;
 
             try {
                 const res = await apiFetch('/api/borrows', {
@@ -410,7 +410,7 @@ const template = \`<!DOCTYPE html>
         });
     </script>
 </body>
-</html>\`;
+</html>`;
 
 fs.writeFileSync(path, template, 'utf8');
 console.log('Fixed borrows.html encoding and content');
