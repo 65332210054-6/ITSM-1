@@ -67,7 +67,7 @@
         <div class="modal-content max-w-2xl animate-in fade-in zoom-in duration-200">
             <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-3xl">
                 <h2 id="modalTitle" class="text-xl font-bold text-slate-800 tracking-tight">ลงทะเบียน Domain & Hosting</h2>
-                <button onclick="closeDomainModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-6 h-6"></i></button>
+                <button onclick="closeDomainModal()" class="btn-icon"><i data-lucide="x" class="w-6 h-6"></i></button>
             </div>
             <form id="domainForm" class="p-8 space-y-6 max-h-[75vh] overflow-y-auto">
                 <input type="hidden" id="domainId">
@@ -157,8 +157,8 @@
                 </div>
 
                 <div class="pt-6 flex gap-3 sticky bottom-0 bg-white py-4 border-t border-slate-100 mt-auto">
-                    <button type="button" onclick="closeDomainModal()" class="flex-1 px-6 py-3 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all">ยกเลิก</button>
-                    <button type="submit" class="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all flex items-center justify-center gap-2">
+                    <button type="button" onclick="closeDomainModal()" class="flex-1 btn-secondary">ยกเลิก</button>
+                    <button type="submit" class="flex-1 btn-primary">
                         <i data-lucide="save" class="w-5 h-5"></i> บันทึกข้อมูล
                     </button>
                 </div>
@@ -242,10 +242,15 @@
                         </td>
                         <td class="px-6 py-4 text-right">
                             <div class="flex justify-end gap-1">
-                                ${ui.checkAccess('domains', null, null, 'edit') ? `<button onclick="editDomain('${d.id}')" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all active:scale-95">
+                                ${ui.checkAccess('domains', null, null, 'edit') ? `
+                                <button onclick="editDomain('${d.id}')" class="btn-icon" title="แก้ไข">
                                     <i data-lucide="edit-3" class="w-4 h-4"></i>
-                                </button>` : ''}
-                                ${ui.checkAccess('domains', null, null, 'delete') ? `<button onclick="deleteDomain('${d.id}', '${escapeHTML(d.name)}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-95">
+                                </button>` : `
+                                <button onclick="editDomain('${d.id}')" class="btn-icon" title="ดูรายละเอียด">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </button>`}
+                                ${ui.checkAccess('domains', null, null, 'delete') ? `
+                                <button onclick="deleteDomain('${d.id}', '${escapeHTML(d.name)}')" class="btn-icon btn-icon-rose" title="ลบ">
                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                                 </button>` : ''}
                             </div>
@@ -290,9 +295,19 @@
         }
 
         function openDomainModal() {
+            const canEdit = ui.checkAccess('domains', null, null, 'edit') || ui.checkAccess('domains', null, null, 'create');
             document.getElementById('modalTitle').innerText = 'ลงทะเบียนโดเมนใหม่';
             document.getElementById('domainId').value = '';
             document.getElementById('domainForm').reset();
+
+            // Handle Read-Only state
+            const form = document.getElementById('domainForm');
+            const inputs = form.querySelectorAll('input, select, textarea');
+            const saveBtn = form.querySelector('button[type="submit"]');
+
+            inputs.forEach(input => input.disabled = !canEdit);
+            if (saveBtn) saveBtn.style.display = canEdit ? 'block' : 'none';
+
             document.getElementById('domainModal').classList.remove('hidden');
         }
 
@@ -304,7 +319,8 @@
             const d = allDomains.find(x => x.id === id);
             if (!d) return;
             
-            document.getElementById('modalTitle').innerText = 'แก้ไขข้อมูลโดเมน';
+            const canEdit = ui.checkAccess('domains', null, null, 'edit');
+            document.getElementById('modalTitle').innerText = canEdit ? 'แก้ไขข้อมูลโดเมน' : 'รายละเอียดโดเมน (Read-Only)';
             document.getElementById('domainId').value = d.id;
             document.getElementById('name').value = d.name;
             document.getElementById('registrar').value = d.registrar || '';
@@ -318,6 +334,14 @@
             document.getElementById('hostingCost').value = d.hosting_cost || 0;
             document.getElementById('hostingExpiration').value = d.hosting_expiration ? d.hosting_expiration.split('T')[0] : '';
             
+            // Handle Read-Only state
+            const form = document.getElementById('domainForm');
+            const inputs = form.querySelectorAll('input, select, textarea');
+            const saveBtn = form.querySelector('button[type="submit"]');
+
+            inputs.forEach(input => input.disabled = !canEdit);
+            if (saveBtn) saveBtn.style.display = canEdit ? 'block' : 'none';
+
             document.getElementById('domainModal').classList.remove('hidden');
         }
 

@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless';
 import { checkModuleAccess } from '../auth.js';
 import { logAction } from './logs.js';
+import { sendLineNotify } from '../line.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -206,6 +207,15 @@ export async function onRequest(context) {
         // Update asset status back to Available
         await sql`UPDATE assets SET status = 'Available', updated_at = NOW() WHERE id = ${borrow[0].asset_id}`;
         await logAction(sql, userSession.user_id, 'Borrows', 'Return', { borrow_id: id, asset_id: borrow[0].asset_id });
+
+        // Line Notification
+        const assetInfo = await sql`SELECT asset_tag, name FROM assets WHERE id = ${borrow[0].asset_id} LIMIT 1`;
+        const borrowerInfo = await sql`SELECT name FROM users WHERE id = ${borrow[0].borrower_id} LIMIT 1`;
+        if (assetInfo.length > 0) {
+          const notifyMsg = `\n↩️ คืนทรัพย์สินแล้ว\n🔹 ทรัพย์สิน: ${assetInfo[0].asset_tag} - ${assetInfo[0].name}\n👤 ผู้คืน: ${borrowerInfo[0]?.name || 'Unknown'}`;
+          await sendLineNotify(sql, notifyMsg);
+        }
+
         return new Response(JSON.stringify({ message: "บันทึกการคืนสำเร็จ" }), { status: 200 });
       }
 
@@ -252,6 +262,15 @@ export async function onRequest(context) {
       await sql`UPDATE assets SET status = 'Borrowed', assigned_to = ${borrower_id}, updated_at = NOW() WHERE id = ${asset_id}`;
 
       await logAction(sql, userSession.user_id, 'Borrows', 'Create', { borrow_id: newId, asset_id, borrower_id });
+
+      // Line Notification
+      const borrowerInfo = await sql`SELECT name FROM users WHERE id = ${borrower_id} LIMIT 1`;
+      const assetInfo = await sql`SELECT asset_tag, name FROM assets WHERE id = ${asset_id} LIMIT 1`;
+      if (assetInfo.length > 0) {
+        const notifyMsg = `\n📦 มีการยืมทรัพย์สินใหม่!\n🔹 ทรัพย์สิน: ${assetInfo[0].asset_tag} - ${assetInfo[0].name}\n👤 ผู้ยืม: ${borrowerInfo[0]?.name || 'Unknown'}\n📅 กำหนดคืน: ${due_date || 'ไม่ระบุ'}`;
+        await sendLineNotify(sql, notifyMsg);
+      }
+
       return new Response(JSON.stringify({ message: "บันทึกการยืมสำเร็จ" }), { status: 201 });
     }
 

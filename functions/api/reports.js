@@ -26,16 +26,14 @@ export async function onRequest(context) {
 
     // Summary Stats
     if (action === "summary") {
-      const [assetStats, ticketStats, borrowStats] = await Promise.all([
+      const [assetStats, ticketStats, borrowStats, consumableStats, domainStats, licenseStats, ipStats] = await Promise.all([
         sql`
           SELECT 
             COUNT(*)::int as total,
             COUNT(*) FILTER (WHERE status = 'Available')::int as available,
             COUNT(*) FILTER (WHERE status = 'In Use')::int as in_use,
             COUNT(*) FILTER (WHERE status = 'Repairing')::int as repairing,
-            COUNT(*) FILTER (WHERE status = 'Borrowed')::int as borrowed,
-            COUNT(*) FILTER (WHERE status = 'Broken')::int as broken,
-            COUNT(*) FILTER (WHERE status = 'Retired')::int as retired
+            COUNT(*) FILTER (WHERE status = 'Borrowed')::int as borrowed
           FROM assets
         `,
         sql`
@@ -54,7 +52,31 @@ export async function onRequest(context) {
             COUNT(*) FILTER (WHERE status = 'Returned')::int as returned,
             COUNT(*) FILTER (WHERE status = 'Overdue')::int as overdue
           FROM borrows
-        `.catch(() => [{ total: 0, borrowed: 0, returned: 0, overdue: 0 }])
+        `.catch(() => [{ total: 0, borrowed: 0, returned: 0, overdue: 0 }]),
+        sql`
+          SELECT 
+            COUNT(*)::int as total,
+            COUNT(*) FILTER (WHERE quantity <= min_quantity)::int as low_stock
+          FROM consumables
+        `.catch(() => [{ total: 0, low_stock: 0 }]),
+        sql`
+          SELECT 
+            COUNT(*)::int as total,
+            COUNT(*) FILTER (WHERE expiration_date <= NOW() + INTERVAL '30 days')::int as expiring_soon
+          FROM domains
+        `.catch(() => [{ total: 0, expiring_soon: 0 }]),
+        sql`
+          SELECT 
+            COUNT(*)::int as total,
+            COUNT(*) FILTER (WHERE expiration_date <= NOW() + INTERVAL '30 days')::int as expiring_soon
+          FROM licenses
+        `.catch(() => [{ total: 0, expiring_soon: 0 }]),
+        sql`
+          SELECT 
+            COUNT(*)::int as total,
+            COUNT(*) FILTER (WHERE status = 'Reserved')::int as reserved
+          FROM ip_addresses
+        `.catch(() => [{ total: 0, reserved: 0 }])
       ]);
 
       // Asset by category
@@ -68,23 +90,15 @@ export async function onRequest(context) {
         LIMIT 10
       `;
 
-      // Recent ticket activity (last 30 days)
-      const ticketTrend = await sql`
-        SELECT 
-          DATE_TRUNC('day', created_at)::date as date,
-          COUNT(*)::int as count
-        FROM tickets
-        WHERE created_at >= NOW() - INTERVAL '30 days'
-        GROUP BY DATE_TRUNC('day', created_at)::date
-        ORDER BY date ASC
-      `;
-
       return new Response(JSON.stringify({
         assets: assetStats[0],
         tickets: ticketStats[0],
         borrows: borrowStats[0],
-        assetByCategory,
-        ticketTrend
+        consumables: consumableStats[0],
+        domains: domainStats[0],
+        licenses: licenseStats[0],
+        ips: ipStats[0],
+        assetByCategory
       }), {
         status: 200,
         headers: { "Content-Type": "application/json" }
@@ -120,26 +134,21 @@ export async function onRequest(context) {
     // Export Tickets CSV
     if (action === "export-tickets") {
       const tickets = await sql`
-        SELECT t.id, t.subject, t.description, t.status, t.priority, t.created_at, t.updated_at,
-               u.name as reporter_name, u.email as reporter_email,
-               d.name as department_name,
-               a.asset_tag, a.name as asset_name,
+        SELECT t.id, t.subject, t.status, t.priority, t.created_at,
+               u.name as reporter_name, d.name as department_name,
                tech.name as technician_name
         FROM tickets t
         JOIN users u ON t.reporter_id = u.id
         LEFT JOIN departments d ON u.department_id = d.id
-        LEFT JOIN assets a ON t.asset_id = a.id
         LEFT JOIN users tech ON t.assigned_to = tech.id
         ORDER BY t.created_at DESC
       `;
 
-      const headers = ["เลขที่", "หัวข้อ", "รายละเอียด", "สถานะ", "ความเร่งด่วน", "ผู้แจ้ง", "อีเมล", "แผนก", "Asset Tag", "ชื่อ Asset", "ช่างผู้รับผิดชอบ", "วันที่แจ้ง", "อัปเดตล่าสุด"];
+      const headers = ["เลขที่", "หัวข้อ", "สถานะ", "ความเร่งด่วน", "ผู้แจ้ง", "แผนก", "ช่างผู้รับผิดชอบ", "วันที่แจ้ง"];
       const rows = tickets.map((t, i) => [
-        i + 1, t.subject || "-", t.description || "-", t.status || "-", t.priority || "-",
-        t.reporter_name || "-", t.reporter_email || "-", t.department_name || "-",
-        t.asset_tag || "-", t.asset_name || "-", t.technician_name || "-",
-        t.created_at ? new Date(t.created_at).toLocaleDateString("th-TH") : "-",
-        t.updated_at ? new Date(t.updated_at).toLocaleDateString("th-TH") : "-"
+        i + 1, t.subject || "-", t.status || "-", t.priority || "-",
+        t.reporter_name || "-", t.department_name || "-", t.technician_name || "-",
+        t.created_at ? new Date(t.created_at).toLocaleDateString("th-TH") : "-"
       ]);
 
       return buildCSVResponse(headers, rows, "it-tickets-export.csv");
@@ -147,33 +156,62 @@ export async function onRequest(context) {
 
     // Export Borrows CSV
     if (action === "export-borrows") {
-      let borrows = [];
-      try {
-        borrows = await sql`
-          SELECT b.id, b.status, b.borrowed_at, b.due_date, b.returned_at, b.notes,
-                 a.asset_tag, a.name as asset_name, a.category as asset_category,
-                 u.name as borrower_name, u.email as borrower_email,
-                 d.name as department_name, cb.name as created_by_name
-          FROM borrows b
-          JOIN assets a ON b.asset_id = a.id
-          JOIN users u ON b.borrower_id = u.id
-          LEFT JOIN departments d ON u.department_id = d.id
-          LEFT JOIN users cb ON b.created_by = cb.id
-          ORDER BY b.created_at DESC
-        `;
-      } catch (e) { borrows = []; }
+      const borrows = await sql`
+        SELECT b.status, b.borrowed_at, b.due_date, b.returned_at,
+               a.asset_tag, a.name as asset_name,
+               u.name as borrower_name
+        FROM borrows b
+        JOIN assets a ON b.asset_id = a.id
+        JOIN users u ON b.borrower_id = u.id
+        ORDER BY b.created_at DESC
+      `;
 
-      const headers = ["Asset Tag", "ชื่อทรัพย์สิน", "หมวดหมู่", "ผู้ยืม", "อีเมล", "แผนก", "วันที่ยืม", "วันกำหนดคืน", "วันที่คืน", "สถานะ", "หมายเหตุ", "บันทึกโดย"];
+      const headers = ["Asset Tag", "ชื่อทรัพย์สิน", "ผู้ยืม", "วันที่ยืม", "วันกำหนดคืน", "วันที่คืน", "สถานะ"];
       const rows = borrows.map(b => [
-        b.asset_tag || "-", b.asset_name || "-", b.asset_category || "-",
-        b.borrower_name || "-", b.borrower_email || "-", b.department_name || "-",
+        b.asset_tag || "-", b.asset_name || "-", b.borrower_name || "-",
         b.borrowed_at ? new Date(b.borrowed_at).toLocaleDateString("th-TH") : "-",
         b.due_date ? new Date(b.due_date).toLocaleDateString("th-TH") : "-",
         b.returned_at ? new Date(b.returned_at).toLocaleDateString("th-TH") : "-",
-        b.status || "-", b.notes || "-", b.created_by_name || "-"
+        b.status || "-"
       ]);
 
       return buildCSVResponse(headers, rows, "it-borrows-export.csv");
+    }
+
+    // Export Consumables
+    if (action === "export-consumables") {
+        const items = await sql`SELECT * FROM consumables ORDER BY name ASC`;
+        const headers = ["ชื่อพัสดุ", "หมวดหมู่", "คงเหลือ", "ขั้นต่ำ", "หน่วย", "สถานที่เก็บ"];
+        const rows = items.map(i => [i.name, i.category, i.quantity, i.min_quantity, i.unit, i.location]);
+        return buildCSVResponse(headers, rows, "it-consumables-export.csv");
+    }
+
+    // Export Domains
+    if (action === "export-domains") {
+        const items = await sql`SELECT * FROM domains ORDER BY expiration_date ASC`;
+        const headers = ["Domain", "Registrar", "วันหมดอายุ Domain", "SSL Type", "วันหมดอายุ SSL", "Hosting", "วันหมดอายุ Hosting", "สถานะ"];
+        const rows = items.map(i => [
+            i.name, i.registrar, 
+            i.expiration_date ? new Date(i.expiration_date).toLocaleDateString("th-TH") : "-",
+            i.ssl_type || "-",
+            i.ssl_expiration ? new Date(i.ssl_expiration).toLocaleDateString("th-TH") : "-",
+            i.hosting_provider || "-",
+            i.hosting_expiration ? new Date(i.hosting_expiration).toLocaleDateString("th-TH") : "-",
+            i.status
+        ]);
+        return buildCSVResponse(headers, rows, "it-domains-export.csv");
+    }
+
+    // Export Licenses
+    if (action === "export-licenses") {
+        const items = await sql`SELECT * FROM licenses ORDER BY name ASC`;
+        const headers = ["Software", "Version", "License Key", "Type", "จำนวน", "วันหมดอายุ", "Vendor", "ราคา", "สถานะ"];
+        const rows = items.map(i => [
+            i.name, i.version || "-", i.license_key || "-", i.type, i.total_licenses,
+            i.expiration_date ? new Date(i.expiration_date).toLocaleDateString("th-TH") : "-",
+            i.vendor || "-", i.price || 0, i.status
+        ]);
+        return buildCSVResponse(headers, rows, "it-licenses-export.csv");
     }
 
     return new Response(JSON.stringify({ message: "Action not found" }), { status: 400 });

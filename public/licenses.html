@@ -66,7 +66,7 @@
         <div class="modal-content max-w-xl animate-in fade-in zoom-in duration-200">
             <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-3xl">
                 <h2 id="modalTitle" class="text-xl font-bold text-slate-800 tracking-tight">ลงทะเบียน Software License</h2>
-                <button onclick="closeLicenseModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-6 h-6"></i></button>
+                <button onclick="closeLicenseModal()" class="btn-icon"><i data-lucide="x" class="w-6 h-6"></i></button>
             </div>
             <form id="licenseForm" class="p-8 space-y-4 max-h-[75vh] overflow-y-auto">
                 <input type="hidden" id="licenseId">
@@ -123,8 +123,8 @@
                     <textarea id="notes" rows="2" class="form-input h-20 py-2"></textarea>
                 </div>
                 <div class="pt-6 flex gap-3">
-                    <button type="button" onclick="closeLicenseModal()" class="flex-1 px-6 py-3 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all">ยกเลิก</button>
-                    <button type="submit" class="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all flex items-center justify-center gap-2">
+                    <button type="button" onclick="closeLicenseModal()" class="flex-1 btn-secondary">ยกเลิก</button>
+                    <button type="submit" class="flex-1 btn-primary">
                         <i data-lucide="save" class="w-5 h-5"></i> บันทึกข้อมูล
                     </button>
                 </div>
@@ -195,10 +195,15 @@
                         </td>
                         <td class="px-6 py-4 text-right">
                             <div class="flex justify-end gap-1">
-                                ${ui.checkAccess('licenses', null, null, 'edit') ? `<button onclick="editLicense('${l.id}')" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all active:scale-95">
+                                ${ui.checkAccess('licenses', null, null, 'edit') ? `
+                                <button onclick="editLicense('${l.id}')" class="btn-icon" title="แก้ไข">
                                     <i data-lucide="edit-3" class="w-4 h-4"></i>
-                                </button>` : ''}
-                                ${ui.checkAccess('licenses', null, null, 'delete') ? `<button onclick="deleteLicense('${l.id}', '${escapeHTML(l.name)}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-95">
+                                </button>` : `
+                                <button onclick="editLicense('${l.id}')" class="btn-icon" title="ดูรายละเอียด">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </button>`}
+                                ${ui.checkAccess('licenses', null, null, 'delete') ? `
+                                <button onclick="deleteLicense('${l.id}', '${escapeHTML(l.name)}')" class="btn-icon btn-icon-rose" title="ลบ">
                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                                 </button>` : ''}
                             </div>
@@ -226,9 +231,19 @@
         function changePage(p) { currentPage = p; loadLicenses(); }
 
         function openLicenseModal() {
+            const canEdit = ui.checkAccess('licenses', null, null, 'edit') || ui.checkAccess('licenses', null, null, 'create');
             document.getElementById('modalTitle').innerText = 'ลงทะเบียนซอฟต์แวร์ใหม่';
             document.getElementById('licenseId').value = '';
             document.getElementById('licenseForm').reset();
+            
+            // Handle Read-Only state
+            const form = document.getElementById('licenseForm');
+            const inputs = form.querySelectorAll('input, select, textarea');
+            const saveBtn = form.querySelector('button[type="submit"]');
+
+            inputs.forEach(input => input.disabled = !canEdit);
+            if (saveBtn) saveBtn.style.display = canEdit ? 'block' : 'none';
+
             document.getElementById('licenseModal').classList.remove('hidden');
         }
 
@@ -237,7 +252,9 @@
         function editLicense(id) {
             const l = allLicenses.find(x => x.id === id);
             if (!l) return;
-            document.getElementById('modalTitle').innerText = 'แก้ไขข้อมูลไลเซนส์';
+
+            const canEdit = ui.checkAccess('licenses', null, null, 'edit');
+            document.getElementById('modalTitle').innerText = canEdit ? 'แก้ไขข้อมูลไลเซนส์' : 'รายละเอียดไลเซนส์ (Read-Only)';
             document.getElementById('licenseId').value = l.id;
             document.getElementById('name').value = l.name;
             document.getElementById('version').value = l.version || '';
@@ -249,6 +266,15 @@
             document.getElementById('vendor').value = l.vendor || '';
             document.getElementById('price').value = l.price;
             document.getElementById('notes').value = l.notes || '';
+
+            // Handle Read-Only state
+            const form = document.getElementById('licenseForm');
+            const inputs = form.querySelectorAll('input, select, textarea');
+            const saveBtn = form.querySelector('button[type="submit"]');
+
+            inputs.forEach(input => input.disabled = !canEdit);
+            if (saveBtn) saveBtn.style.display = canEdit ? 'block' : 'none';
+
             document.getElementById('licenseModal').classList.remove('hidden');
         }
 

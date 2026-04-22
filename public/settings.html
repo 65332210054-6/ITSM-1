@@ -6,12 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ตั้งค่าระบบ | ITSM Admin</title>
     <script>
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
         if (!localStorage.getItem('token')) {
             window.location.replace('/login.html');
-        } else if (user.role !== 'Admin') {
-            // Redirect non-admins away from settings
-            window.location.replace('/index.html');
         }
     </script>
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
@@ -79,6 +75,37 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Notification Settings -->
+                <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 p-4 sm:p-8">
+                    <div class="mb-6 sm:mb-8">
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">ตั้งค่าการแจ้งเตือน (Notifications)</h2>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1 font-medium leading-relaxed">ตั้งค่าการแจ้งเตือนผ่าน Line Notify สำหรับกิจกรรมในระบบ</p>
+                    </div>
+                    <div class="space-y-6 max-w-2xl">
+                        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800">เปิดใช้งาน Line Notify</h3>
+                                <p class="text-xs text-slate-500 mt-1">ส่งการแจ้งเตือนไปยังกลุ่ม Line เมื่อมีรายการใหม่</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="toggleLineNotify" class="sr-only peer"
+                                    onchange="toggleSetting('line_notify_enabled', this.checked)">
+                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
+                        </div>
+                        
+                        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Line Notify Token</label>
+                            <div class="flex gap-2">
+                                <input type="password" id="lineNotifyToken" class="form-input flex-1" placeholder="กรอก Line Notify Token ที่นี่...">
+                                <button onclick="saveToken()" class="btn-primary py-2 text-xs">บันทึก Token</button>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-2 italic">* สามารถขอ Token ได้จาก <a href="https://notify-bot.line.me/" target="_blank" class="text-indigo-500 underline">Line Notify Bot</a></p>
+                        </div>
+                    </div>
+                </div>
+
 
                 <!-- Module Management -->
                 <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 p-4 sm:p-8">
@@ -201,8 +228,7 @@
         <div class="modal-content max-w-md animate-in fade-in zoom-in duration-200 overflow-hidden">
             <div class="bg-indigo-600 p-6 text-white flex justify-between items-center">
                 <h3 class="text-lg font-bold">เพิ่มสาขาใหม่</h3>
-                <button onclick="toggleModal('branchModal', false)"
-                    class="text-white/80 hover:text-white transition-colors">
+                <button onclick="toggleModal('branchModal', false)" class="btn-icon text-white/80 hover:text-white hover:bg-white/10">
                     <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
             </div>
@@ -219,10 +245,8 @@
                         placeholder="กรอกที่อยู่แบบเต็ม เช่น 123 อาคาร ABC ชั้น 2 ถนน..."></textarea>
                 </div>
                 <div class="flex gap-3 pt-4">
-                    <button onclick="toggleModal('branchModal', false)"
-                        class="flex-1 px-4 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all">ยกเลิก</button>
-                    <button onclick="saveBranch()"
-                        class="flex-1 px-4 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all">บันทึกสาขา</button>
+                    <button onclick="toggleModal('branchModal', false)" class="flex-1 btn-secondary">ยกเลิก</button>
+                    <button onclick="saveBranch()" class="flex-1 btn-primary">บันทึกสาขา</button>
                 </div>
             </div>
         </div>
@@ -233,8 +257,7 @@
         <div class="modal-content max-w-md animate-in fade-in zoom-in duration-200 overflow-hidden">
             <div class="bg-indigo-600 p-6 text-white flex justify-between items-center">
                 <h3 class="text-lg font-bold">เพิ่มแผนกใหม่</h3>
-                <button onclick="toggleModal('deptModal', false)"
-                    class="text-white/80 hover:text-white transition-colors">
+                <button onclick="toggleModal('deptModal', false)" class="btn-icon text-white/80 hover:text-white hover:bg-white/10">
                     <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
             </div>
@@ -252,10 +275,8 @@
                     </select>
                 </div>
                 <div class="flex gap-3 pt-4">
-                    <button onclick="toggleModal('deptModal', false)"
-                        class="flex-1 px-4 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all">ยกเลิก</button>
-                    <button onclick="saveDept()"
-                        class="flex-1 px-4 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all">บันทึกแผนก</button>
+                    <button onclick="toggleModal('deptModal', false)" class="flex-1 btn-secondary">ยกเลิก</button>
+                    <button onclick="saveDept()" class="flex-1 btn-primary">บันทึกแผนก</button>
                 </div>
             </div>
         </div>
@@ -268,7 +289,7 @@
         <div class="modal-content max-w-md animate-in fade-in zoom-in duration-200 overflow-hidden">
             <div class="bg-indigo-600 p-6 text-white flex justify-between items-center">
                 <h3 class="text-lg font-bold">เพิ่มบทบาทใหม่</h3>
-                <button onclick="toggleModal('roleModal', false)" class="text-white/80 hover:text-white transition-colors">
+                <button onclick="toggleModal('roleModal', false)" class="btn-icon text-white/80 hover:text-white hover:bg-white/10">
                     <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
             </div>
@@ -279,8 +300,8 @@
                     <input type="text" id="roleName" class="form-input" placeholder="เช่น Support, Manager">
                 </div>
                 <div class="flex gap-3 pt-4">
-                    <button onclick="toggleModal('roleModal', false)" class="flex-1 px-4 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all">ยกเลิก</button>
-                    <button onclick="saveRole()" class="flex-1 px-4 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all">บันทึกบทบาท</button>
+                    <button onclick="toggleModal('roleModal', false)" class="flex-1 btn-secondary">ยกเลิก</button>
+                    <button onclick="saveRole()" class="flex-1 btn-primary">บันทึกบทบาท</button>
                 </div>
             </div>
         </div>
@@ -442,6 +463,14 @@
                     document.getElementById('toggleUserRoles').checked = isTrue(settings.show_user_roles);
                     document.getElementById('toggleUserFilter').checked = isTrue(settings.show_user_filter);
                     
+                    // Line Notify populate
+                    if (document.getElementById('toggleLineNotify')) {
+                        document.getElementById('toggleLineNotify').checked = isTrue(settings.line_notify_enabled);
+                    }
+                    if (document.getElementById('lineNotifyToken')) {
+                        document.getElementById('lineNotifyToken').value = settings.line_notify_token || '';
+                    }
+                    
                     const modules = ui.modules;
 
                     const moduleGrid = document.getElementById('moduleGrid');
@@ -594,6 +623,24 @@
             }
         }
 
+        async function saveToken() {
+            const token = document.getElementById('lineNotifyToken').value.trim();
+            if (!token) return notify.error('กรุณาระบุ Token');
+            
+            try {
+                const response = await apiFetch('/api/system-settings', {
+                    method: 'POST',
+                    body: JSON.stringify({ setting_key: 'line_notify_token', setting_value: token })
+                });
+                if (response.ok) {
+                    await ui.getSystemSettings(true);
+                    notify.success('บันทึก Token แล้ว');
+                }
+            } catch (err) {
+                notify.error('ไม่สามารถบันทึก Token ได้');
+            }
+        }
+
         // Roles Management
         function openRoleModal(id = '', name = '') {
             document.getElementById('editRoleId').value = id;
@@ -712,8 +759,14 @@
         }
 
         async function loadSettings() {
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            const isAdmin = user.role === 'Admin';
+            const settings = await ui.getSystemSettings();
+            if (!ui.checkAccess('settings', settings, null, 'view')) {
+                window.location.replace('/index.html');
+                return;
+            }
+
+            const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+            const isAdmin = currentUser.role === 'Admin';
 
             // Show Audit Logs only for Admin
             const auditSection = document.getElementById('auditLogsSection');
@@ -745,11 +798,16 @@
                         return `
                         <div class="bg-white border border-slate-200 rounded-2xl p-5 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 transition-all relative text-center group">
                             ${!isAdmin ? `
-                            <button onclick="deleteRole('${role.id}', '${safeName}')" class="absolute top-2 right-2 w-8 h-8 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 z-10 cursor-pointer">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
+                            <div class="flex gap-1 absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all">
+                                <button onclick="openRoleModal('${role.id}', '${safeName}')" class="btn-icon" title="แก้ไข">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="deleteRole('${role.id}', '${safeName}')" class="btn-icon btn-icon-rose" title="ลบ">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
                             ` : ''}
-                            <div class="${!isAdmin ? 'cursor-pointer' : ''}" onclick="${!isAdmin ? `openRoleModal('${role.id}', '${safeName}')` : ''}">
+                            <div>
                                 <div class="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 mx-auto mb-3 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-all">
                                     <i data-lucide="shield-check" class="w-6 h-6"></i>
                                 </div>
@@ -779,10 +837,15 @@
                         const safeLoc = escapeHTML(branch.location || '').replace(/'/g, "\\'");
                         return `
                         <div class="bg-white border border-slate-200 rounded-2xl p-5 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 transition-all group relative">
-                            <button onclick="deleteBranch('${branch.id}', '${safeName}')" class="absolute top-2 right-2 w-8 h-8 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 z-10">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
-                            <div class="flex items-center gap-4 mb-3 cursor-pointer" onclick="openBranchModal('${branch.id}', '${safeName}', '${safeLoc}')">
+                            <div class="flex gap-1 absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all">
+                                <button onclick="openBranchModal('${branch.id}', '${safeName}', '${safeLoc}')" class="btn-icon" title="แก้ไข">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="deleteBranch('${branch.id}', '${safeName}')" class="btn-icon btn-icon-rose" title="ลบ">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-4 mb-3">
                                 <div class="w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-200 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all">
                                     <i data-lucide="building-2" class="w-5 h-5"></i>
                                 </div>
@@ -819,10 +882,15 @@
                         const safeName = escapeHTML(dept.name).replace(/'/g, "\\'");
                         return `
                         <div class="bg-white border border-slate-200 rounded-2xl p-5 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 transition-all relative text-center group">
-                            <button onclick="deleteDept('${dept.id}', '${safeName}')" class="absolute top-2 right-2 w-8 h-8 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 z-10">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
-                            <div class="cursor-pointer" onclick="openDeptModal('${dept.id}', '${safeName}', '${dept.branch_id || ''}')">
+                            <div class="flex gap-1 absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all">
+                                <button onclick="openDeptModal('${dept.id}', '${safeName}', '${dept.branch_id || ''}')" class="btn-icon" title="แก้ไข">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="deleteDept('${dept.id}', '${safeName}')" class="btn-icon btn-icon-rose" title="ลบ">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                            <div>
                                 <div class="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 mx-auto mb-3 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-all">
                                     <i data-lucide="briefcase" class="w-6 h-6"></i>
                                 </div>

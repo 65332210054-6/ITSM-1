@@ -353,6 +353,7 @@ body {
     padding: 0.5rem;
     border-radius: 0.75rem;
     transition: all 0.2s ease;
+    cursor: pointer;
 }
 
 .pagination-btn-nav:hover:not(:disabled) {
@@ -362,8 +363,51 @@ body {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
+.pagination-btn-nav:active:not(:disabled) {
+    transform: scale(0.9);
+}
+
 .pagination-btn-nav:disabled {
     opacity: 0.3;
     cursor: not-allowed;
     background-color: #f1f5f9;
 }
+
+/* ============================================
+   Interactive Feedback (Global)
+   ============================================ */
+
+button, .btn-click {
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:active, .btn-click:active {
+    transform: scale(0.95);
+}
+
+/* Action Icon Buttons (in Tables/Lists) */
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: 0.75rem;
+    color: #94a3b8;
+    transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+    background-color: #f1f5f9;
+    color: #475569;
+}
+
+.btn-icon:active {
+    transform: scale(0.9);
+}
+
+/* Specific Action Icon Variations */
+.btn-icon-indigo:hover { background-color: #eef2ff; color: #4f46e5; }
+.btn-icon-rose:hover { background-color: #fff1f2; color: #e11d48; }
+.btn-icon-emerald:hover { background-color: #ecfdf5; color: #059669; }
+.btn-icon-amber:hover { background-color: #fffbeb; color: #d97706; }

@@ -37,36 +37,32 @@ export async function onRequest(context) {
     const action = url.searchParams.get("action");
 
     if (action === "getStats") {
-      // Get Total Users
+      // Get Total Users (Always show count)
       let totalUsersNum = 0;
-      if (usersVisible) {
+      try {
         const usersCount = await sql`SELECT COUNT(*) as count FROM users`;
         totalUsersNum = parseInt(usersCount[0].count);
-      }
+      } catch (e) { totalUsersNum = 0; }
       
-      // Get Total Assets
+      // Get Total Assets (Always show count)
       let assetsCount = 0;
-      if (assetsVisible) {
-        try {
-          const res = await sql`SELECT COUNT(*) as count FROM assets`;
-          assetsCount = parseInt(res[0].count);
-        } catch (e) { assetsCount = 0; }
-      }
+      try {
+        const res = await sql`SELECT COUNT(*) as count FROM assets`;
+        assetsCount = parseInt(res[0].count);
+      } catch (e) { assetsCount = 0; }
 
-      // Get Pending Tickets
+      // Get Pending/Resolved Tickets (Always show count)
       let pendingTickets = 0;
       let resolvedThisMonth = 0;
-      if (ticketsVisible) {
-        try {
-          const resPending = await sql`SELECT COUNT(*) as count FROM tickets WHERE status != 'Resolved'`;
-          pendingTickets = parseInt(resPending[0].count);
-          
-          const resResolved = await sql`SELECT COUNT(*) as count FROM tickets 
-                                WHERE status = 'Resolved' 
-                                AND updated_at >= date_trunc('month', now())`;
-          resolvedThisMonth = parseInt(resResolved[0].count);
-        } catch (e) { pendingTickets = 0; resolvedThisMonth = 0; }
-      }
+      try {
+        const resPending = await sql`SELECT COUNT(*) as count FROM tickets WHERE status != 'Resolved'`;
+        pendingTickets = parseInt(resPending[0].count);
+        
+        const resResolved = await sql`SELECT COUNT(*) as count FROM tickets 
+                              WHERE status = 'Resolved' 
+                              AND updated_at >= date_trunc('month', now())`;
+        resolvedThisMonth = parseInt(resResolved[0].count);
+      } catch (e) { pendingTickets = 0; resolvedThisMonth = 0; }
 
       return new Response(JSON.stringify({
         totalUsers: totalUsersNum,
@@ -79,33 +75,29 @@ export async function onRequest(context) {
     }
 
     if (action === "getChartData") {
-      // Asset categories distribution
+      // Asset categories distribution (Always show summary)
       let assetsByCategory = [];
-      if (assetsVisible) {
-        try {
-          assetsByCategory = await sql`SELECT category, COUNT(*) as count FROM assets GROUP BY category`;
-        } catch (e) { assetsByCategory = []; }
-      }
+      try {
+        assetsByCategory = await sql`SELECT category, COUNT(*) as count FROM assets GROUP BY category`;
+      } catch (e) { assetsByCategory = []; }
 
-      // Ticket status distribution
+      // Ticket status distribution & trends (Always show summary)
       let ticketsByStatus = [];
       let ticketTrends = [];
-      if (ticketsVisible) {
-        try {
-          ticketsByStatus = await sql`SELECT status, COUNT(*) as count FROM tickets GROUP BY status`;
-          
-          ticketTrends = await sql`
-            SELECT 
-              to_char(created_at, 'Mon YYYY') as month,
-              COUNT(*) as count,
-              min(created_at) as sort_date
-            FROM tickets
-            WHERE created_at >= now() - interval '6 months'
-            GROUP BY month
-            ORDER BY sort_date ASC
-          `;
-        } catch (e) { ticketsByStatus = []; ticketTrends = []; }
-      }
+      try {
+        ticketsByStatus = await sql`SELECT status, COUNT(*) as count FROM tickets GROUP BY status`;
+        
+        ticketTrends = await sql`
+          SELECT 
+            to_char(created_at, 'Mon YYYY') as month,
+            COUNT(*) as count,
+            min(created_at) as sort_date
+          FROM tickets
+          WHERE created_at >= now() - interval '6 months'
+          GROUP BY month
+          ORDER BY sort_date ASC
+        `;
+      } catch (e) { ticketsByStatus = []; ticketTrends = []; }
 
       return new Response(JSON.stringify({
         assetsByCategory,

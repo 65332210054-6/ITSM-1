@@ -330,11 +330,11 @@
                     </td>
                     <td class="px-6 py-4 text-right">
                         <div class="flex justify-end gap-1">
-                            <button onclick="window.location.href='/ticket-detail.html?id=${t.id}'" class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all active:scale-95" title="ดูรายละเอียด">
+                            <button onclick="window.location.href='/ticket-detail.html?id=${t.id}'" class="btn-icon btn-icon-emerald" title="ดูรายละเอียด">
                                 <i data-lucide="search" class="w-4 h-4"></i>
                             </button>
                             ${ui.checkAccess('tickets', null, null, 'edit') ? `
-                            <button onclick="viewTicket('${t.id}')" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all active:scale-95" title="แก้ไข">
+                            <button onclick="viewTicket('${t.id}')" class="btn-icon btn-icon-indigo" title="แก้ไข">
                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                             </button>` : ''}
                         </div>

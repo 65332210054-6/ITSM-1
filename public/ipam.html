@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการ IP Address | ITSM Admin</title>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.454.0/lucide.min.css" rel="stylesheet">
+    <!-- Choices.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body class="h-full flex overflow-hidden">
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden transition-opacity lg:hidden"></div>
+
+    <!-- Sidebar Container -->
+    <div id="sidebar-container" class="lg:static"></div>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Header Container -->
+        <div id="header-container"></div>
+
+        <main class="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-10 bg-slate-50/50">
+            <div class="max-w-6xl mx-auto space-y-6 sm:space-y-10">
+                <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+                    <div class="relative w-full md:w-96">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                            <i data-lucide="search" class="w-5 h-5"></i>
+                        </div>
+                        <input type="text" id="ipSearch" placeholder="ค้นหา IP Address, คำอธิบาย, ทรัพย์สิน..." 
+                            class="block w-full pl-12 pr-4 py-3 rounded-2xl border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all shadow-sm bg-white">
+                    </div>
+                    <button onclick="openIPModal()" class="w-full md:w-auto btn-primary">
+                        <i data-lucide="plus-circle" class="w-5 h-5"></i> เพิ่ม IP Address
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[800px]">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200">
+                                    <th class="th-cell">IP Address</th>
+                                    <th class="th-cell">VLAN / Subnet</th>
+                                    <th class="th-cell">ทรัพย์สินที่เชื่อมโยง</th>
+                                    <th class="th-cell">คำอธิบาย</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">สถานะ</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">แก้ไข</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ipTableBody" class="divide-y divide-slate-100">
+                                <!-- Data will be injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Pagination Footer -->
+                    <div class="pagination-footer">
+                        <div class="flex items-center gap-4">
+                            <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                แสดง <span id="showingStart">0</span> - <span id="showingEnd">0</span> จาก <span id="totalItems">0</span> รายการ
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="prevPage" class="pagination-btn-nav" disabled>
+                                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                            </button>
+                            <div id="pageNumbers" class="flex items-center gap-1">
+                                <!-- Page numbers will be injected here -->
+                            </div>
+                            <button id="nextPage" class="pagination-btn-nav" disabled>
+                                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- IP Modal -->
+    <div id="ipModal" class="modal-overlay hidden">
+        <div class="modal-content animate-in fade-in zoom-in duration-200">
+            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-3xl">
+                <h2 id="modalTitle" class="text-xl font-bold text-slate-800 tracking-tight">เพิ่ม IP Address</h2>
+                <button onclick="closeIPModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <form id="ipForm" class="p-8 space-y-5">
+                <input type="hidden" id="ipId">
+                <div class="grid grid-cols-2 gap-5">
+                    <div>
+                        <label class="form-label">IP Address</label>
+                        <input type="text" id="ipAddress" required placeholder="e.g. 192.168.1.10" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Subnet Mask</label>
+                        <input type="text" id="subnetMask" placeholder="255.255.255.0" class="form-input">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-5">
+                    <div>
+                        <label class="form-label">Gateway</label>
+                        <input type="text" id="gateway" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">VLAN</label>
+                        <input type="text" id="vlan" class="form-input">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-5">
+                    <div>
+                        <label class="form-label">สถานะ</label>
+                        <select id="ipStatus" required class="form-input">
+                            <option value="Available">พร้อมใช้งาน (Available)</option>
+                            <option value="Active">ใช้งานอยู่ (Active)</option>
+                            <option value="Reserved">จองไว้ (Reserved)</option>
+                            <option value="Static">Static IP</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">เชื่อมโยงกับทรัพย์สิน</label>
+                        <select id="ipAssetId" class="form-input" data-search="true">
+                            <option value="">-- เลือกทรัพย์สิน --</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label">คำอธิบาย / หมายเหตุ</label>
+                    <textarea id="ipDescription" class="form-input h-24 py-3" placeholder="รายละเอียดเพิ่มเติม..."></textarea>
+                </div>
+                <div class="flex items-end">
+                    <button type="button" id="deleteIPBtn" onclick="confirmDeleteIP()" class="hidden w-full px-6 py-3 rounded-2xl font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="trash-2" class="w-5 h-5"></i> ลบ IP นี้
+                    </button>
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="closeIPModal()" class="flex-1 px-6 py-3 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all">ยกเลิก</button>
+                    <button type="submit" class="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="save" class="w-5 h-5"></i> บันทึกข้อมูล
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <script src="/assets/js/app.js"></script>
+    <script>
+        let allIPs = [];
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        let totalItemsCount = 0;
+        let totalPagesCount = 1;
+        let searchTimer = null;
+
+        let currentSettings = null;
+
+        async function loadInitialData() {
+            currentSettings = await ui.getSystemSettings();
+            
+            // Check Access
+            if (!ui.checkAccess('ipam', currentSettings, null, 'view')) {
+                window.location.replace('/index.html');
+                return;
+            }
+
+            if (!ui.checkAccess('ipam', currentSettings, null, 'create')) {
+                document.querySelector('button[onclick="openIPModal()"]')?.remove();
+            }
+            
+            ui.renderHeader('จัดการ IP Address');
+            loadIPs();
+            loadAssetOptions();
+        }
+
+        async function loadAssetOptions() {
+            try {
+                const res = await apiFetch('/api/assets?action=getOptions', { silent: true });
+                if (res && res.ok) {
+                    const assets = await res.json();
+                    const select = document.getElementById('ipAssetId');
+                    if (select) {
+                        select.innerHTML = '<option value="">-- ไม่เชื่อมโยง --</option>' + 
+                            assets.map(a => `<option value="${a.id}">${escapeHTML(a.asset_tag)} - ${escapeHTML(a.name)}</option>`).join('');
+                        ui.initChoices(select);
+                    }
+                }
+            } catch (err) { console.error('Failed to load asset options', err); }
+        }
+
+        async function loadIPs() {
+            const tableBodyId = 'ipTableBody';
+            ui.renderTableLoading(tableBodyId, 6);
+            const searchTerm = document.getElementById('ipSearch')?.value || '';
+            
+            try {
+                const params = new URLSearchParams({
+                    page: currentPage,
+                    limit: itemsPerPage,
+                    search: searchTerm
+                });
+
+                const response = await apiFetch(`/api/ipam?${params.toString()}`);
+                if (response && response.ok) {
+                    const data = await response.json();
+                    allIPs = data.ips;
+                    totalItemsCount = data.totalCount;
+                    totalPagesCount = data.totalPages;
+                    renderIPs();
+                } else {
+                    const err = response ? await response.json() : { message: 'Network error' };
+                    throw new Error(err.message);
+                }
+            } catch (err) {
+                console.error('Load IPs error:', err);
+                document.getElementById(tableBodyId).innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-red-500">เกิดข้อผิดพลาด: ${err.message}</td></tr>`;
+            }
+        }
+
+        function renderIPs() {
+            const tbody = document.getElementById('ipTableBody');
+            if (allIPs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">ไม่พบข้อมูล IP Address</td></tr>';
+                ui.renderPagination('pageNumbers', currentPage, totalPagesCount, totalItemsCount, itemsPerPage);
+                return;
+            }
+
+            tbody.innerHTML = allIPs.map(ip => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-slate-800 text-sm">${escapeHTML(ip.ip_address)}</div>
+                        <div class="text-[10px] text-slate-400 font-medium">Gateway: ${escapeHTML(ip.gateway || '-')}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-medium text-slate-700">VLAN: ${escapeHTML(ip.vlan || '-')}</div>
+                        <div class="text-[10px] text-slate-400">${escapeHTML(ip.subnet_mask || '-')}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        ${ip.asset_id ? `
+                            <div class="text-sm font-semibold text-indigo-600">${escapeHTML(ip.asset_tag)}</div>
+                            <div class="text-[10px] text-slate-400">${escapeHTML(ip.asset_name)}</div>
+                        ` : '<span class="text-slate-300 text-xs italic">ไม่ได้เชื่อมโยง</span>'}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-500 max-w-xs truncate">${escapeHTML(ip.description || '-')}</td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="${ui.getBadgeClass('status', ip.status)}">${ip.status}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        ${ui.checkAccess('ipam', currentSettings, null, 'edit') ? `
+                            <button onclick="editIP('${ip.id}')" title="แก้ไข" class="btn-icon btn-icon-indigo">
+                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                            </button>
+                        ` : `
+                            <button onclick="editIP('${ip.id}')" title="ดูรายละเอียด" class="btn-icon btn-icon-slate">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </button>
+                        `}
+                    </td>
+                </tr>
+            `).join('');
+            
+            lucide.createIcons();
+            ui.renderPagination('pageNumbers', currentPage, totalPagesCount, totalItemsCount, itemsPerPage);
+        }
+
+        function goToPage(page) {
+            if (page < 1 || page > totalPagesCount) return;
+            currentPage = page;
+            loadIPs();
+        }
+
+        function openIPModal() {
+            document.getElementById('modalTitle').innerText = 'เพิ่ม IP Address';
+            document.getElementById('ipForm').reset();
+            document.getElementById('ipId').value = '';
+            document.getElementById('deleteIPBtn').classList.add('hidden');
+            
+            if (ui.choicesInstances['ipAssetId']) ui.choicesInstances['ipAssetId'].setChoiceByValue('');
+            
+            document.getElementById('ipModal').classList.remove('hidden');
+        }
+
+        function closeIPModal() {
+            document.getElementById('ipModal').classList.add('hidden');
+        }
+
+        function editIP(id) {
+            const ip = allIPs.find(i => i.id === id);
+            if (!ip) return;
+
+            document.getElementById('modalTitle').innerText = 'แก้ไขข้อมูล IP Address';
+            document.getElementById('ipId').value = ip.id;
+            document.getElementById('ipAddress').value = ip.ip_address;
+            document.getElementById('subnetMask').value = ip.subnet_mask || '';
+            document.getElementById('gateway').value = ip.gateway || '';
+            document.getElementById('vlan').value = ip.vlan || '';
+            document.getElementById('ipStatus').value = ip.status;
+            document.getElementById('ipDescription').value = ip.description || '';
+            
+            if (ui.choicesInstances['ipAssetId']) ui.choicesInstances['ipAssetId'].setChoiceByValue(ip.asset_id || '');
+            
+            const hasEditAccess = ui.checkAccess('ipam', currentSettings, null, 'edit');
+            const hasDeleteAccess = ui.checkAccess('ipam', currentSettings, null, 'delete');
+
+            // Toggle form fields based on access
+            const formInputs = document.querySelectorAll('#ipForm input, #ipForm select, #ipForm textarea');
+            formInputs.forEach(input => {
+                if (input.id !== 'ipId') input.disabled = !hasEditAccess;
+            });
+
+            // Toggle buttons
+            const saveBtn = document.querySelector('#ipForm button[type="submit"]');
+            if (saveBtn) saveBtn.style.display = hasEditAccess ? 'flex' : 'none';
+
+            if (hasDeleteAccess) {
+                document.getElementById('deleteIPBtn').classList.remove('hidden');
+            } else {
+                document.getElementById('deleteIPBtn').classList.add('hidden');
+            }
+            
+            document.getElementById('ipModal').classList.remove('hidden');
+        }
+
+        async function confirmDeleteIP() {
+            const id = document.getElementById('ipId').value;
+            if (!id) return;
+
+            const confirmed = await notify.confirm('ยืนยันการลบ', 'คุณแน่ใจหรือไม่ว่าต้องการลบ IP Address นี้?');
+            if (confirmed) {
+                try {
+                    const response = await apiFetch(`/api/ipam?action=delete&id=${id}`, {
+                        method: 'POST'
+                    });
+
+                    if (response.ok) {
+                        notify.success('ลบข้อมูลเรียบร้อยแล้ว');
+                        closeIPModal();
+                        loadIPs();
+                    } else {
+                        const err = await response.json();
+                        notify.error(err.message || 'เกิดข้อผิดพลาดในการลบ');
+                    }
+                } catch (err) {
+                    notify.error('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+                }
+            }
+        }
+
+        document.getElementById('ipForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('ipId').value;
+            const data = {
+                id: id || null,
+                ip_address: document.getElementById('ipAddress').value,
+                subnet_mask: document.getElementById('subnetMask').value,
+                gateway: document.getElementById('gateway').value,
+                vlan: document.getElementById('vlan').value,
+                status: document.getElementById('ipStatus').value,
+                asset_id: document.getElementById('ipAssetId').value || null,
+                description: document.getElementById('ipDescription').value
+            };
+
+            try {
+                const response = await apiFetch('/api/ipam', {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    notify.success(id ? 'แก้ไขข้อมูลสำเร็จ' : 'เพิ่มข้อมูลสำเร็จ');
+                    closeIPModal();
+                    loadIPs();
+                } else {
+                    const err = await response.json();
+                    notify.error(err.message || 'เกิดข้อผิดพลาด');
+                }
+            } catch (err) {
+                notify.error('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+            }
+        });
+
+        document.getElementById('ipSearch').addEventListener('input', () => {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                currentPage = 1;
+                loadIPs();
+            }, 800);
+        });
+
+        document.addEventListener('DOMContentLoaded', loadInitialData);
+    </script>
+</body>
+</html>

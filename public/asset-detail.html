@@ -52,6 +52,10 @@
                                 <p id="serialNumber" class="text-sm font-bold text-slate-700">-</p>
                             </div>
                             <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">IP Address</label>
+                                <p id="linkedIP" class="text-sm font-bold text-indigo-600">-</p>
+                            </div>
+                            <div>
                                 <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">วันที่ซื้อ (Purchase Date)</label>
                                 <p id="purchaseDate" class="text-sm font-bold text-slate-700">-</p>
                             </div>
@@ -132,6 +136,7 @@
                 document.getElementById('assetModel').innerText = asset.model || 'ไม่ทราบแบรนด์/รุ่น';
                 document.getElementById('assetCategory').innerText = asset.category || 'อื่นๆ';
                 document.getElementById('serialNumber').innerText = asset.serial_number || '-';
+                document.getElementById('linkedIP').innerText = asset.linked_ip || 'ไม่ได้ระบุ IP';
                 document.getElementById('purchaseDate').innerText = asset.purchase_date ? new Date(asset.purchase_date).toLocaleDateString('th-TH') : '-';
                 
                 const statusEl = document.getElementById('assetStatus');
@@ -147,7 +152,7 @@
                 document.getElementById('ticketCount').innerText = `${tickets.length} เคส`;
                 if (tickets.length > 0) {
                     ticketList.innerHTML = tickets.map(t => `
-                        <div class="p-4 bg-white rounded-2xl border border-slate-100 hover:border-indigo-200 transition-all cursor-pointer shadow-sm hover:shadow-md" onclick="window.location.href='/ticket-detail.html?id=${t.id}'">
+                        <div class="p-4 bg-white rounded-2xl border border-slate-100 hover:border-indigo-200 transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-[0.98]" onclick="window.location.href='/ticket-detail.html?id=${t.id}'">
                             <div class="flex justify-between items-start mb-2">
                                 <h4 class="text-sm font-bold text-slate-800 truncate">${escapeHTML(t.subject)}</h4>
                                 <span class="${ui.getBadgeClass('status', t.status)}">${t.status}</span>

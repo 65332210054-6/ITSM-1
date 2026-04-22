@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Management System | Enterprise Capabilities</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.454.0/lucide.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-dark: #0f172a;
+            --bg-darker: #0a0f1d;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            color: #cbd5e1;
+        }
+
+        .glass {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #a5b4fc 0%, #6366f1 50%, #4338ca 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0) 70%);
+            filter: blur(60px);
+            z-index: 0;
+        }
+
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-hover:hover {
+            transform: translateY(-8px);
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .module-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden selection:bg-indigo-500/30">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 glass border-b border-white/5 py-4 transition-all duration-300" id="navbar">
+        <div class="max-w-7xl mx-auto px-6 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-600/20">
+                    <i data-lucide="cpu" class="text-white w-6 h-6"></i>
+                </div>
+                <span class="text-xl font-bold text-white tracking-tight">ITSM <span class="text-indigo-400 text-sm font-medium">by CTC Webdesign</span></span>
+            </div>
+            <div class="hidden lg:flex items-center gap-8 text-sm font-medium">
+                <a href="#core" class="hover:text-indigo-400 transition-colors">Core Services</a>
+                <a href="#inventory" class="hover:text-indigo-400 transition-colors">Inventory</a>
+                <a href="#infra" class="hover:text-indigo-400 transition-colors">Infrastructure</a>
+                <a href="#admin" class="hover:text-indigo-400 transition-colors">Administration</a>
+                <a href="/login.html" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-full transition-all shadow-lg shadow-indigo-600/20">เข้าสู่ระบบ</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-44 pb-32 overflow-hidden">
+        <div class="hero-glow -top-48 -left-48"></div>
+        <div class="hero-glow -bottom-48 -right-48"></div>
+        
+        <div class="max-w-7xl mx-auto px-6 relative z-10">
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <div class="space-y-8">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-widest">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                        </span>
+                        The Future of IT Operations
+                    </div>
+                    <h1 class="text-5xl lg:text-7xl font-extrabold text-white leading-[1.1] tracking-tight">
+                        เจาะลึกทุก <br>
+                        <span class="gradient-text">ความสามารถระบบ</span>
+                    </h1>
+                    <p class="text-xl text-slate-400 leading-relaxed max-w-xl">
+                        ยกระดับการจัดการไอทีด้วยโซลูชันที่ครบถ้วนที่สุด ตั้งแต่การจัดการสินทรัพย์ การแจ้งซ่อม ไปจนถึงโครงสร้างพื้นฐานระดับองค์กร
+                    </p>
+                    <div class="flex flex-wrap gap-4 pt-4">
+                        <a href="/login.html" class="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-lg transition-all shadow-xl shadow-indigo-600/30 flex items-center gap-2">
+                            เริ่มต้นใช้งาน <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                        </a>
+                        <a href="#core" class="px-8 py-4 glass text-white rounded-2xl font-bold text-lg hover:bg-white/5 transition-all flex items-center gap-2">
+                            สำรวจโมดูล
+                        </a>
+                    </div>
+                </div>
+                <div class="relative group">
+                    <div class="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[40px] blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+                    <div class="relative glass rounded-[40px] p-2 overflow-hidden shadow-2xl shadow-indigo-500/20 animate-float">
+                        <img src="/assets/images/welcome_picture.jpg" alt="Actual System Dashboard" class="rounded-[32px] w-full border border-white/10">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Core Services -->
+    <section id="core" class="py-24 bg-slate-900/50">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="mb-16">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-8 h-1 bg-indigo-500 rounded-full"></div>
+                    <span class="text-indigo-400 font-bold uppercase tracking-widest text-sm">🛠️ หมวดบริการหลัก</span>
+                </div>
+                <h2 class="text-4xl font-bold text-white mb-6">Core Services Management</h2>
+                <p class="text-slate-400 max-w-2xl">หัวใจสำคัญของการบริหารจัดการไอทีในทุกๆ วัน ครอบคลุมงานบริการพื้นฐานที่จำเป็นสำหรับพนักงานและทีมเทคนิค</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Dashboard -->
+                <div class="glass p-8 rounded-3xl card-hover flex flex-col">
+                    <div class="w-12 h-12 bg-indigo-500/20 rounded-2xl flex items-center justify-center mb-6">
+                        <i data-lucide="layout-dashboard" class="text-indigo-400 w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-4">Dashboard</h3>
+                    <ul class="text-sm text-slate-400 space-y-3 mb-6 flex-grow">
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-indigo-500 flex-shrink-0"></i> ดูสรุปจำนวนทรัพย์สิน, งานซ่อมค้าง, และจำนวนพนักงานแบบ Real-time</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-indigo-500 flex-shrink-0"></i> กราฟวิเคราะห์แนวโน้มการแจ้งซ่อมย้อนหลัง 6 เดือน</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-indigo-500 flex-shrink-0"></i> Feed กิจกรรมล่าสุดเพื่อความโปร่งใสในระบบ</li>
+                    </ul>
+                </div>
+
+                <!-- Assets -->
+                <div class="glass p-8 rounded-3xl card-hover flex flex-col">
+                    <div class="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center mb-6">
+                        <i data-lucide="monitor" class="text-blue-400 w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-4">Assets (ทรัพย์สิน)</h3>
+                    <ul class="text-sm text-slate-400 space-y-3 mb-6 flex-grow">
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-blue-500 flex-shrink-0"></i> บันทึกข้อมูลสเปกละเอียด (CPU, RAM, Storage)</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-blue-500 flex-shrink-0"></i> ระบุสถานะอุปกรณ์และผูกเจ้าของเครื่อง (Assign)</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-blue-500 flex-shrink-0"></i> รองรับระบบ QR Code สแกนดูข้อมูลได้ทันที</li>
+                    </ul>
+                </div>
+
+                <!-- Tickets -->
+                <div class="glass p-8 rounded-3xl card-hover flex flex-col">
+                    <div class="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center mb-6">
+                        <i data-lucide="ticket" class="text-emerald-400 w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-4">Tickets (การแจ้งซ่อม)</h3>
+                    <ul class="text-sm text-slate-400 space-y-3 mb-6 flex-grow">
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-500 flex-shrink-0"></i> พนักงานแจ้งปัญหาเองได้ พร้อมระบุความสำคัญ</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-500 flex-shrink-0"></i> Technician รับงานและอัปเดตสถานะแบบ Real-time</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-500 flex-shrink-0"></i> เก็บประวัติการซ่อมเพื่อวิเคราะห์การเคลม</li>
+                    </ul>
+                </div>
+
+                <!-- Borrows -->
+                <div class="glass p-8 rounded-3xl card-hover flex flex-col">
+                    <div class="w-12 h-12 bg-purple-500/20 rounded-2xl flex items-center justify-center mb-6">
+                        <i data-lucide="refresh-cw" class="text-purple-400 w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-4">Borrows (การยืม-คืน)</h3>
+                    <ul class="text-sm text-slate-400 space-y-3 mb-6 flex-grow">
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-purple-500 flex-shrink-0"></i> บันทึกการยืมอุปกรณ์พร้อมวันกำหนดคืน</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-purple-500 flex-shrink-0"></i> ระบบตรวจสอบสถานะ คืนแล้ว/เกินกำหนด/ยังไม่คืน</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-purple-500 flex-shrink-0"></i> แจ้งเตือนผ่าน Line เมื่อใกล้ถึงกำหนดคืน</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Inventory & Supplies -->
+    <section id="inventory" class="py-24">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex flex-col lg:flex-row gap-16">
+                <div class="lg:w-1/3">
+                    <div class="sticky top-32">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-8 h-1 bg-amber-500 rounded-full"></div>
+                            <span class="text-amber-400 font-bold uppercase tracking-widest text-sm">📦 หมวดจัดการสต็อก</span>
+                        </div>
+                        <h2 class="text-4xl font-bold text-white mb-6">Inventory & Supplies</h2>
+                        <p class="text-slate-400 mb-8">จัดการวัสดุสิ้นเปลืองและอุปกรณ์รายย่อยอย่างเป็นระบบ ไม่ให้การทำงานสะดุดเพียงเพราะของหมด</p>
+                        <div class="p-6 bg-amber-500/10 border border-amber-500/20 rounded-3xl">
+                            <div class="flex items-center gap-4 text-amber-400 mb-2">
+                                <i data-lucide="bell-ring" class="w-6 h-6 animate-pulse"></i>
+                                <span class="font-bold">Smart Notification</span>
+                            </div>
+                            <p class="text-xs text-amber-200/70">ระบบแจ้งเตือน Minimum Stock และเติมหมึกพิมพ์ผ่าน Line Notify โดยอัตโนมัติ</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 grid sm:grid-cols-2 gap-6">
+                    <div class="glass p-8 rounded-3xl card-hover">
+                        <i data-lucide="package" class="w-10 h-10 text-amber-400 mb-6"></i>
+                        <h3 class="text-xl font-bold text-white mb-4">Consumables</h3>
+                        <p class="text-sm text-slate-400 mb-4">จัดการเมาส์, หูฟัง, สายชาร์จ และอุปกรณ์รายย่อย</p>
+                        <ul class="text-xs text-slate-500 space-y-2">
+                            <li class="flex items-center gap-2"><i data-lucide="chevron-right" class="w-3 h-3 text-amber-500"></i> ตั้งค่า Minimum Stock แจ้งเตือนของขาด</li>
+                            <li class="flex items-center gap-2"><i data-lucide="chevron-right" class="w-3 h-3 text-amber-500"></i> บันทึกราคาและแหล่งซื้อเพื่อคุมงบ</li>
+                        </ul>
+                    </div>
+                    <div class="glass p-8 rounded-3xl card-hover">
+                        <i data-lucide="droplet" class="w-10 h-10 text-pink-400 mb-6"></i>
+                        <h3 class="text-xl font-bold text-white mb-4">Cartridges</h3>
+                        <p class="text-sm text-slate-400 mb-4">ระบบจัดการหมึกพิมพ์แยกตามรุ่นและสี (CMYK)</p>
+                        <ul class="text-xs text-slate-500 space-y-2">
+                            <li class="flex items-center gap-2"><i data-lucide="chevron-right" class="w-3 h-3 text-pink-500"></i> ติดตามจำนวนคงเหลือแยกตามสี</li>
+                            <li class="flex items-center gap-2"><i data-lucide="chevron-right" class="w-3 h-3 text-pink-500"></i> Printer Compatibility Mapping</li>
+                        </ul>
+                    </div>
+                    <div class="glass p-8 rounded-3xl card-hover sm:col-span-2">
+                        <div class="flex items-center gap-4">
+                            <i data-lucide="tags" class="w-10 h-10 text-emerald-400"></i>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">Categories & Tags</h3>
+                                <p class="text-sm text-slate-400">จัดระเบียบทุกอย่างด้วยหมวดหมู่และไอคอนที่ปรับแต่งได้เอง</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Infrastructure & Compliance -->
+    <section id="infra" class="py-24 bg-indigo-950/20">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <div class="flex justify-center items-center gap-3 mb-4">
+                    <div class="w-8 h-1 bg-sky-500 rounded-full"></div>
+                    <span class="text-sky-400 font-bold uppercase tracking-widest text-sm">🌐 หมวดโครงสร้างพื้นฐาน</span>
+                    <div class="w-8 h-1 bg-sky-500 rounded-full"></div>
+                </div>
+                <h2 class="text-4xl font-bold text-white mb-6">Infrastructure & Compliance</h2>
+                <p class="text-slate-400 max-w-2xl mx-auto">ควบคุมดูแลโครงสร้างพื้นฐานด้านเน็ตเวิร์กและลิขสิทธิ์ซอฟต์แวร์ให้ถูกต้องตามกฎระเบียบและปลอดภัยเสมอ</p>
+            </div>
+
+            <div class="grid lg:grid-cols-3 gap-8">
+                <div class="glass p-10 rounded-[40px] card-hover text-center">
+                    <div class="w-16 h-16 bg-sky-500/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-sky-500/20">
+                        <i data-lucide="network" class="text-sky-400 w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-4">IPAM</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-6">จดบันทึกการใช้งาน Static IP เพื่อป้องกันการใช้ IP ซ้ำซ้อน พร้อมระบุ MAC Address และตำแหน่งที่ตั้งอุปกรณ์</p>
+                    <div class="h-px w-12 bg-sky-500/30 mx-auto"></div>
+                </div>
+                <div class="glass p-10 rounded-[40px] card-hover text-center">
+                    <div class="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-rose-500/20">
+                        <i data-lucide="shield-check" class="text-rose-400 w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-4">Domains & SSL</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-6">ติดตามวันหมดอายุโดเมนและใบรับรอง SSL ล่วงหน้า 30 วัน เพื่อความต่อเนื่องของบริการออนไลน์</p>
+                    <div class="h-px w-12 bg-rose-500/30 mx-auto"></div>
+                </div>
+                <div class="glass p-10 rounded-[40px] card-hover text-center">
+                    <div class="w-16 h-16 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-indigo-500/20">
+                        <i data-lucide="key" class="text-indigo-400 w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-4">Software Licenses</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-6">จัดเก็บ License Key และติดตามจำนวนสิทธิ์ (Seat) ที่ถูกใช้งานไปแล้วเทียบกับที่มีอยู่จริง</p>
+                    <div class="h-px w-12 bg-indigo-500/30 mx-auto"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Administration -->
+    <section id="admin" class="py-24">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="glass rounded-[48px] p-12 lg:p-20 overflow-hidden relative">
+                <div class="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
+                    <i data-lucide="settings" class="w-64 h-64 animate-spin-slow"></i>
+                </div>
+                
+                <div class="relative z-10">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-8 h-1 bg-indigo-500 rounded-full"></div>
+                        <span class="text-indigo-400 font-bold uppercase tracking-widest text-sm">⚙️ หมวดบริหารจัดการ</span>
+                    </div>
+                    <h2 class="text-4xl lg:text-5xl font-bold text-white mb-12">Administration & Control</h2>
+                    
+                    <div class="grid md:grid-cols-3 gap-12">
+                        <div class="space-y-4">
+                            <h4 class="text-xl font-bold text-white flex items-center gap-2">
+                                <i data-lucide="users" class="text-indigo-400"></i> Users & RBAC
+                            </h4>
+                            <p class="text-slate-400 text-sm">แบ่งสิทธิ์การเข้าถึงตามบทบาท Admin, Technician หรือ User ทั่วไป เพื่อความปลอดภัยสูงสุดของข้อมูล</p>
+                        </div>
+                        <div class="space-y-4">
+                            <h4 class="text-xl font-bold text-white flex items-center gap-2">
+                                <i data-lucide="bar-chart-3" class="text-indigo-400"></i> Advanced Reports
+                            </h4>
+                            <p class="text-slate-400 text-sm">Export ข้อมูลทุกโมดูลเป็น CSV/Excel ในคลิกเดียว สรุปภาพรวมสต็อกและประวัติการซ่อมเพื่อนำเสนอผู้บริหาร</p>
+                        </div>
+                        <div class="space-y-4">
+                            <h4 class="text-xl font-bold text-white flex items-center gap-2">
+                                <i data-lucide="sliders" class="text-indigo-400"></i> Global Settings
+                            </h4>
+                            <p class="text-slate-400 text-sm">ปรับแต่งโครงสร้างองค์กร สาขา และแผนก รวมถึงโลโก้และชื่อระบบได้ตามต้องการ</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="py-32 text-center relative overflow-hidden">
+        <div class="hero-glow top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-30"></div>
+        <div class="max-w-4xl mx-auto px-6 relative z-10">
+            <h2 class="text-4xl lg:text-7xl font-extrabold text-white mb-8 tracking-tight">พร้อมจัดการงานไอที <br> อย่างมืออาชีพหรือยัง?</h2>
+            <div class="flex flex-col sm:flex-row justify-center gap-6">
+                <a href="/login.html" class="px-12 py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xl transition-all shadow-2xl shadow-indigo-600/40 transform hover:scale-105">
+                    เข้าสู่ระบบทันที
+                </a>
+            </div>
+            <p class="mt-8 text-slate-500">รองรับการเข้าใช้งานผ่านระบบ Single Sign-On ภายในองค์กร</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-16 border-t border-white/5 bg-slate-950/50">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-indigo-600/20 rounded-xl flex items-center justify-center">
+                        <i data-lucide="cpu" class="text-indigo-500 w-6 h-6"></i>
+                    </div>
+                    <span class="text-2xl font-bold text-white tracking-tight">ITSM <span class="text-indigo-400 text-base font-medium">by CTC Webdesign</span></span>
+                </div>
+                <div class="flex gap-12 text-sm font-medium text-slate-500">
+                    <a href="#core" class="hover:text-white transition-colors">Services</a>
+                    <a href="#inventory" class="hover:text-white transition-colors">Inventory</a>
+                    <a href="#infra" class="hover:text-white transition-colors">Infrastructure</a>
+                    <a href="#admin" class="hover:text-white transition-colors">Privacy Policy</a>
+                </div>
+                <div class="flex gap-4">
+                    <a href="#" class="w-10 h-10 glass rounded-full flex items-center justify-center hover:bg-indigo-500 hover:border-indigo-500 transition-all">
+                        <i data-lucide="github" class="w-5 h-5 text-white"></i>
+                    </a>
+                    <a href="#" class="w-10 h-10 glass rounded-full flex items-center justify-center hover:bg-indigo-500 hover:border-indigo-500 transition-all">
+                        <i data-lucide="linkedin" class="w-5 h-5 text-white"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="mt-12 pt-8 border-t border-white/5 text-center text-xs text-slate-600 font-medium tracking-widest uppercase">
+                © 2026 Enterprise IT Management System. Built for Performance & Scalability.
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
+
+        // Navbar Scroll Effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                nav.classList.add('py-2', 'bg-[#0f172a]/90', 'shadow-2xl');
+                nav.classList.remove('py-4');
+            } else {
+                nav.classList.remove('py-2', 'bg-[#0f172a]/90', 'shadow-2xl');
+                nav.classList.add('py-4');
+            }
+        });
+
+        // Add smooth scroll for all links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+    <style>
+        .animate-spin-slow {
+            animation: spin 20s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</body>
+</html>

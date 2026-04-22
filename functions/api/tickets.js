@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless';
 import { validateSession, checkModuleAccess } from '../auth.js';
 import { logAction } from './logs.js';
+import { sendLineNotify } from '../line.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -183,6 +184,13 @@ export async function onRequest(context) {
           WHERE id = ${id}
         `;
         await logAction(sql, userSession.user_id, 'Tickets', 'Update', { ticket_id: id, subject, status });
+
+        // Line Notification on Resolution
+        if (status === 'Resolved' || status === 'Closed') {
+          const notifyMsg = `\n✅ เคสได้รับการแก้ไขแล้ว!\n🔹 เรื่อง: ${subject}\n🔸 สถานะ: ${status}\n👤 ดำเนินการโดย: ${userSession.name}`;
+          await sendLineNotify(sql, notifyMsg);
+        }
+
         return new Response(JSON.stringify({ message: "Ticket updated successfully" }), { status: 200 });
       } else {
         // Create
@@ -195,6 +203,11 @@ export async function onRequest(context) {
           VALUES (${newId}, ${subject}, ${description}, ${priority}, ${userSession.user_id}, ${asset_id}, 'Open', NOW(), NOW())
         `;
         await logAction(sql, userSession.user_id, 'Tickets', 'Create', { ticket_id: newId, subject, priority });
+
+        // Line Notification on Creation
+        const notifyMsg = `\n🆕 มีเคสแจ้งซ่อมใหม่!\n🔹 เรื่อง: ${subject}\n🔸 ความสำคัญ: ${priority}\n👤 ผู้แจ้ง: ${userSession.name}`;
+        await sendLineNotify(sql, notifyMsg);
+
         return new Response(JSON.stringify({ message: "Ticket created successfully", id: newId }), { status: 201 });
       }
     }

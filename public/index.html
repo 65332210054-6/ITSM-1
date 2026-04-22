@@ -95,7 +95,7 @@
                                 </div>
                             </div>
                         </div>
-                        <button onclick="window.location.href='/settings.html'" class="w-full mt-6 py-3 text-xs font-bold text-slate-400 hover:text-indigo-600 border border-dashed border-slate-200 rounded-xl hover:border-indigo-200 transition-all">ดูประวัติทั้งหมด</button>
+                        <button onclick="window.location.href='/settings.html'" class="w-full mt-6 py-3 text-xs font-bold text-slate-400 hover:text-indigo-600 border border-dashed border-slate-200 rounded-xl hover:border-indigo-200 transition-all active:scale-95">ดูประวัติทั้งหมด</button>
                     </div>
                 </div>
             </div>
@@ -309,7 +309,7 @@
                     let gridHTML = ui.modules.map(m => {
                         if (ui.checkAccess(m.key, settings, user)) {
                             return `
-                                <div class="p-6 sm:p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 transition-all cursor-pointer group" onclick="window.location.href='${m.path}'">
+                                <div class="p-6 sm:p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 transition-all cursor-pointer group active:scale-95" onclick="window.location.href='${m.path}'">
                                     <div class="flex items-center gap-4 mb-3">
                                         <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                                             <i data-lucide="${m.icon}" class="h-5 w-5 text-white"></i>
@@ -326,7 +326,7 @@
                     // Add Settings card for Admin
                     if (isAdmin) {
                         gridHTML += `
-                            <div class="p-6 sm:p-8 bg-slate-900/10 backdrop-blur-md border border-white/10 rounded-2xl hover:bg-slate-900/20 transition-all cursor-pointer group" onclick="window.location.href='/settings.html'">
+                            <div class="p-6 sm:p-8 bg-slate-900/10 backdrop-blur-md border border-white/10 rounded-2xl hover:bg-slate-900/20 transition-all cursor-pointer group active:scale-95" onclick="window.location.href='/settings.html'">
                                 <div class="flex items-center gap-4 mb-3">
                                     <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                                         <i data-lucide="settings" class="h-5 w-5 text-white"></i>

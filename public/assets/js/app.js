@@ -156,10 +156,11 @@ const ui = {
     modules: [
         { id: 'users', name: 'จัดการผู้ใช้งาน', icon: 'users', color: 'text-indigo-600', key: 'module_users_enabled', path: '/users.html', desc: 'จัดการข้อมูลพนักงานและสิทธิ์การใช้งาน' },
         { id: 'assets', name: 'จัดการทรัพย์สิน', icon: 'monitor', color: 'text-blue-600', key: 'module_assets_enabled', path: '/assets.html', desc: 'ดูแลรักษาคอมพิวเตอร์และอุปกรณ์ไอที' },
+        { id: 'ipam', name: 'จัดการ IP Address', icon: 'network', color: 'text-cyan-600', key: 'module_ipam_enabled', path: '/ipam.html', desc: 'จัดการและติดตามการใช้งาน IP Address ในองค์กร' },
         { id: 'tickets', name: 'ระบบแจ้งซ่อม', icon: 'ticket', color: 'text-amber-600', key: 'module_tickets_enabled', path: '/tickets.html', desc: 'ติดตามงานซ่อมและบริการด้านไอทีทั้งหมด' },
         { id: 'borrows', name: 'ยืม-คืนอุปกรณ์', icon: 'arrow-right-from-line', color: 'text-violet-600', key: 'module_borrows_enabled', path: '/borrows.html', desc: 'บันทึกการเบิกยืมและคืนอุปกรณ์ไอที' },
         { id: 'domains', name: 'โดเมน & SSL', icon: 'globe', color: 'text-sky-600', key: 'module_domains_enabled', path: '/domains.html', desc: 'จัดการโดเมนเนม ใบรับรอง SSL และโฮสติ้ง' },
-        { id: 'cartridges', name: 'หมึกพิมพ์ & Toner', icon: 'droplets', color: 'text-pink-600', key: 'module_cartridges_enabled', path: '/cartridges.html', desc: 'จัดการสต็อกและประวัติการใช้หมึกพิมพ์' },
+        { id: 'consumables', name: 'วัสดุสิ้นเปลือง', icon: 'package', color: 'text-rose-600', key: 'module_consumables_enabled', path: '/consumables.html', desc: 'คลังพัสดุไอทีและวัสดุสิ้นเปลือง' },
         { id: 'licenses', name: 'ลิขสิทธิ์ซอฟต์แวร์', icon: 'key', color: 'text-purple-600', key: 'module_licenses_enabled', path: '/licenses.html', desc: 'จัดการคีย์และวันหมดอายุของซอฟต์แวร์' },
         { id: 'reports', name: 'รายงาน & Export', icon: 'bar-chart-2', color: 'text-emerald-600', key: 'module_reports_enabled', path: '/reports.html', desc: 'สรุปข้อมูลทางสถิติและส่งออกไฟล์ CSV' },
         { id: 'categories', name: 'หมวดหมู่ทรัพย์สิน', icon: 'layers', color: 'text-rose-600', key: 'module_categories_enabled', path: '/categories.html', desc: 'จัดการประเภทและหมวดหมู่ของอุปกรณ์' }

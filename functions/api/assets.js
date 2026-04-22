@@ -110,11 +110,13 @@ export async function onRequest(context) {
         if (!id) return new Response(JSON.stringify({ message: "ID is required" }), { status: 400 });
 
         const asset = await sql`
-          SELECT a.*, u.name as assigned_to_name, d.name as department_name, b.name as branch_name
+          SELECT a.*, u.name as assigned_to_name, d.name as department_name, b.name as branch_name,
+                 i.ip_address as linked_ip
           FROM assets a
           LEFT JOIN users u ON a.assigned_to = u.id
           LEFT JOIN departments d ON a.department_id = d.id
           LEFT JOIN branches b ON d.branch_id = b.id
+          LEFT JOIN ip_addresses i ON i.asset_id = a.id
           WHERE a.id = ${id}
         `;
 

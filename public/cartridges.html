@@ -65,7 +65,7 @@
         <div class="modal-content max-w-lg animate-in fade-in zoom-in duration-200">
             <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-3xl">
                 <h2 id="modalTitle" class="text-xl font-bold text-slate-800 tracking-tight">จัดการหมึกพิมพ์ / Toner</h2>
-                <button onclick="closeCartridgeModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-6 h-6"></i></button>
+                <button onclick="closeCartridgeModal()" class="btn-icon"><i data-lucide="x" class="w-6 h-6"></i></button>
             </div>
             <form id="cartridgeForm" class="p-8 space-y-5">
                 <input type="hidden" id="cartridgeId">
@@ -112,8 +112,8 @@
                     <textarea id="printer_models" rows="3" placeholder="ระบุรุ่นเครื่องพิมพ์ที่สามารถใช้ตลับหมึกนี้ได้..." class="form-input h-24 py-3"></textarea>
                 </div>
                 <div class="pt-4 flex gap-3">
-                    <button type="button" onclick="closeCartridgeModal()" class="flex-1 px-6 py-3 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all">ยกเลิก</button>
-                    <button type="submit" class="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all flex items-center justify-center gap-2">
+                    <button type="button" onclick="closeCartridgeModal()" class="flex-1 btn-secondary">ยกเลิก</button>
+                    <button type="submit" class="flex-1 btn-primary">
                         <i data-lucide="save" class="w-5 h-5"></i> บันทึกข้อมูล
                     </button>
                 </div>
@@ -181,10 +181,15 @@
                         </td>
                         <td class="px-6 py-4 text-right">
                             <div class="flex justify-end gap-1">
-                                ${ui.checkAccess('cartridges', null, null, 'edit') ? `<button onclick="editCartridge('${c.id}')" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all active:scale-95">
+                                ${ui.checkAccess('cartridges', null, null, 'edit') ? `
+                                <button onclick="editCartridge('${c.id}')" class="btn-icon" title="แก้ไข">
                                     <i data-lucide="edit-3" class="w-4 h-4"></i>
-                                </button>` : ''}
-                                ${ui.checkAccess('cartridges', null, null, 'delete') ? `<button onclick="deleteCartridge('${c.id}', '${escapeHTML(c.model)}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-95">
+                                </button>` : `
+                                <button onclick="editCartridge('${c.id}')" class="btn-icon" title="ดูรายละเอียด">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </button>`}
+                                ${ui.checkAccess('cartridges', null, null, 'delete') ? `
+                                <button onclick="deleteCartridge('${c.id}', '${escapeHTML(c.model)}')" class="btn-icon btn-icon-rose" title="ลบ">
                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                                 </button>` : ''}
                             </div>
@@ -212,9 +217,19 @@
         function changePage(p) { currentPage = p; loadCartridges(); }
 
         function openCartridgeModal() {
+            const canEdit = ui.checkAccess('cartridges', null, null, 'edit') || ui.checkAccess('cartridges', null, null, 'create');
             document.getElementById('modalTitle').innerText = 'เพิ่มหมึกพิมพ์ใหม่';
             document.getElementById('cartridgeId').value = '';
             document.getElementById('cartridgeForm').reset();
+            
+            // Handle Read-Only state
+            const form = document.getElementById('cartridgeForm');
+            const inputs = form.querySelectorAll('input, select, textarea');
+            const saveBtn = form.querySelector('button[type="submit"]');
+
+            inputs.forEach(input => input.disabled = !canEdit);
+            if (saveBtn) saveBtn.style.display = canEdit ? 'block' : 'none';
+
             document.getElementById('cartridgeModal').classList.remove('hidden');
         }
 
@@ -223,7 +238,9 @@
         function editCartridge(id) {
             const c = allCartridges.find(x => x.id === id);
             if (!c) return;
-            document.getElementById('modalTitle').innerText = 'แก้ไขข้อมูลหมึกพิมพ์';
+
+            const canEdit = ui.checkAccess('cartridges', null, null, 'edit');
+            document.getElementById('modalTitle').innerText = canEdit ? 'แก้ไขข้อมูลหมึกพิมพ์' : 'รายละเอียดหมึกพิมพ์ (Read-Only)';
             document.getElementById('cartridgeId').value = c.id;
             document.getElementById('model').value = c.model;
             document.getElementById('color').value = c.color;
@@ -232,6 +249,15 @@
             document.getElementById('quantity').value = c.quantity;
             document.getElementById('min_stock').value = c.min_stock;
             document.getElementById('printer_models').value = c.printer_models || '';
+
+            // Handle Read-Only state
+            const form = document.getElementById('cartridgeForm');
+            const inputs = form.querySelectorAll('input, select, textarea');
+            const saveBtn = form.querySelector('button[type="submit"]');
+
+            inputs.forEach(input => input.disabled = !canEdit);
+            if (saveBtn) saveBtn.style.display = canEdit ? 'block' : 'none';
+
             document.getElementById('cartridgeModal').classList.remove('hidden');
         }
 
