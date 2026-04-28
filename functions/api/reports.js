@@ -90,6 +90,22 @@ export async function onRequest(context) {
         LIMIT 10
       `;
 
+      // Consumables low stock for chart
+      const consumableLowStock = await sql`
+        SELECT name, quantity, unit
+        FROM consumables
+        WHERE quantity <= min_quantity
+        ORDER BY quantity ASC
+        LIMIT 5
+      `.catch(() => []);
+
+      // IP Status for chart
+      const ipStatusSummary = await sql`
+        SELECT status, COUNT(*)::int as count
+        FROM ip_addresses
+        GROUP BY status
+      `.catch(() => []);
+
       return new Response(JSON.stringify({
         assets: assetStats[0],
         tickets: ticketStats[0],
@@ -98,7 +114,9 @@ export async function onRequest(context) {
         domains: domainStats[0],
         licenses: licenseStats[0],
         ips: ipStats[0],
-        assetByCategory
+        assetByCategory,
+        consumableLowStock,
+        ipStatusSummary
       }), {
         status: 200,
         headers: { "Content-Type": "application/json" }
@@ -212,6 +230,23 @@ export async function onRequest(context) {
             i.vendor || "-", i.price || 0, i.status
         ]);
         return buildCSVResponse(headers, rows, "it-licenses-export.csv");
+    }
+
+    // Export IPAM
+    if (action === "export-ipam") {
+        const items = await sql`
+          SELECT i.*, a.asset_tag, a.name as asset_name 
+          FROM ip_addresses i 
+          LEFT JOIN assets a ON i.asset_id = a.id 
+          ORDER BY i.ip_address ASC
+        `.catch(() => []);
+        
+        const headers = ["IP Address", "Subnet Mask", "Gateway", "VLAN", "สถานะ", "ทรัพย์สินที่ผูก", "ชื่อทรัพย์สิน", "คำอธิบาย"];
+        const rows = items.map(i => [
+            i.ip_address, i.subnet_mask, i.gateway || "-", i.vlan || "-", i.status, 
+            i.asset_tag || "-", i.asset_name || "-", i.description || "-"
+        ]);
+        return buildCSVResponse(headers, rows, "it-ipam-export.csv");
     }
 
     return new Response(JSON.stringify({ message: "Action not found" }), { status: 400 });

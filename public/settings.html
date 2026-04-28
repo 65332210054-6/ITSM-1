@@ -103,6 +103,13 @@
                             </div>
                             <p class="text-[10px] text-slate-400 mt-2 italic">* สามารถขอ Token ได้จาก <a href="https://notify-bot.line.me/" target="_blank" class="text-indigo-500 underline">Line Notify Bot</a></p>
                         </div>
+                        
+                        <div class="pt-2">
+                            <button onclick="triggerAutomatedNotify()" class="flex items-center gap-2 text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-4 py-2.5 rounded-xl border border-indigo-100 transition-all active:scale-95">
+                                <i data-lucide="bell-ring" class="w-4 h-4"></i>
+                                ทดสอบส่งรายงานแจ้งเตือนด่วน (Overdue & Expiry)
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -117,7 +124,12 @@
                     </div>
                     <div class="space-y-6" id="moduleGrid">
                         <!-- Module Grid will be rendered dynamically -->
-                        <div class="p-10 text-center text-slate-400 font-medium">กำลังโหลดโมดูล...</div>
+                        <div class="animate-pulse w-full border border-slate-200 rounded-2xl overflow-hidden">
+    <div class="h-12 bg-slate-200/50 w-full border-b border-slate-200"></div>
+    <div class="h-16 bg-slate-100/50 w-full border-b border-slate-100"></div>
+    <div class="h-16 bg-slate-100/50 w-full border-b border-slate-100"></div>
+    <div class="h-16 bg-slate-100/50 w-full"></div>
+</div>
                     </div>
                 </div>
 
@@ -134,7 +146,10 @@
                     </div>
                     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6" id="roleGrid">
                         <!-- Roles will be loaded here -->
-                        <div class="p-10 text-center text-slate-400 col-span-full">กำลังโหลดข้อมูลบทบาท...</div>
+                        <div class="animate-pulse bg-slate-100 rounded-2xl h-24 col-span-1"></div>
+<div class="animate-pulse bg-slate-100 rounded-2xl h-24 col-span-1"></div>
+<div class="animate-pulse bg-slate-100 rounded-2xl h-24 col-span-1 hidden sm:block"></div>
+<div class="animate-pulse bg-slate-100 rounded-2xl h-24 col-span-1 hidden lg:block"></div>
                     </div>
                 </div>
 
@@ -152,7 +167,9 @@
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6" id="branchGrid">
                     <!-- Branches will be loaded here -->
-                    <div class="p-10 text-center text-slate-400 col-span-full">กำลังโหลดข้อมูลสาขา...</div>
+                    <div class="animate-pulse bg-slate-100 rounded-2xl h-24 col-span-1"></div>
+<div class="animate-pulse bg-slate-100 rounded-2xl h-24 col-span-1"></div>
+<div class="animate-pulse bg-slate-100 rounded-2xl h-24 col-span-1 hidden sm:block"></div>
                 </div>
             </div>
 
@@ -170,7 +187,10 @@
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6" id="deptGrid">
                     <!-- Departments will be loaded here -->
-                    <div class="p-10 text-center text-slate-400 col-span-full">กำลังโหลดข้อมูลแผนก...</div>
+                    <div class="animate-pulse bg-slate-100 rounded-2xl h-24 col-span-1"></div>
+<div class="animate-pulse bg-slate-100 rounded-2xl h-24 col-span-1"></div>
+<div class="animate-pulse bg-slate-100 rounded-2xl h-24 col-span-1 hidden sm:block"></div>
+<div class="animate-pulse bg-slate-100 rounded-2xl h-24 col-span-1 hidden lg:block"></div>
                 </div>
             </div>
             <!-- Audit Logs Management (Admin Only) -->
@@ -446,6 +466,48 @@
         }
 
         // Settings Logic
+        async function triggerAutomatedNotify() {
+            try {
+                notify.toast('กำลังประมวลผลการแจ้งเตือน...');
+                const response = await apiFetch('/api/automated-notify');
+                const data = await response.json();
+                if (response.ok) {
+                    if (data.stats) {
+                        Swal.fire({
+                            title: 'ส่งแจ้งเตือนสำเร็จ',
+                            html: `ประมวลผลเสร็จสิ้น:<br><br>⚠️ ยืมเกินกำหนด: <b>${data.stats.overdue}</b> รายการ<br>⌛ กำลังจะหมดอายุ: <b>${data.stats.domains + data.stats.ssl + data.stats.licenses}</b> รายการ`,
+                            icon: 'success'
+                        });
+                    } else {
+                        Swal.fire('ส่งแจ้งเตือนสำเร็จ', data.message, 'success');
+                    }
+                } else {
+                    notify.error(data.message || 'ไม่สามารถส่งแจ้งเตือนได้');
+                }
+            } catch (err) {
+                notify.error('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+            }
+        }
+
+        function toggleRowHighlight(rowId) {
+            const row = document.getElementById(rowId);
+            if (!row) return;
+            
+            // Remove highlight from all other rows
+            document.querySelectorAll('tr[id^="modRow_"]').forEach(r => {
+                if (r.id !== rowId) {
+                    r.classList.remove('!bg-indigo-100');
+                    const firstTd = r.querySelector('td.sticky');
+                    if (firstTd) firstTd.classList.remove('!bg-indigo-100');
+                }
+            });
+            
+            // Toggle the clicked row
+            row.classList.toggle('!bg-indigo-100');
+            const firstTd = row.querySelector('td.sticky');
+            if (firstTd) firstTd.classList.toggle('!bg-indigo-100');
+        }
+
         async function loadGeneralSettings() {
             try {
                 // Fetch roles first to render dynamic module grid
@@ -473,77 +535,100 @@
                     
                     const modules = ui.modules;
 
+                    
+                    // Sort roles by priority
+                    const roleOrder = ['Admin', 'Administrator', 'Executive', 'Manager', 'Team Lead', 'Technician', 'IT Support', 'User', 'Member', 'Visitor', 'Guest'];
+                    const sortedRoles = [...allRoles].sort((a, b) => {
+                        const idxA = roleOrder.indexOf(a.name);
+                        const idxB = roleOrder.indexOf(b.name);
+                        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+                        if (idxA !== -1) return -1;
+                        if (idxB !== -1) return 1;
+                        return a.name.localeCompare(b.name);
+                    });
+
                     const moduleGrid = document.getElementById('moduleGrid');
                     moduleGrid.innerHTML = `
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            ${modules.map(m => {
-                                const baseKey = m.id; // e.g. 'users'
-                                const actions = ['view', 'create', 'edit', 'delete'];
-                                const actionLabels = { view: 'View', create: 'Add', edit: 'Edit', delete: 'Del' };
+                        <div class="mb-4 flex flex-wrap gap-4 text-[11px] font-bold text-slate-500">
+                            <span class="flex items-center gap-1.5"><span class="text-indigo-600 bg-indigo-100/50 border border-indigo-200 px-1.5 py-0.5 rounded shadow-sm">V</span> = View (ดูข้อมูล)</span>
+                            <span class="flex items-center gap-1.5"><span class="text-indigo-600 bg-indigo-100/50 border border-indigo-200 px-1.5 py-0.5 rounded shadow-sm">A</span> = Add (เพิ่ม)</span>
+                            <span class="flex items-center gap-1.5"><span class="text-indigo-600 bg-indigo-100/50 border border-indigo-200 px-1.5 py-0.5 rounded shadow-sm">E</span> = Edit (แก้ไข)</span>
+                            <span class="flex items-center gap-1.5"><span class="text-indigo-600 bg-indigo-100/50 border border-indigo-200 px-1.5 py-0.5 rounded shadow-sm">D</span> = Delete (ลบ)</span>
+                        </div>
+                        <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+                            <table class="w-full text-left whitespace-nowrap border-collapse">
+                                <thead class="bg-slate-50 border-b border-slate-200">
+                                    <tr>
+                                        <th class="sticky left-0 bg-slate-50 z-20 px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                                            โมดูล
+                                        </th>
+                                        ${sortedRoles.map(r => `
+                                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center border-r border-slate-100 last:border-r-0">
+                                                ${escapeHTML(r.name)}
+                                            </th>
+                                        `).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    ${modules.map(m => {
+                                        const baseKey = m.id; // e.g. 'users'
+                                        const actions = ['view', 'create', 'edit', 'delete'];
+                                        const actionLabels = { view: 'V', create: 'A', edit: 'E', delete: 'D' };
+                                        const actionTitles = { view: 'View', create: 'Add', edit: 'Edit', delete: 'Delete' };
 
-                                return `
-                                <div class="bg-slate-50 rounded-2xl border border-slate-100 p-6 flex flex-col h-full">
-                                    <div class="flex items-center gap-3 mb-4">
-                                        <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center ${m.color} shadow-sm border border-slate-200">
-                                            <i data-lucide="${m.icon}" class="w-5 h-5"></i>
-                                        </div>
-                                        <div>
-                                            <h3 class="text-sm font-bold text-slate-800">${m.name}</h3>
-                                            <p class="text-[10px] text-slate-500 uppercase tracking-wider font-bold">${m.id} Module</p>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="flex-1 space-y-4">
-                                        <!-- Header row for permissions -->
-                                        <div class="grid grid-cols-5 gap-1 px-1">
-                                            <div class="col-span-1"></div>
-                                            ${actions.map(a => `<div class="text-[9px] font-bold text-slate-400 text-center uppercase tracking-tighter">${actionLabels[a]}</div>`).join('')}
-                                        </div>
-
-                                        <!-- Admin Row (Always enabled) -->
-                                        <div class="grid grid-cols-5 gap-1 items-center p-2 bg-white rounded-xl border border-slate-100 opacity-60">
-                                            <span class="text-[11px] font-bold text-slate-600 truncate">Admin</span>
-                                            ${actions.map(() => `
-                                                <div class="flex justify-center">
-                                                    <input type="checkbox" checked disabled class="rounded w-3.5 h-3.5 border-slate-300 text-indigo-600">
-                                                </div>
-                                            `).join('')}
-                                        </div>
-
-                                        <!-- Custom Role Rows -->
-                                        ${nonAdminRoles.map(role => {
-                                            return `
-                                            <div class="grid grid-cols-5 gap-1 items-center p-2 bg-white rounded-xl border border-slate-100 hover:bg-indigo-50/30 transition-colors">
-                                                <span class="text-[11px] font-bold text-slate-600 truncate" title="${escapeHTML(role.name)}">${escapeHTML(role.name)}</span>
-                                                ${actions.map(action => {
-                                                    const key = `module_${baseKey}_roles_${action}`;
-                                                    const legacyKey = `module_${baseKey}_enabled`;
-                                                    const val = settings[key] || (action === 'view' ? settings[legacyKey] : 'false');
-                                                    
-                                                    let isAllowed = false;
-                                                    if (val === true || val === 'true' || val === null || val === undefined) {
-                                                        isAllowed = true;
-                                                    } else if (val !== 'false') {
-                                                        const allowedRoles = String(val).split(',').map(r => r.trim());
-                                                        isAllowed = allowedRoles.includes(role.name);
-                                                    }
-
-                                                    return `
-                                                    <div class="flex justify-center">
-                                                        <input type="checkbox" 
-                                                            onchange="updateModuleAccess('${baseKey}', '${action}', '${role.name}', this.checked)"
-                                                            ${isAllowed ? 'checked' : ''} 
-                                                            class="rounded w-3.5 h-3.5 border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
+                                        return `
+                                        <tr id="modRow_${baseKey}" class="group hover:bg-slate-50/50 transition-colors cursor-pointer" onclick="if(event.target.tagName !== 'INPUT') toggleRowHighlight('modRow_${baseKey}')">
+                                            <td class="sticky left-0 bg-white group-hover:bg-slate-50/80 z-10 px-6 py-4 border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] transition-colors">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-8 h-8 rounded-xl flex items-center justify-center ${m.color} shadow-sm border border-slate-200">
+                                                        <i data-lucide="${m.icon}" class="w-4 h-4"></i>
                                                     </div>
-                                                    `;
-                                                }).join('')}
-                                            </div>
-                                            `;
-                                        }).join('')}
-                                    </div>
-                                </div>
-                                `;
-                            }).join('')}
+                                                    <div>
+                                                        <h3 class="text-sm font-bold text-slate-800">${m.name}</h3>
+                                                        <p class="text-[10px] text-slate-500 uppercase tracking-wider">${m.id}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            ${sortedRoles.map(role => {
+                                                const isAdmin = role.name === 'Admin' || role.name === 'Administrator';
+                                                
+                                                return `
+                                                <td class="px-6 py-4 text-center border-r border-slate-100 last:border-r-0">
+                                                    <div class="flex justify-center gap-3">
+                                                        ${actions.map(action => {
+                                                            const key = `module_${baseKey}_roles_${action}`;
+                                                            const legacyKey = `module_${baseKey}_enabled`;
+                                                            const val = settings[key] || (action === 'view' ? settings[legacyKey] : 'false');
+                                                            
+                                                            let isAllowed = false;
+                                                            if (val === true || val === 'true' || val === null || val === undefined) {
+                                                                isAllowed = true;
+                                                            } else if (val !== 'false') {
+                                                                const allowedRoles = String(val).split(',').map(r => r.trim());
+                                                                isAllowed = allowedRoles.includes(role.name);
+                                                            }
+
+                                                            if (isAdmin) isAllowed = true;
+
+                                                            return `
+                                                            <div class="flex flex-col items-center gap-1.5" title="${actionTitles[action]}">
+                                                                <span class="text-[9px] font-bold ${isAllowed ? 'text-indigo-600' : 'text-slate-400'}">${actionLabels[action]}</span>
+                                                                <input type="checkbox" 
+                                                                    ${isAdmin ? 'disabled' : `onchange="updateModuleAccess('${baseKey}', '${action}', '${role.name}', this.checked)"`}
+                                                                    ${isAllowed ? 'checked' : ''} 
+                                                                    class="rounded w-4 h-4 border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                                                            </div>
+                                                            `;
+                                                        }).join('')}
+                                                    </div>
+                                                </td>
+                                                `;
+                                            }).join('')}
+                                        </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
                         </div>
                     `;
                     if (window.lucide) lucide.createIcons();
@@ -793,7 +878,7 @@
                     roleGrid.innerHTML = '<div class="p-10 text-center text-slate-400 col-span-full font-medium">ไม่พบข้อมูลบทบาท</div>';
                 } else {
                     roleGrid.innerHTML = roles.map(role => {
-                        const safeName = escapeHTML(role.name).replace(/'/g, "\\'");
+                        const safeName = escapeHTML(role.name).replace(/'/g, "'");
                         const isAdmin = role.name === 'Admin';
                         return `
                         <div class="bg-white border border-slate-200 rounded-2xl p-5 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 transition-all relative text-center group">
@@ -833,8 +918,8 @@
                     branchGrid.innerHTML = '<div class="p-10 text-center text-slate-400 col-span-full font-medium">ไม่พบข้อมูลสาขา</div>';
                 } else {
                     branchGrid.innerHTML = branches.map(branch => {
-                        const safeName = escapeHTML(branch.name).replace(/'/g, "\\'");
-                        const safeLoc = escapeHTML(branch.location || '').replace(/'/g, "\\'");
+                        const safeName = escapeHTML(branch.name).replace(/'/g, "'");
+                        const safeLoc = escapeHTML(branch.location || '').replace(/'/g, "'");
                         return `
                         <div class="bg-white border border-slate-200 rounded-2xl p-5 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 transition-all group relative">
                             <div class="flex gap-1 absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all">
@@ -879,7 +964,7 @@
                     deptGrid.innerHTML = '<div class="p-10 text-center text-slate-400 col-span-full font-medium">ไม่พบข้อมูลแผนก</div>';
                 } else {
                     deptGrid.innerHTML = depts.map(dept => {
-                        const safeName = escapeHTML(dept.name).replace(/'/g, "\\'");
+                        const safeName = escapeHTML(dept.name).replace(/'/g, "'");
                         return `
                         <div class="bg-white border border-slate-200 rounded-2xl p-5 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 transition-all relative text-center group">
                             <div class="flex gap-1 absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all">

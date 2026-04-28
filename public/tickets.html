@@ -337,6 +337,10 @@
                             <button onclick="viewTicket('${t.id}')" class="btn-icon btn-icon-indigo" title="แก้ไข">
                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                             </button>` : ''}
+                            ${ui.checkAccess('tickets', null, null, 'delete') ? `
+                            <button onclick="deleteTicket('${t.id}')" class="btn-icon text-red-600 hover:bg-red-50" title="ลบข้อมูล">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>` : ''}
                         </div>
                     </td>
                 `;
@@ -382,6 +386,37 @@
 
         function closeTicketModal() {
             document.getElementById('ticketModal').classList.add('hidden');
+        }
+
+        async function deleteTicket(id) {
+            const result = await Swal.fire({
+                title: 'ยืนยันการลบข้อมูล?',
+                text: "คุณแน่ใจหรือไม่ที่จะลบรายการแจ้งซ่อมนี้? (ข้อมูลจะถูกลบถาวร)",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#e2e8f0',
+                confirmButtonText: 'ใช่, ลบทิ้งเลย',
+                cancelButtonText: 'ยกเลิก',
+                customClass: {
+                    cancelButton: '!text-slate-700'
+                }
+            });
+            
+            if (!result.isConfirmed) return;
+
+            try {
+                const response = await apiFetch(`/api/tickets?id=${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    notify.success('ลบข้อมูลใบแจ้งซ่อมสำเร็จ');
+                    loadTickets();
+                } else {
+                    const err = await response.json();
+                    notify.error(err.message || 'ไม่สามารถลบข้อมูลได้');
+                }
+            } catch (err) {
+                notify.error('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+            }
         }
 
         async function viewTicket(id) {

@@ -223,9 +223,37 @@ export async function onRequest(context) {
         }
         const id = url.searchParams.get("id");
         if (!id) return new Response(JSON.stringify({ message: "ID is required" }), { status: 400 });
-        await sql`DELETE FROM assets WHERE id = ${id}`;
-        await logAction(sql, userSession.user_id, 'Assets', 'Delete', { asset_id: id });
-        return new Response(JSON.stringify({ message: "Asset deleted successfully" }), { status: 200 });
+
+        try {
+          const references = await sql`
+            SELECT 
+              (SELECT COUNT(*) FROM tickets WHERE asset_id = ${id}) as tickets_count,
+              (SELECT COUNT(*) FROM borrows WHERE asset_id = ${id}) as borrows_count
+          `;
+
+          const { tickets_count, borrows_count } = references[0];
+
+          if (tickets_count > 0 || borrows_count > 0) {
+            return new Response(JSON.stringify({ 
+              message: "ไม่สามารถลบทรัพย์สินได้เนื่องจากมีประวัติการแจ้งซ่อม หรือ ยืม-คืนผูกอยู่ในระบบ กรุณาเปลี่ยนสถานะเป็น 'เลิกใช้งาน (Retired)' แทน" 
+            }), { status: 400 });
+          }
+
+          // Free up IP address if assigned
+          await sql`UPDATE ip_addresses SET asset_id = NULL, status = 'Available', updated_at = NOW() WHERE asset_id = ${id}`;
+
+          await sql`DELETE FROM assets WHERE id = ${id}`;
+          await logAction(sql, userSession.user_id, 'Assets', 'Delete', { asset_id: id });
+          return new Response(JSON.stringify({ message: "ลบทรัพย์สินสำเร็จ" }), { status: 200 });
+        } catch (dbError) {
+          console.error("Database Error during deletion:", dbError);
+          if (dbError.message && dbError.message.includes('violates foreign key constraint')) {
+            return new Response(JSON.stringify({ 
+              message: "ไม่สามารถลบทรัพย์สินได้เนื่องจากมีข้อมูลผูกกับระบบอื่น ๆ กรุณาเปลี่ยนสถานะแทน"
+            }), { status: 400 });
+          }
+          throw dbError;
+        }
       }
       
       const data = await request.json();

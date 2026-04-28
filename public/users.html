@@ -902,7 +902,7 @@
                 return;
             }
             
-            if (!stats || Object.keys(stats).length === 0) {
+            if (!stats || (Array.isArray(stats) ? stats.length === 0 : Object.keys(stats).length === 0)) {
                 // Only hide if we explicitly have empty stats but should be showing
                 container.classList.add('hidden');
                 return;
@@ -910,26 +910,50 @@
             
             container.classList.remove('hidden');
             let html = '';
-            const sortedRoles = Object.keys(stats).sort();
             
-            sortedRoles.forEach(role => {
+            // Handle both Array from API and Object format
+            let statsArray = [];
+            if (Array.isArray(stats)) {
+                statsArray = stats.map(s => ({ name: s.name || 'Unknown', count: s.count || 0 }));
+            } else {
+                statsArray = Object.keys(stats).map(k => ({ name: k, count: stats[k] }));
+            }
+            
+            statsArray.sort((a, b) => a.name.localeCompare(b.name));
+            
+            statsArray.forEach(item => {
+                const role = item.name;
+                const count = item.count;
                 // Case-insensitive mapping for safety
                 const normalizedRole = role.toLowerCase();
                 const roleIcons = {
-                    'admin': { icon: 'shield-check', color: 'indigo' },
-                    'administrator': { icon: 'shield-check', color: 'indigo' },
-                    'team lead': { icon: 'users', color: 'blue' },
+                    'admin': { icon: 'shield-check', color: 'rose' },
+                    'administrator': { icon: 'shield-check', color: 'rose' },
+                    'executive': { icon: 'briefcase', color: 'purple' },
+                    'manager': { icon: 'users', color: 'indigo' },
+                    'team lead': { icon: 'users', color: 'indigo' },
+                    'technician': { icon: 'wrench', color: 'amber' },
+                    'it support': { icon: 'headphones', color: 'amber' },
+                    'visitor': { icon: 'user-check', color: 'emerald' },
+                    'guest': { icon: 'user', color: 'teal' },
                     'member': { icon: 'user', color: 'slate' },
-                    'user': { icon: 'user', color: 'slate' },
-                    'technician': { icon: 'tool', color: 'amber' }
+                    'user': { icon: 'user', color: 'slate' }
                 };
                 
-                const roleConfig = roleIcons[normalizedRole] || { icon: 'shield', color: 'slate' };
+                // Fallback for roles that might contain keywords
+                let roleConfig = roleIcons[normalizedRole];
+                if (!roleConfig) {
+                    if (normalizedRole.includes('admin')) roleConfig = roleIcons['admin'];
+                    else if (normalizedRole.includes('tech') || normalizedRole.includes('support')) roleConfig = roleIcons['technician'];
+                    else if (normalizedRole.includes('manage')) roleConfig = roleIcons['manager'];
+                    else if (normalizedRole.includes('visit')) roleConfig = roleIcons['visitor'];
+                    else roleConfig = { icon: 'shield', color: 'slate' };
+                }
                 html += `
                     <div class="bg-white p-4 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between transition-all hover:shadow-md hover:border-${roleConfig.color}-200 group">
                         <div>
                             <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">${escapeHTML(role)}</p>
-                            <p class="text-2xl font-bold text-slate-800">${stats[role]}</p>
+                            <p class="text-2xl font-bold text-slate-800">${count}</p>
                         </div>
                         <div class="w-10 h-10 rounded-xl bg-${roleConfig.color}-50 text-${roleConfig.color}-400 flex items-center justify-center group-hover:bg-${roleConfig.color}-100 group-hover:text-${roleConfig.color}-600 transition-colors">
                             <i data-lucide="${roleConfig.icon}" class="w-5 h-5"></i>

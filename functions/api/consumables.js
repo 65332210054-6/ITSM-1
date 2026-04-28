@@ -11,15 +11,23 @@ export async function onRequest(context) {
   }
 
   try {
-    const userSession = await checkModuleAccess(context, 'consumables', 'view');
-    if (userSession === null) {
-      return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
-    }
-    if (userSession === false) {
-      return new Response(JSON.stringify({ message: "Forbidden: You do not have access to the Consumables module" }), { status: 403 });
+    const url = new URL(request.url);
+    const action = url.searchParams.get("action");
+    const sql = neon(databaseUrl);
+
+    // Auth Check
+    let authAction = 'view';
+    if (request.method === 'POST') {
+      if (action === 'delete') authAction = 'delete';
+      else if (action === 'adjust') authAction = 'edit';
+      else if (url.searchParams.get('id') || (await request.clone().json()).id) authAction = 'edit';
+      else authAction = 'create';
     }
 
-    const sql = neon(databaseUrl);
+    const userSession = await checkModuleAccess(context, 'consumables', authAction);
+    
+    if (userSession === null) return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
+    if (userSession === false) return new Response(JSON.stringify({ message: "Forbidden" }), { status: 403 });
 
     // Migration: Ensure consumables and logs table exist
     try {
@@ -50,9 +58,6 @@ export async function onRequest(context) {
     } catch (migErr) {
       console.error("Consumables Migration Error:", migErr);
     }
-
-    const url = new URL(request.url);
-    const action = url.searchParams.get("action");
 
     // 1. GET Consumables
     if (request.method === "GET") {
@@ -130,9 +135,6 @@ export async function onRequest(context) {
       }
 
       if (action === "delete") {
-        if (!await checkModuleAccess(context, 'consumables', 'delete', sql)) {
-          return new Response(JSON.stringify({ message: "Forbidden" }), { status: 403 });
-        }
         const id = url.searchParams.get("id");
         await sql`DELETE FROM consumables WHERE id = ${id}`;
         await logAction(sql, userSession.user_id, 'Consumables', 'Delete', { id });
@@ -144,9 +146,6 @@ export async function onRequest(context) {
       const { id, name, category, min_quantity, unit, location } = data;
 
       if (id) {
-        if (!await checkModuleAccess(context, 'consumables', 'edit', sql)) {
-          return new Response(JSON.stringify({ message: "Forbidden" }), { status: 403 });
-        }
         await sql`
           UPDATE consumables 
           SET name = ${name}, category = ${category}, 
@@ -157,9 +156,6 @@ export async function onRequest(context) {
         await logAction(sql, userSession.user_id, 'Consumables', 'Update', { id, name });
         return new Response(JSON.stringify({ message: "Item updated" }), { status: 200 });
       } else {
-        if (!await checkModuleAccess(context, 'consumables', 'create', sql)) {
-          return new Response(JSON.stringify({ message: "Forbidden" }), { status: 403 });
-        }
         const newId = crypto.randomUUID();
         await sql`
           INSERT INTO consumables (id, name, category, min_quantity, unit, location, quantity)

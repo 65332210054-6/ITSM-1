@@ -219,7 +219,7 @@
             // Load meta data in background
             try {
                 const results = await Promise.allSettled([
-                    apiFetch('/api/users?action=getOptions', { silent: true }),
+                    apiFetch('/api/users?action=getUsers', { silent: true }),
                     apiFetch('/api/departments', { silent: true }),
                     apiFetch('/api/categories', { silent: true })
                 ]);
@@ -229,13 +229,12 @@
                 const catRes  = results[2].status === 'fulfilled' ? results[2].value : null;
  
                 if (userRes && userRes.ok) {
-                    allUsers = await userRes.json().catch(() => ({ roles: [], branches: [], departments: [] }));
+                    allUsers = await userRes.json().catch(() => []);
                     const usersArray = Array.isArray(allUsers) ? allUsers : (allUsers.users || []);
                     const userSelect = document.getElementById('assetUser');
                     if (userSelect) {
                         userSelect.innerHTML = '<option value="">ไม่มี (Stock)</option>' + 
                             usersArray.map(u => `<option value="${u.id}">${escapeHTML(u.name)}</option>`).join('');
-                        ui.initChoices();
                     }
                 }
                 
@@ -245,7 +244,6 @@
                     if (deptSelect) {
                         deptSelect.innerHTML = '<option value="">ไม่มีแผนก</option>' + 
                             allDepts.map(d => `<option value="${d.id}">${escapeHTML(d.name)}</option>`).join('');
-                        ui.initChoices();
                     }
                 }
 
@@ -254,9 +252,10 @@
                     const catSelect = document.getElementById('assetCategory');
                     if (catSelect && cats.length > 0) {
                         catSelect.innerHTML = cats.map(c => `<option value="${escapeHTML(c.name)}">${escapeHTML(c.name)}</option>`).join('');
-                        ui.initChoices();
                     }
                 }
+                
+                ui.initChoices();
             } catch (err) {
                 console.error('Failed to load background data:', err);
             }

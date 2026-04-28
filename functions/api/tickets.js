@@ -212,6 +212,36 @@ export async function onRequest(context) {
       }
     }
 
+    // 3. DELETE Ticket
+    if (request.method === "DELETE") {
+      const url = new URL(request.url);
+      const id = url.searchParams.get("id");
+      
+      if (!id) return new Response(JSON.stringify({ message: "ID is required" }), { status: 400 });
+
+      // Verify Delete Permission
+      const hasDeletePerm = await checkModuleAccess(context, 'tickets', 'delete', sql);
+      if (!hasDeletePerm) {
+        return new Response(JSON.stringify({ message: "Forbidden: No permission to delete tickets" }), { status: 403 });
+      }
+
+      // Check if ticket exists
+      const existingTicket = await sql`SELECT subject FROM tickets WHERE id = ${id} LIMIT 1`;
+      if (existingTicket.length === 0) {
+        return new Response(JSON.stringify({ message: "Ticket not found" }), { status: 404 });
+      }
+      
+      const ticketSubject = existingTicket[0].subject;
+
+      // Perform Deletion
+      await sql`DELETE FROM tickets WHERE id = ${id}`;
+      
+      // Log Action
+      await logAction(sql, userSession.user_id, 'Tickets', 'Delete', { ticket_id: id, subject: ticketSubject });
+
+      return new Response(JSON.stringify({ message: "Ticket deleted successfully" }), { status: 200 });
+    }
+
     return new Response(JSON.stringify({ message: "Method not allowed" }), { status: 405 });
 
   } catch (error) {

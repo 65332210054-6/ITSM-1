@@ -164,6 +164,28 @@
                     </div>
                 </div>
 
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- IP Status Summary -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                        <h3 class="font-bold text-slate-800 mb-5 flex items-center gap-2">
+                            <i data-lucide="hash" class="w-5 h-5 text-indigo-500"></i> สรุปสถานะ IP Address
+                        </h3>
+                        <div id="ipChart" class="space-y-4">
+                            <div class="text-center text-slate-400 py-8 font-medium text-sm">กำลังโหลด...</div>
+                        </div>
+                    </div>
+
+                    <!-- Consumables Stock Summary -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                        <h3 class="font-bold text-slate-800 mb-5 flex items-center gap-2">
+                            <i data-lucide="package" class="w-5 h-5 text-rose-500"></i> พัสดุที่ต้องเติม (Stock ต่ำ)
+                        </h3>
+                        <div id="consumableChart" class="space-y-3">
+                            <div class="text-center text-slate-400 py-8 font-medium text-sm">กำลังโหลด...</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Export Section -->
                 <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                     <h3 class="font-bold text-slate-800 mb-2 flex items-center gap-2">
@@ -220,7 +242,7 @@
                             </button>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                             <!-- Consumables Export -->
                             <div class="bg-white rounded-2xl border border-slate-200 p-6 hover:border-rose-200 transition-all">
                                 <div class="flex items-center gap-3 mb-4">
@@ -246,6 +268,15 @@
                                     <p class="font-bold text-slate-800">ลิขสิทธิ์ซอฟต์แวร์</p>
                                 </div>
                                 <button onclick="exportData('licenses')" class="w-full btn-primary py-2 !bg-purple-600 hover:!bg-purple-700">Export CSV</button>
+                            </div>
+
+                            <!-- IPAM Export -->
+                            <div class="bg-white rounded-2xl border border-slate-200 p-6 hover:border-indigo-200 transition-all">
+                                <div class="flex items-center gap-3 mb-4">
+                                    <div class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600"><i data-lucide="hash" class="w-5 h-5"></i></div>
+                                    <p class="font-bold text-slate-800">IP Addresses</p>
+                                </div>
+                                <button onclick="exportData('ipam')" class="w-full btn-primary py-2 !bg-indigo-600 hover:!bg-indigo-700">Export CSV</button>
                             </div>
                         </div>
 
@@ -349,6 +380,39 @@
 
                 document.getElementById('lastUpdated').textContent = `อัปเดตเมื่อ ${new Date().toLocaleTimeString('th-TH')}`;
 
+                // IP Status Chart
+                const ipSummary = data.ipStatusSummary || [];
+                const maxIP = Math.max(...ipSummary.map(i => i.count), 1);
+                const IP_COLORS = { 'Available': 'bg-emerald-500', 'Reserved': 'bg-indigo-500', 'Static': 'bg-amber-500' };
+                document.getElementById('ipChart').innerHTML = ipSummary.length === 0
+                    ? '<div class="text-center text-slate-400 py-8 text-sm">ไม่มีข้อมูล</div>'
+                    : ipSummary.map(i => `
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-xs text-slate-500">
+                                <span class="font-bold">${i.status}</span>
+                                <span class="font-bold text-slate-700">${i.count}</span>
+                            </div>
+                            <div class="bg-slate-100 rounded-full h-3 overflow-hidden">
+                                <div class="h-3 rounded-full ${IP_COLORS[i.status] || 'bg-slate-400'} transition-all duration-700" style="width: ${Math.round((i.count / maxIP) * 100)}%"></div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                // Consumable Low Stock Chart
+                const lowStock = data.consumableLowStock || [];
+                const maxStock = Math.max(...lowStock.map(l => l.quantity), 1);
+                document.getElementById('consumableChart').innerHTML = lowStock.length === 0
+                    ? '<div class="text-center text-slate-400 py-8 text-sm">สต็อกปกติทุกรายการ</div>'
+                    : lowStock.map(l => `
+                        <div class="bar-item">
+                            <div class="text-xs font-bold text-slate-600 w-32 truncate shrink-0">${escapeHTML(l.name)}</div>
+                            <div class="flex-1 bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                                <div class="bar-fill bg-rose-500" style="width: ${Math.round((l.quantity / maxStock) * 100)}%"></div>
+                            </div>
+                            <div class="text-xs font-bold text-slate-500 w-12 text-right">${l.quantity} ${escapeHTML(l.unit)}</div>
+                        </div>
+                    `).join('');
+
             } catch (err) {
                 console.error('Reports Error:', err);
                 notify.error('ไม่สามารถโหลดข้อมูลรายงานได้');
@@ -364,7 +428,8 @@
                 borrows: 'export-borrows',
                 consumables: 'export-consumables',
                 domains: 'export-domains',
-                licenses: 'export-licenses'
+                licenses: 'export-licenses',
+                ipam: 'export-ipam'
             };
             const action = actionMap[type];
             if (!action) return;

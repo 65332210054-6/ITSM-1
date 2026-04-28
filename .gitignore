@@ -50,3 +50,4 @@ desktop.ini
 build_output.log
 .git/index.lock
 scratch/
+tools/

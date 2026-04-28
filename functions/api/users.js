@@ -132,6 +132,7 @@ export async function onRequest(context) {
 
       const usersResult = await sql`
         SELECT u.id, u.name, u.email, u.status, u.created_at, u.login_attempts, u.lock_until,
+               u.role_id, u.branch_id, u.department_id,
                r.name as role_name, b.name as branch_name, d.name as department_name
         FROM users u
         LEFT JOIN roles r ON u.role_id = r.id
@@ -182,9 +183,44 @@ export async function onRequest(context) {
           return new Response(JSON.stringify({ message: "User ID is required" }), { status: 400 });
         }
 
-        await sql`DELETE FROM users WHERE id = ${id}`;
-        await logAction(sql, userSession.user_id, 'Users', 'Delete', { target_id: id });
-        return new Response(JSON.stringify({ message: "User deleted successfully" }), { status: 200 });
+        try {
+          // Check if user is referenced in other tables
+          const references = await sql`
+            SELECT 
+              (SELECT COUNT(*) FROM tickets WHERE reporter_id = ${id} OR assigned_to = ${id}) as tickets_count,
+              (SELECT COUNT(*) FROM borrows WHERE borrower_id = ${id} OR created_by = ${id}) as borrows_count,
+              (SELECT COUNT(*) FROM assets WHERE assigned_to = ${id}) as assets_count
+          `;
+
+          const { tickets_count, borrows_count, assets_count } = references[0];
+
+          if (tickets_count > 0 || borrows_count > 0 || assets_count > 0) {
+            return new Response(JSON.stringify({ 
+              message: "ไม่สามารถลบผู้ใช้งานได้เนื่องจากมีประวัติการใช้งานในระบบ (แจ้งซ่อม, ยืม-คืน, ครอบครองทรัพย์สิน) กรุณาแก้ไขข้อมูลผู้ใช้แล้วเปลี่ยนสถานะเป็น 'ระงับการใช้งาน' แทน" 
+            }), { status: 400 });
+          }
+
+          // Delete sessions related to the user first to avoid FK constraints
+          await sql`DELETE FROM sessions WHERE user_id = ${id}`;
+          await sql`DELETE FROM session WHERE "userId" = ${id}`;
+          await sql`DELETE FROM account WHERE "userId" = ${id}`;
+          
+          // Nullify references that are allowed to be null
+          await sql`UPDATE logs SET user_id = NULL WHERE user_id = ${id}`;
+          await sql`UPDATE consumable_logs SET user_id = NULL WHERE user_id = ${id}`;
+
+          await sql`DELETE FROM users WHERE id = ${id}`;
+          await logAction(sql, userSession.user_id, 'Users', 'Delete', { target_id: id });
+          return new Response(JSON.stringify({ message: "ลบผู้ใช้งานสำเร็จ" }), { status: 200 });
+        } catch (dbError) {
+          console.error("Database Error during deletion:", dbError);
+          if (dbError.message && dbError.message.includes('violates foreign key constraint')) {
+            return new Response(JSON.stringify({ 
+              message: "ไม่สามารถลบผู้ใช้งานได้เนื่องจากมีข้อมูลผูกกับระบบอื่น ๆ กรุณาระงับการใช้งานแทน"
+            }), { status: 400 });
+          }
+          throw dbError;
+        }
       }
 
       const data = await request.json();

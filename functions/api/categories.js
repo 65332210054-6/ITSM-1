@@ -16,12 +16,9 @@ export async function onRequest(context) {
     const sql = neon(databaseUrl);
 
     // 1. Session & Access Control
-    const userSession = await checkModuleAccess(context, 'categories', 'view', sql);
-    if (userSession === null) {
+    const userSession = await validateSession(context);
+    if (!userSession) {
       return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
-    }
-    if (userSession === false) {
-      return new Response(JSON.stringify({ message: "Forbidden: No access to Categories" }), { status: 403 });
     }
 
     // Migration: Ensure asset_categories table exists
