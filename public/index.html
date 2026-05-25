@@ -44,6 +44,19 @@
                     <div class="absolute -right-20 -bottom-20 w-40 sm:w-80 h-40 sm:h-80 bg-white/10 rounded-full blur-3xl"></div>
                 </div>
 
+                <!-- Critical Alerts Section (Hidden by default) -->
+                <div id="alertsContainer" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <!-- Alerts will be injected here -->
+                </div>
+
+                <!-- Quick Actions Section -->
+                <div id="quickActionsContainer" class="hidden space-y-4">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">ทางลัดดำเนินการ (Quick Actions)</h3>
+                    <div id="quickActionsGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <!-- Buttons injected here -->
+                    </div>
+                </div>
+
                 <!-- Simple Stats -->
                 <div id="statsGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     <div class="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 animate-pulse">
@@ -78,24 +91,37 @@
                     </div>
 
                     <!-- Activity Feed (Col Span 1) -->
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="font-bold text-slate-800">กิจกรรมล่าสุด (Recent Activity)</h3>
-                            <i data-lucide="activity" class="text-slate-400 w-5 h-5"></i>
+                    <div class="space-y-6">
+                        <!-- My Tasks Section -->
+                        <div id="myTasksContainer" class="hidden bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="font-bold text-slate-800">งานของฉัน (My Tasks)</h3>
+                                <span id="taskCount" class="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded-full font-black">0</span>
+                            </div>
+                            <div id="myTasksList" class="space-y-3">
+                                <!-- Tasks injected here -->
+                            </div>
                         </div>
-                        <div id="activityFeed" class="space-y-4">
-                            <!-- Activities will be loaded here -->
-                            <div class="animate-pulse space-y-4">
-                                <div class="flex gap-3">
-                                    <div class="w-8 h-8 bg-slate-100 rounded-full"></div>
-                                    <div class="flex-1 space-y-2">
-                                        <div class="h-3 bg-slate-100 rounded w-1/2"></div>
-                                        <div class="h-2 bg-slate-50 rounded w-1/4"></div>
+
+                        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="font-bold text-slate-800">กิจกรรมล่าสุด (Recent Activity)</h3>
+                                <i data-lucide="activity" class="text-slate-400 w-5 h-5"></i>
+                            </div>
+                            <div id="activityFeed" class="space-y-4">
+                                <!-- Activities will be loaded here -->
+                                <div class="animate-pulse space-y-4">
+                                    <div class="flex gap-3">
+                                        <div class="w-8 h-8 bg-slate-100 rounded-full"></div>
+                                        <div class="flex-1 space-y-2">
+                                            <div class="h-3 bg-slate-100 rounded w-1/2"></div>
+                                            <div class="h-2 bg-slate-50 rounded w-1/4"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            <button onclick="window.location.href='/settings.html'" class="w-full mt-6 py-3 text-xs font-bold text-slate-400 hover:text-indigo-600 border border-dashed border-slate-200 rounded-xl hover:border-indigo-200 transition-all active:scale-95">ดูประวัติทั้งหมด</button>
                         </div>
-                        <button onclick="window.location.href='/settings.html'" class="w-full mt-6 py-3 text-xs font-bold text-slate-400 hover:text-indigo-600 border border-dashed border-slate-200 rounded-xl hover:border-indigo-200 transition-all active:scale-95">ดูประวัติทั้งหมด</button>
                     </div>
                 </div>
             </div>
@@ -157,6 +183,131 @@
             }
         }
 
+        async function loadDashboardAlerts() {
+            const container = document.getElementById('alertsContainer');
+            try {
+                const response = await apiFetch('/api/dashboard?action=getAlerts');
+                const alerts = await response.json();
+                
+                let html = '';
+                
+                if (alerts.overdueBorrows > 0) {
+                    html += `
+                        <div onclick="window.location.href='/borrows.html?status=Overdue'" class="flex items-center gap-4 p-4 bg-rose-50 border border-rose-100 rounded-2xl cursor-pointer hover:bg-rose-100 transition-all group shadow-sm">
+                            <div class="w-10 h-10 bg-rose-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-rose-500/20 group-hover:scale-110 transition-transform">
+                                <i data-lucide="clock-alert" class="w-5 h-5"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-bold text-rose-400 uppercase tracking-widest leading-tight">เกินกำหนดคืน</p>
+                                <p class="text-sm font-black text-rose-700">${alerts.overdueBorrows} รายการ</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (alerts.lowStockConsumables > 0) {
+                    html += `
+                        <div onclick="window.location.href='/consumables.html'" class="flex items-center gap-4 p-4 bg-amber-50 border border-amber-100 rounded-2xl cursor-pointer hover:bg-amber-100 transition-all group shadow-sm">
+                            <div class="w-10 h-10 bg-amber-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/20 group-hover:scale-110 transition-transform">
+                                <i data-lucide="package-x" class="w-5 h-5"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-bold text-amber-500 uppercase tracking-widest leading-tight">พัสดุใกล้หมด</p>
+                                <p class="text-sm font-black text-amber-700">${alerts.lowStockConsumables} รายการ</p>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (alerts.expiringLicenses > 0) {
+                    html += `
+                        <div onclick="window.location.href='/licenses.html'" class="flex items-center gap-4 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl cursor-pointer hover:bg-indigo-100 transition-all group shadow-sm">
+                            <div class="w-10 h-10 bg-indigo-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/20 group-hover:scale-110 transition-transform">
+                                <i data-lucide="key" class="w-5 h-5"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest leading-tight">License จะหมดอายุ</p>
+                                <p class="text-sm font-black text-indigo-700">${alerts.expiringLicenses} รายการ</p>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (alerts.expiringDomains > 0) {
+                    html += `
+                        <div onclick="window.location.href='/domains.html'" class="flex items-center gap-4 p-4 bg-sky-50 border border-sky-100 rounded-2xl cursor-pointer hover:bg-sky-100 transition-all group shadow-sm">
+                            <div class="w-10 h-10 bg-sky-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-sky-500/20 group-hover:scale-110 transition-transform">
+                                <i data-lucide="globe" class="w-5 h-5"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-bold text-sky-400 uppercase tracking-widest leading-tight">โดเมน/SSL ใกล้หมด</p>
+                                <p class="text-sm font-black text-sky-700">${alerts.expiringDomains} รายการ</p>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (alerts.unassignedTickets > 0) {
+                    html += `
+                        <div onclick="window.location.href='/tickets.html?status=Pending&assigned=none'" class="flex items-center gap-4 p-4 bg-orange-50 border border-orange-100 rounded-2xl cursor-pointer hover:bg-orange-100 transition-all group shadow-sm">
+                            <div class="w-10 h-10 bg-orange-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-orange-500/20 group-hover:scale-110 transition-transform">
+                                <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-bold text-orange-500 uppercase tracking-widest leading-tight">งานยังไม่มอบหมาย</p>
+                                <p class="text-sm font-black text-orange-700">${alerts.unassignedTickets} รายการ</p>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (html) {
+                    container.innerHTML = html;
+                    container.classList.remove('hidden');
+                    lucide.createIcons();
+                } else {
+                    container.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('Failed to load alerts:', error);
+            }
+        }
+
+        async function loadQuickActions() {
+            const container = document.getElementById('quickActionsContainer');
+            const grid = document.getElementById('quickActionsGrid');
+            const settings = await ui.getSystemSettings();
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            
+            const actions = [
+                { key: 'assets', name: 'เพิ่มทรัพย์สิน', icon: 'monitor-plus', color: 'indigo', path: '/assets.html?action=add', perm: 'create' },
+                { key: 'tickets', name: 'เปิดใบแจ้งซ่อม', icon: 'ticket-plus', color: 'amber', path: '/tickets.html?action=add', perm: 'create' },
+                { key: 'borrows', name: 'บันทึกการยืม', icon: 'book-plus', color: 'emerald', path: '/borrows.html?action=add', perm: 'create' },
+                { key: 'users', name: 'เพิ่มพนักงาน', icon: 'user-plus', color: 'blue', path: '/users.html?action=add', perm: 'create' },
+                { key: 'consumables', name: 'เบิกจ่ายพัสดุ', icon: 'package-plus', color: 'rose', path: '/consumables.html', perm: 'edit' }
+            ];
+            
+            let html = '';
+            actions.forEach(a => {
+                if (ui.checkAccess(a.key, settings, user, a.perm)) {
+                    html += `
+                        <button onclick="window.location.href='${a.path}'" class="flex items-center gap-3 p-4 bg-white border border-slate-100 rounded-2xl hover:border-${a.color}-200 hover:bg-${a.color}-50 transition-all group shadow-sm active:scale-95 text-left">
+                            <div class="w-10 h-10 bg-${a.color}-50 text-${a.color}-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:bg-${a.color}-100 transition-all">
+                                <i data-lucide="${a.icon}" class="w-5 h-5"></i>
+                            </div>
+                            <span class="text-sm font-bold text-slate-700">${a.name}</span>
+                        </button>
+                    `;
+                }
+            });
+            
+            if (html) {
+                grid.innerHTML = html;
+                container.classList.remove('hidden');
+                lucide.createIcons();
+            }
+        }
+
         async function loadDashboardCharts() {
             try {
                 const response = await apiFetch('/api/dashboard?action=getChartData');
@@ -175,8 +326,8 @@
                             data: data.assetsByCategory.map(a => a.count),
                             backgroundColor: ['#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
                             borderWidth: 0,
-                            spacing: 4,
-                            hoverOffset: 15
+                            spacing: data.assetsByCategory.length > 1 ? 4 : 0,
+                            hoverOffset: data.assetsByCategory.length > 1 ? 15 : 0
                         }]
                     },
                     options: {
@@ -261,6 +412,56 @@
             }
         }
 
+        async function loadMyTasks() {
+            const container = document.getElementById('myTasksContainer');
+            const list = document.getElementById('myTasksList');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            
+            // Only show for Admin or Technician
+            if (user.role !== 'Admin' && user.role !== 'Technician') return;
+
+            try {
+                const response = await apiFetch('/api/dashboard?action=getMyTasks');
+                if (!response.ok) return;
+                const tasks = await response.json();
+                
+                if (tasks.length === 0) {
+                    list.innerHTML = `
+                        <div class="py-8 flex flex-col items-center justify-center text-center">
+                            <div class="w-12 h-12 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mb-3">
+                                <i data-lucide="check-check" class="w-6 h-6"></i>
+                            </div>
+                            <p class="text-xs font-bold text-slate-400">จัดการงานเรียบร้อยแล้ว!</p>
+                            <p class="text-[10px] text-slate-300 mt-1">คุณไม่มีงานค้างในขณะนี้</p>
+                        </div>
+                    `;
+                    document.getElementById('taskCount').innerText = '0';
+                    lucide.createIcons();
+                    container.classList.remove('hidden'); // Show empty state instead of hiding
+                    return;
+                }
+
+                document.getElementById('taskCount').innerText = tasks.length;
+                list.innerHTML = tasks.map(t => `
+                    <div onclick="window.location.href='/ticket-detail.html?id=${t.id}'" class="p-3 bg-slate-50 border border-slate-100 rounded-2xl hover:border-indigo-200 hover:bg-white transition-all cursor-pointer group shadow-sm active:scale-95">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">#TK-${t.id.substring(0, 6)}</span>
+                            <span class="${ui.getBadgeClass('priority', t.priority)} scale-75 origin-top-right">${t.priority}</span>
+                        </div>
+                        <h4 class="text-xs font-bold text-slate-700 truncate group-hover:text-indigo-600 transition-colors">${escapeHTML(t.subject)}</h4>
+                        <div class="flex justify-between items-center mt-2">
+                             <span class="text-[9px] font-bold text-slate-400">${new Date(t.created_at).toLocaleDateString('th-TH')}</span>
+                             <span class="text-[9px] font-black text-indigo-500 uppercase">${t.status}</span>
+                        </div>
+                    </div>
+                `).join('');
+                
+                container.classList.remove('hidden');
+            } catch (err) {
+                console.error('loadMyTasks Error:', err);
+            }
+        }
+
         async function loadRecentActivity() {
             const feed = document.getElementById('activityFeed');
             try {
@@ -301,7 +502,16 @@
 
                 // Update Welcome Message (Wait for elements to exist)
                 const welcomeName = document.getElementById('welcomeName');
-                if (welcomeName) welcomeName.innerText = user.name || 'User';
+                if (welcomeName) {
+                    const hour = new Date().getHours();
+                    let greeting = 'สวัสดี';
+                    if (hour < 12) greeting = 'อรุณสวัสดิ์';
+                    else if (hour < 17) greeting = 'สวัสดีตอนบ่าย';
+                    else greeting = 'สวัสดีตอนเย็น';
+                    
+                    document.querySelector('h2.text-2xl').innerText = `${greeting}, คุณ ${user.name || 'User'}`;
+                    welcomeName.parentElement.innerHTML = `<p class="text-indigo-100 mt-2 sm:mt-4 text-sm sm:text-lg font-medium opacity-90">ขอให้วันนี้เป็นวันที่ดีสำหรับการทำงานของคุณ</p>`;
+                }
 
                 // Render Module Cards Dynamically
                 const welcomeGrid = document.getElementById('welcomeGrid');
@@ -341,6 +551,9 @@
                 }
 
                 loadDashboardStats();
+                loadDashboardAlerts();
+                loadQuickActions();
+                loadMyTasks();
                 loadDashboardCharts();
                 loadRecentActivity();
             } catch (err) {

@@ -74,6 +74,78 @@ export async function onRequest(context) {
       });
     }
 
+    if (action === "getAlerts") {
+      const alerts = {
+        overdueBorrows: 0,
+        lowStockConsumables: 0,
+        expiringLicenses: 0,
+        expiringDomains: 0
+      };
+
+      try {
+        // 1. Overdue Borrows
+        const resOverdue = await sql`SELECT COUNT(*)::int as count FROM borrows WHERE status = 'Overdue'`;
+        alerts.overdueBorrows = resOverdue[0].count;
+
+        // 2. Low Stock Consumables
+        const resLowStock = await sql`SELECT COUNT(*)::int as count FROM consumables WHERE quantity <= min_quantity`;
+        alerts.lowStockConsumables = resLowStock[0].count;
+
+        // 3. Expiring Licenses (< 30 days)
+        const resExpLicenses = await sql`SELECT COUNT(*)::int as count FROM licenses WHERE expiration_date < now() + interval '30 days' AND status = 'Active'`;
+        alerts.expiringLicenses = resExpLicenses[0].count;
+
+        // 4. Expiring Domains (< 30 days)
+        const resExpDomains = await sql`
+          SELECT COUNT(*)::int as count FROM domains 
+          WHERE (
+            expiration_date < now() + interval '30 days'
+            OR ssl_expiration < now() + interval '30 days'
+            OR hosting_expiration < now() + interval '30 days'
+          )
+          AND status = 'Active'
+        `;
+        alerts.expiringDomains = resExpDomains[0].count;
+
+        // 5. Unassigned Tickets (Critical/High only)
+        const resUnassigned = await sql`
+          SELECT COUNT(*)::int as count FROM tickets 
+          WHERE assigned_to IS NULL 
+          AND status = 'Pending'
+          AND priority IN ('Critical', 'High')
+        `;
+        alerts.unassignedTickets = resUnassigned[0].count;
+
+      } catch (e) {
+        console.error("Dashboard Alerts Error:", e);
+      }
+
+      return new Response(JSON.stringify(alerts), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    if (action === "getMyTasks") {
+      // Fetch tickets assigned to this user that are not Resolved or Closed
+      const tasks = await sql`
+        SELECT id, subject, priority, status, created_at 
+        FROM tickets 
+        WHERE assigned_to = ${userSession.user_id} 
+        AND status NOT IN ('Resolved', 'Closed')
+        ORDER BY 
+          CASE WHEN priority = 'Critical' THEN 1
+               WHEN priority = 'High' THEN 2
+               WHEN priority = 'Medium' THEN 3
+               ELSE 4 END,
+          created_at DESC
+        LIMIT 5
+      `;
+      
+      return new Response(JSON.stringify(tasks), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
     if (action === "getChartData") {
       // Asset categories distribution (Always show summary)
       let assetsByCategory = [];

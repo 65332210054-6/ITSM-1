@@ -161,9 +161,9 @@ const ui = {
         { id: 'borrows', name: 'ยืม-คืนอุปกรณ์', icon: 'arrow-right-from-line', color: 'text-violet-600', key: 'module_borrows_enabled', path: '/borrows.html', desc: 'บันทึกการเบิกยืมและคืนอุปกรณ์ไอที' },
         { id: 'domains', name: 'โดเมน & SSL', icon: 'globe', color: 'text-sky-600', key: 'module_domains_enabled', path: '/domains.html', desc: 'จัดการโดเมนเนม ใบรับรอง SSL และโฮสติ้ง' },
         { id: 'consumables', name: 'วัสดุสิ้นเปลือง', icon: 'package', color: 'text-rose-600', key: 'module_consumables_enabled', path: '/consumables.html', desc: 'คลังพัสดุไอทีและวัสดุสิ้นเปลือง' },
-        { id: 'licenses', name: 'ลิขสิทธิ์ซอฟต์แวร์', icon: 'key', color: 'text-purple-600', key: 'module_licenses_enabled', path: '/licenses.html', desc: 'จัดการคีย์และวันหมดอายุของซอฟต์แวร์' },
         { id: 'reports', name: 'รายงาน & Export', icon: 'bar-chart-2', color: 'text-emerald-600', key: 'module_reports_enabled', path: '/reports.html', desc: 'สรุปข้อมูลทางสถิติและส่งออกไฟล์ CSV' },
-        { id: 'categories', name: 'หมวดหมู่ทรัพย์สิน', icon: 'layers', color: 'text-rose-600', key: 'module_categories_enabled', path: '/categories.html', desc: 'จัดการประเภทและหมวดหมู่ของอุปกรณ์' }
+        { id: 'categories', name: 'หมวดหมู่ทรัพย์สิน', icon: 'layers', color: 'text-rose-600', key: 'module_categories_enabled', path: '/categories.html', desc: 'จัดการประเภทและหมวดหมู่ของอุปกรณ์' },
+        { id: 'room_care', name: 'บำรุงรักษาห้องพัก', icon: 'hotel', color: 'text-emerald-600', key: 'module_room_care_enabled', path: '/room-care.html', desc: 'ตรวจเช็คระบบภายในห้องและบันทึกงานซ่อมบำรุงโรงแรม' }
     ],
 
     verifySession: async () => {
@@ -391,6 +391,26 @@ const ui = {
                     ${headerTitle}
                 </div>
                 <div class="flex items-center gap-2 sm:gap-6 ml-4">
+                        <div class="relative">
+                            <button id="notificationBtn" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all group cursor-pointer relative">
+                                <i data-lucide="bell" class="h-5 w-5 group-hover:rotate-12 transition-transform"></i>
+                                <span id="notificationBadge" class="absolute top-2 right-2 w-4 h-4 bg-rose-500 text-white text-[9px] font-black flex items-center justify-center rounded-full border-2 border-white hidden">0</span>
+                            </button>
+                            <!-- Notification Dropdown -->
+                            <div id="notificationDropdown" class="hidden absolute right-0 mt-3 w-72 sm:w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                <div class="p-4 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
+                                    <h3 class="text-sm font-black text-slate-700 uppercase tracking-widest">การแจ้งเตือน</h3>
+                                    <span id="notifTotal" class="text-[10px] bg-indigo-100 text-indigo-600 px-2.5 py-1 rounded-full font-bold">0 รายการ</span>
+                                </div>
+                                <div id="notificationList" class="max-h-[350px] overflow-y-auto p-2 space-y-1">
+                                    <div class="py-10 text-center text-slate-400 text-xs font-bold">ไม่มีการแจ้งเตือนใหม่</div>
+                                </div>
+                                <div class="p-3 bg-slate-50 border-t border-slate-100 text-center">
+                                    <button onclick="window.location.href='/index.html'" class="text-xs font-bold text-indigo-600 hover:underline">ดูแดชบอร์ดทั้งหมด</button>
+                                </div>
+                            </div>
+                        </div>
+
                         <button onclick="window.location.href='/profile.html'" class="flex items-center gap-3 p-1 sm:p-2 rounded-2xl hover:bg-slate-100 transition-all active:scale-95 group border border-transparent hover:border-slate-200 cursor-pointer">
                             <div class="text-right hidden md:block">
                                 <p id="userName" class="text-sm font-bold text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors">${escapeHTML(user.name || 'User')}</p>
@@ -430,9 +450,10 @@ const ui = {
     getBadgeClass: (type, value) => {
         const val = String(value).toLowerCase();
         if (type === 'status') {
-            if (['active', 'in use', 'resolved', 'closed', 'success'].includes(val)) return 'status-badge status-success';
-            if (['inactive', 'broken', 'repairing', 'danger'].includes(val)) return 'status-badge status-danger';
-            if (['suspended', 'on hold', 'warning', 'in progress'].includes(val)) return 'status-badge status-warning';
+            if (['active', 'resolved', 'closed', 'success', 'available'].includes(val)) return 'status-badge status-success';
+            if (['in use'].includes(val)) return 'status-badge status-primary';
+            if (['inactive', 'broken', 'danger'].includes(val)) return 'status-badge status-danger';
+            if (['suspended', 'on hold', 'warning', 'in progress', 'repairing'].includes(val)) return 'status-badge status-warning';
             return 'status-badge status-neutral';
         }
         if (type === 'priority') {
@@ -553,6 +574,71 @@ const ui = {
         link.style.display = 'none';
         document.body.appendChild(link); link.click();
         document.body.removeChild(link);
+    },
+
+    updateNotifications: async () => {
+        const badge = document.getElementById('notificationBadge');
+        const list = document.getElementById('notificationList');
+        const totalLabel = document.getElementById('notifTotal');
+        const btn = document.getElementById('notificationBtn');
+        const dropdown = document.getElementById('notificationDropdown');
+
+        if (!badge || !list) return;
+
+        // Toggle logic
+        if (btn) {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('hidden');
+            };
+            // Close when clicking outside
+            document.addEventListener('click', (e) => {
+                if (dropdown && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        }
+
+        try {
+            const res = await apiFetch('/api/dashboard?action=getAlerts', { silent: true });
+            if (!res || !res.ok) return;
+            const alerts = await res.json();
+
+            const items = [];
+            if (alerts.unassignedTickets > 0) items.push({ title: 'งานยังไม่มอบหมาย', count: alerts.unassignedTickets, color: 'orange', icon: 'alert-circle', url: '/tickets.html?status=Pending&assigned=none' });
+            if (alerts.overdueBorrows > 0) items.push({ title: 'เกินกำหนดคืน', count: alerts.overdueBorrows, color: 'rose', icon: 'clock-alert', url: '/borrows.html?status=Overdue' });
+            if (alerts.lowStockConsumables > 0) items.push({ title: 'พัสดุใกล้หมด', count: alerts.lowStockConsumables, color: 'amber', icon: 'package-x', url: '/consumables.html' });
+            if (alerts.expiringLicenses > 0) items.push({ title: 'License จะหมดอายุ', count: alerts.expiringLicenses, color: 'indigo', icon: 'key', url: '/licenses.html' });
+            if (alerts.expiringDomains > 0) items.push({ title: 'โดเมน/SSL ใกล้หมด', count: alerts.expiringDomains, color: 'sky', icon: 'globe', url: '/domains.html' });
+
+            const total = items.reduce((sum, i) => sum + i.count, 0);
+
+            if (total > 0) {
+                badge.innerText = total > 99 ? '99+' : total;
+                badge.classList.remove('hidden');
+                totalLabel.innerText = `${total} รายการ`;
+                
+                list.innerHTML = items.map(item => `
+                    <div onclick="window.location.href='${item.url}'" class="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-xl transition-all cursor-pointer group">
+                        <div class="w-10 h-10 bg-${item.color}-50 text-${item.color}-600 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                            <i data-lucide="${item.icon}" class="w-5 h-5"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-bold text-slate-700">${item.title}</p>
+                            <p class="text-xs text-slate-500 font-medium">${item.count} รายการที่ต้องตรวจสอบ</p>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300 group-hover:translate-x-0.5 transition-transform"></i>
+                    </div>
+                `).join('');
+                if (window.lucide) lucide.createIcons();
+            } else {
+                badge.classList.add('hidden');
+                totalLabel.innerText = '0 รายการ';
+                list.innerHTML = '<div class="py-10 text-center text-slate-400 text-xs font-bold">ไม่มีการแจ้งเตือนใหม่</div>';
+            }
+        } catch (err) {
+            console.error('Update Notifications Error:', err);
+        }
     }
 };
 
@@ -628,6 +714,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (elements.name) elements.name.innerText = user.name || 'User';
         if (elements.role) elements.role.innerText = user.role || 'System Admin';
+        
+        // Initialize Notifications
+        ui.updateNotifications();
+
         if (window.lucide) lucide.createIcons();
     } catch (err) { console.error("Global init failed:", err); }
 });

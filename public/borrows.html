@@ -461,6 +461,12 @@
             });
             loadStats();
             loadBorrows();
+
+            // Check for quick action trigger
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'add') {
+                setTimeout(openBorrowModal, 800); // Borrows modal needs a bit more time for its fetch
+            }
         });
     </script>
 </body>

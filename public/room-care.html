@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoomCare บำรุงรักษาห้องพัก | ITSM Admin</title>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.454.0/lucide.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <style>
+        /* Custom Premium Glassmorphism Cards & Room items */
+        .room-card {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center;
+        }
+        .room-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+        .room-card:active {
+            transform: scale(0.97);
+        }
+        .system-pill {
+            transition: all 0.15s ease;
+            cursor: pointer;
+        }
+        .system-pill.active-normal {
+            background-color: #f0fdf4;
+            color: #166534;
+            border-color: #bbf7d0;
+        }
+        .system-pill.active-repair {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border-color: #fecaca;
+        }
+        .system-pill.active-process {
+            background-color: #eff6ff;
+            color: #1e40af;
+            border-color: #bfdbfe;
+        }
+        .custom-tab-active {
+            border-bottom: 2px solid #4f46e5;
+            color: #4f46e5;
+        }
+        /* Custom scrollbar for logs list */
+        .logs-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+    </style>
+</head>
+<body class="h-full flex overflow-hidden">
+    <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden transition-opacity lg:hidden"></div>
+    <div id="sidebar-container" class="lg:static"></div>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <div id="header-container"></div>
+
+        <main class="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-10 bg-slate-50/50">
+            <div class="max-w-7xl mx-auto space-y-8">
+                
+                <!-- RoomCare Banner Header -->
+                <div class="bg-gradient-to-r from-emerald-600 to-teal-500 rounded-3xl shadow-xl shadow-emerald-600/10 p-6 sm:p-10 text-white relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div class="relative z-10 space-y-2">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-md border border-white/20 rounded-full text-xs font-black uppercase tracking-widest text-emerald-50">
+                            <i data-lucide="hotel" class="w-3.5 h-3.5"></i> Pilot Module
+                        </div>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">RoomCare ระบบบำรุงรักษาห้องพัก</h2>
+                        <p class="text-emerald-50/90 text-sm font-medium">จัดการเช็คสภาพระบบ และจัดเก็บประวัติการซ่อมบำรุงในโรงแรมแต่ละสาขา</p>
+                    </div>
+                    <div class="flex items-center gap-3 relative z-10">
+                        <button onclick="clearLocalStorageLogs()" class="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/25 rounded-2xl text-xs font-black tracking-wider uppercase transition-all active:scale-95 flex items-center gap-2 text-white cursor-pointer">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i> ล้างประวัติทดสอบ
+                        </button>
+                    </div>
+                    <div class="absolute -right-16 -bottom-16 w-60 h-60 bg-white/10 rounded-full blur-3xl"></div>
+                </div>
+
+                <!-- Main Grid Layout: Controls & Room View on Left, Logs Panel on Right -->
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    
+                    <!-- Rooms & Controls Area (Col Span 3) -->
+                    <div class="lg:col-span-3 space-y-6">
+                        
+                        <!-- Control Toolbar -->
+                        <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col xl:flex-row gap-5 items-end xl:items-center justify-between">
+                            <div class="flex flex-col sm:flex-row gap-3 items-end w-full xl:w-auto">
+                                <div class="w-full sm:w-60">
+                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">เลือกสาขาโรงแรม</label>
+                                    <select id="branchSelect" onchange="branchChanged()">
+                                        <!-- Will populate dynamically -->
+                                    </select>
+                                </div>
+                                <div class="flex gap-2 w-full sm:w-auto shrink-0">
+                                    <button onclick="addNewBranch()" class="flex-1 sm:flex-initial px-4 py-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-100 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer h-12" title="เพิ่มสาขาใหม่">
+                                        <i data-lucide="plus" class="w-4 h-4"></i> เพิ่มสาขา
+                                    </button>
+                                    <button onclick="openRoomModal()" class="flex-1 sm:flex-initial px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/10 active:scale-95 cursor-pointer h-12" title="เพิ่มห้องพักใหม่">
+                                        <i data-lucide="plus-circle" class="w-4 h-4"></i> เพิ่มห้องพัก
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Stats Badges inside ToolBar -->
+                            <div class="flex flex-wrap gap-2 justify-end w-full xl:w-auto">
+                                <span class="px-3 py-1.5 bg-slate-50 text-slate-600 rounded-xl text-xs font-bold border border-slate-100">
+                                    ทั้งหมด: <span id="statTotalRooms" class="font-extrabold text-slate-900">0</span> ห้อง
+                                </span>
+                                <span class="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-bold border border-emerald-100">
+                                    ปกติ: <span id="statAvailableRooms" class="font-extrabold">0</span> ห้อง
+                                </span>
+                                <span class="px-3 py-1.5 bg-rose-50 text-rose-600 rounded-xl text-xs font-bold border border-rose-100">
+                                    ค้างซ่อม: <span id="statNeedsRepairRooms" class="font-extrabold">0</span> ห้อง
+                                </span>
+                                <span class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold border border-blue-100">
+                                    กำลังซ่อม: <span id="statRepairingRooms" class="font-extrabold">0</span> ห้อง
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Rooms Floor Container (Dynamically Rendered) -->
+                        <div id="floorsContainer" class="space-y-6">
+                            <!-- Injected by JavaScript -->
+                        </div>
+
+                    </div>
+
+                    <!-- Logs Panel (Col Span 1) -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col h-[600px]">
+                            <div class="flex items-center justify-between pb-4 border-b border-slate-50">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center shrink-0">
+                                        <i data-lucide="file-clock" class="w-4.5 h-4.5"></i>
+                                    </div>
+                                    <h3 class="font-bold text-slate-800 text-sm">ประวัติการบันทึก (Action Logs)</h3>
+                                </div>
+                                <span id="logBadgeCount" class="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-black">0</span>
+                            </div>
+                            
+                            <!-- Logs Feed -->
+                            <div id="logsContainer" class="flex-1 overflow-y-auto py-4 space-y-3 logs-scrollbar">
+                                <!-- Logs will be injected here -->
+                                <div class="py-10 text-center text-slate-400 text-xs font-medium space-y-2">
+                                    <i data-lucide="database-backup" class="w-8 h-8 text-slate-300 mx-auto"></i>
+                                    <p>ยังไม่มีประวัติการบันทึกข้อมูล</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Room Details Drawer/Modal (Inspection History & Repair Trigger) -->
+    <div id="roomDetailsModal" class="modal-overlay hidden">
+        <div class="modal-content max-w-lg animate-in fade-in zoom-in duration-200">
+            <div class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                <div class="flex items-center gap-3">
+                    <span id="detailRoomBadge" class="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black text-sm">301</span>
+                    <div>
+                        <h3 class="text-base font-black text-slate-800 tracking-tight" id="detailRoomTitle">ห้อง 301 - Deluxe</h3>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider" id="detailBranchTitle">สาขา กรุงเทพฯ (สุขุมวิท)</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1">
+                    <button onclick="editCurrentRoom()" class="btn-icon text-indigo-600 hover:bg-indigo-50 rounded-xl" title="แก้ไขข้อมูลห้องพัก">
+                        <i data-lucide="pencil" class="w-5 h-5"></i>
+                    </button>
+                    <button onclick="deleteCurrentRoom()" class="btn-icon text-rose-500 hover:bg-rose-50 rounded-xl" title="ลบห้องพักนี้">
+                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                    </button>
+                    <button onclick="closeRoomDetailsModal()" class="btn-icon text-slate-400 rounded-xl">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-8 space-y-6">
+                <!-- Status Row -->
+                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <span class="text-xs font-bold text-slate-500">สถานะปัจจุบัน:</span>
+                    <span id="detailStatusBadge" class="status-badge status-success">ปกติ</span>
+                </div>
+
+                <!-- Last Checked Card -->
+                <div class="bg-indigo-50/30 border border-indigo-100 p-5 rounded-2xl space-y-3">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-extrabold text-indigo-900 flex items-center gap-1.5">
+                            <i data-lucide="shield-check" class="w-4 h-4 text-indigo-600"></i> สภาพล่าสุดภายในห้อง
+                        </span>
+                        <span class="text-[10px] text-indigo-400 font-medium" id="lastCheckDate">ตรวจเมื่อ: 25/05/2026</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-[11px]" id="lastInspectionSummary">
+                        <!-- Checklist summary items injected here -->
+                    </div>
+                </div>
+
+                <!-- Actions Row -->
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                    <button onclick="openInspectionModal()" class="btn-secondary text-indigo-600 hover:text-indigo-700 bg-indigo-50 border-indigo-100 hover:bg-indigo-100">
+                        <i data-lucide="check-square" class="w-4 h-4"></i> ตรวจเช็คระบบใหม่
+                    </button>
+                    <button onclick="openRepairModal()" class="btn-primary">
+                        <i data-lucide="wrench" class="w-4 h-4"></i> บันทึกงานซ่อมใหม่
+                    </button>
+                </div>
+
+                <!-- Active / Past Repairs History -->
+                <div class="space-y-3">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">ประวัติการซ่อมบำรุงล่าสุด</h4>
+                    <div id="repairHistoryList" class="space-y-2">
+                        <!-- History injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. Systems Inspection Checklist Modal (ตรวจเช็คระบบภายในห้อง) -->
+    <div id="inspectionModal" class="modal-overlay hidden" style="z-index: 110;">
+        <div class="modal-content max-w-lg animate-in fade-in zoom-in duration-200">
+            <div class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                <div>
+                    <h3 class="text-base font-black text-slate-800 tracking-tight">ตรวจประเมินระบบภายในห้อง <span id="inspectRoomLabel" class="text-indigo-600">301</span></h3>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">เช็คสภาพอุปกรณ์และสิ่งอำนวยความสะดวกในโรงแรม</p>
+                </div>
+                <button onclick="closeInspectionModal()" class="btn-icon">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <form id="inspectionForm" class="p-8 space-y-6">
+                <!-- Checklist items -->
+                <div class="space-y-5" id="inspectionChecklistItems">
+                    
+                    <!-- System Item template: Electrical -->
+                    <div class="space-y-2 border-b border-slate-50 pb-4">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-bold text-slate-700 flex items-center gap-2">
+                                <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i> 1. ระบบไฟฟ้า (Electrical System)
+                            </label>
+                            <!-- Pill Toggles -->
+                            <div class="flex gap-1.5 text-[10px] font-bold">
+                                <button type="button" onclick="setSystemStatus('electrical', 'Normal')" class="system-pill px-2.5 py-1 rounded-lg border border-slate-200 active-normal" id="inspect_electrical_Normal">ปกติ</button>
+                                <button type="button" onclick="setSystemStatus('electrical', 'Needs Repair')" class="system-pill px-2.5 py-1 rounded-lg border border-slate-200" id="inspect_electrical_Repair">ชำรุด</button>
+                            </div>
+                        </div>
+                        <input type="text" id="inspect_electrical_notes" class="form-input text-xs py-2 px-3 placeholder:text-slate-400 bg-slate-50/50" placeholder="หมายเหตุเพิ่มเติมระบบไฟฟ้า (ถ้ามี)...">
+                    </div>
+
+                    <!-- System Item: Air Conditioning -->
+                    <div class="space-y-2 border-b border-slate-50 pb-4">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-bold text-slate-700 flex items-center gap-2">
+                                <i data-lucide="wind" class="w-4 h-4 text-blue-500"></i> 2. ระบบปรับอากาศ (AC System)
+                            </label>
+                            <div class="flex gap-1.5 text-[10px] font-bold">
+                                <button type="button" onclick="setSystemStatus('ac', 'Normal')" class="system-pill px-2.5 py-1 rounded-lg border border-slate-200 active-normal" id="inspect_ac_Normal">ปกติ</button>
+                                <button type="button" onclick="setSystemStatus('ac', 'Needs Repair')" class="system-pill px-2.5 py-1 rounded-lg border border-slate-200" id="inspect_ac_Repair">ชำรุด</button>
+                            </div>
+                        </div>
+                        <input type="text" id="inspect_ac_notes" class="form-input text-xs py-2 px-3 placeholder:text-slate-400 bg-slate-50/50" placeholder="หมายเหตุเพิ่มเติมระบบปรับอากาศ (ถ้ามี)...">
+                    </div>
+
+                    <!-- System Item: Plumbing -->
+                    <div class="space-y-2 border-b border-slate-50 pb-4">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-bold text-slate-700 flex items-center gap-2">
+                                <i data-lucide="droplet" class="w-4 h-4 text-teal-500"></i> 3. ระบบประปาและห้องน้ำ (Plumbing & Bath)
+                            </label>
+                            <div class="flex gap-1.5 text-[10px] font-bold">
+                                <button type="button" onclick="setSystemStatus('plumbing', 'Normal')" class="system-pill px-2.5 py-1 rounded-lg border border-slate-200 active-normal" id="inspect_plumbing_Normal">ปกติ</button>
+                                <button type="button" onclick="setSystemStatus('plumbing', 'Needs Repair')" class="system-pill px-2.5 py-1 rounded-lg border border-slate-200" id="inspect_plumbing_Repair">ชำรุด</button>
+                            </div>
+                        </div>
+                        <input type="text" id="inspect_plumbing_notes" class="form-input text-xs py-2 px-3 placeholder:text-slate-400 bg-slate-50/50" placeholder="หมายเหตุระบบประปา/สุขภัณฑ์ (ถ้ามี)...">
+                    </div>
+
+                    <!-- System Item: Furniture -->
+                    <div class="space-y-2 border-b border-slate-50 pb-4">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-bold text-slate-700 flex items-center gap-2">
+                                <i data-lucide="sofa" class="w-4 h-4 text-indigo-500"></i> 4. เฟอร์นิเจอร์และขอบประตู (Furniture)
+                            </label>
+                            <div class="flex gap-1.5 text-[10px] font-bold">
+                                <button type="button" onclick="setSystemStatus('furniture', 'Normal')" class="system-pill px-2.5 py-1 rounded-lg border border-slate-200 active-normal" id="inspect_furniture_Normal">ปกติ</button>
+                                <button type="button" onclick="setSystemStatus('furniture', 'Needs Repair')" class="system-pill px-2.5 py-1 rounded-lg border border-slate-200" id="inspect_furniture_Repair">ชำรุด</button>
+                            </div>
+                        </div>
+                        <input type="text" id="inspect_furniture_notes" class="form-input text-xs py-2 px-3 placeholder:text-slate-400 bg-slate-50/50" placeholder="หมายเหตุขอบเตียง โต๊ะ โซฟา ประตู (ถ้ามี)...">
+                    </div>
+
+                    <!-- System Item: Appliances -->
+                    <div class="space-y-2 pb-2">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-bold text-slate-700 flex items-center gap-2">
+                                <i data-lucide="tv" class="w-4 h-4 text-purple-500"></i> 5. โทรทัศน์และเครื่องใช้ไฟฟ้า (Appliances)
+                            </label>
+                            <div class="flex gap-1.5 text-[10px] font-bold">
+                                <button type="button" onclick="setSystemStatus('appliances', 'Normal')" class="system-pill px-2.5 py-1 rounded-lg border border-slate-200 active-normal" id="inspect_appliances_Normal">ปกติ</button>
+                                <button type="button" onclick="setSystemStatus('appliances', 'Needs Repair')" class="system-pill px-2.5 py-1 rounded-lg border border-slate-200" id="inspect_appliances_Repair">ชำรุด</button>
+                            </div>
+                        </div>
+                        <input type="text" id="inspect_appliances_notes" class="form-input text-xs py-2 px-3 placeholder:text-slate-400 bg-slate-50/50" placeholder="หมายเหตุรีโมท ทีวี ตู้เย็น ตู้เซฟ (ถ้ามี)...">
+                    </div>
+
+                </div>
+
+                <!-- Auto-Create Ticket Option -->
+                <div class="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-start gap-3">
+                    <input type="checkbox" id="inspectAutoCreateRepair" checked class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 mt-0.5">
+                    <div>
+                        <label for="inspectAutoCreateRepair" class="text-xs font-black text-amber-900 block leading-tight">สร้างใบงานซ่อมโดยอัตโนมัติ</label>
+                        <span class="text-[10px] text-amber-700/80 font-medium">หากตรวจพบว่าอุปกรณ์ใดชำรุด ระบบจะเปิดบันทึกแจ้งซ่อมที่ห้องดังกล่าวในระบบทันที</span>
+                    </div>
+                </div>
+
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="closeInspectionModal()" class="flex-1 btn-secondary">ยกเลิก</button>
+                    <button type="submit" class="flex-1 btn-primary bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/10">
+                        <i data-lucide="save" class="w-5 h-5"></i> บันทึกผลการตรวจ
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. New Maintenance Record Form Modal (แบบฟอร์มบันทึกการซ่อม) -->
+    <div id="repairModal" class="modal-overlay hidden" style="z-index: 120;">
+        <div class="modal-content max-w-lg animate-in fade-in zoom-in duration-200">
+            <div class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                <div>
+                    <h3 class="text-base font-black text-slate-800 tracking-tight">บันทึกแจ้งซ่อมแซมห้อง <span id="repairRoomLabel" class="text-indigo-600">301</span></h3>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">บันทึกรายการซ่อมเพื่อมอบหมายงานให้ช่างวิศวกรรมบำรุงรักษา</p>
+                </div>
+                <button onclick="closeRepairModal()" class="btn-icon">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <form id="repairForm" class="p-8 space-y-5">
+                <div>
+                    <label class="form-label">หมวดหมู่อุปกรณ์ที่เสียหาย <span class="text-red-500">*</span></label>
+                    <select id="repairCategory" required>
+                        <option value="Electrical">ระบบไฟฟ้า (Electrical)</option>
+                        <option value="AC">ระบบปรับอากาศ (AC)</option>
+                        <option value="Plumbing">ระบบประปาและสุขภัณฑ์ (Plumbing)</option>
+                        <option value="Furniture">เฟอร์นิเจอร์และขอบประตู (Furniture)</option>
+                        <option value="Appliances">เครื่องใช้ไฟฟ้าและโทรทัศน์ (Appliances)</option>
+                        <option value="Other">อื่นๆ (Other)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="form-label">รายละเอียดปัญหา / อาการที่พบ <span class="text-red-500">*</span></label>
+                    <input type="text" id="repairDescription" required class="form-input" placeholder="ตัวอย่างเช่น แอร์ห้องพักมีเสียงดังและไม่เย็น...">
+                    
+                    <!-- Pre-populated Quick Tags -->
+                    <div class="mt-2 flex flex-wrap gap-1.5 items-center">
+                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mr-1">ปัญหายอดฮิต:</span>
+                        <button type="button" onclick="setQuickDescription('แอร์ไม่เย็นและมีแต่ลม')" class="px-2 py-0.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-slate-600 hover:text-indigo-600 rounded-lg text-[10px] font-bold transition-all">❄ แอร์ไม่เย็น</button>
+                        <button type="button" onclick="setQuickDescription('ไฟห้องพักกระพริบและเปิดบางจุดไม่ติด')" class="px-2 py-0.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-slate-600 hover:text-indigo-600 rounded-lg text-[10px] font-bold transition-all">💡 ไฟเสีย</button>
+                        <button type="button" onclick="setQuickDescription('น้ำในชักโครกไหลช้าและส้วมตัน')" class="px-2 py-0.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-slate-600 hover:text-indigo-600 rounded-lg text-[10px] font-bold transition-all">🚿 ชักโครกตัน</button>
+                        <button type="button" onclick="setQuickDescription('รีโมทโทรทัศน์ถ่านหมดและจอลาย')" class="px-2 py-0.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-slate-600 hover:text-indigo-600 rounded-lg text-[10px] font-bold transition-all">📺 ทีวีพัง</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="form-label">ความสำคัญ <span class="text-red-500">*</span></label>
+                        <select id="repairPriority" required>
+                            <option value="Low">ต่ำ (Low)</option>
+                            <option value="Medium" selected>ปานกลาง (Medium)</option>
+                            <option value="High">สูง (High)</option>
+                            <option value="Critical">วิกฤต (Critical)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">ช่างซ่อมบำรุงที่รับผิดชอบ</label>
+                        <select id="repairAssignee">
+                            <option value="">-- ไม่ระบุช่าง (ยืนยันเข้าตรวจ) --</option>
+                            <option value="สมชาย วิศวกรรม">สมชาย วิศวกรรม</option>
+                            <option value="วิชัย บำรุงดี">วิชัย บำรุงดี</option>
+                            <option value="เกรียงไกร ช่างไฟ">เกรียงไกร ช่างไฟ</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">ประมาณการค่าใช้จ่าย (บาท)</label>
+                    <input type="number" id="repairCost" class="form-input bg-white" placeholder="0.00" value="0">
+                </div>
+
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="closeRepairModal()" class="flex-1 btn-secondary">ยกเลิก</button>
+                    <button type="submit" class="flex-1 btn-primary">
+                        <i data-lucide="wrench" class="w-5 h-5"></i> บันทึกใบงานซ่อม
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Add/Edit Room Modal (แบบฟอร์มเพิ่ม/แก้ไขห้องพัก) -->
+    <div id="roomModal" class="modal-overlay hidden" style="z-index: 120;">
+        <div class="modal-content max-w-md animate-in fade-in zoom-in duration-200">
+            <div class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                <div>
+                    <h3 class="text-base font-black text-slate-800 tracking-tight" id="roomModalTitle">เพิ่มห้องพักใหม่</h3>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">ระบุสาขา หมายเลขห้อง ชั้น และประเภทห้องพัก</p>
+                </div>
+                <button onclick="closeRoomModal()" class="btn-icon">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <form id="roomForm" class="p-8 space-y-5">
+                <input type="hidden" id="roomFormMode" value="create"> <!-- 'create' or 'edit' -->
+                <input type="hidden" id="editRoomId" value="">
+
+                <div>
+                    <label class="form-label">สาขาโรงแรม <span class="text-red-500">*</span></label>
+                    <select id="roomFormBranch" required></select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="form-label">หมายเลขห้อง (เช่น 205) <span class="text-red-500">*</span></label>
+                        <input type="text" id="roomFormNumber" required class="form-input bg-white" placeholder="เช่น 205">
+                    </div>
+                    <div>
+                        <label class="form-label">ชั้น (เช่น 2) <span class="text-red-500">*</span></label>
+                        <input type="text" id="roomFormFloor" required class="form-input bg-white" placeholder="เช่น 2">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">ประเภทห้องพัก <span class="text-red-500">*</span></label>
+                    <select id="roomFormType" required>
+                        <option value="Standard">Standard</option>
+                        <option value="Deluxe">Deluxe</option>
+                        <option value="Suite">Suite</option>
+                        <option value="Penthouse">Penthouse</option>
+                    </select>
+                </div>
+
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="closeRoomModal()" class="flex-1 btn-secondary">ยกเลิก</button>
+                    <button type="submit" class="flex-1 btn-primary">
+                        <i data-lucide="save" class="w-5 h-5"></i> บันทึกข้อมูล
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="/assets/js/app.js"></script>
+    <script>
+        // MOCKUP CENTRAL DATABASE STRUCTURE (Saved in LocalStorage for rich interactions)
+        const MOCK_BRANCHES = [
+            { id: 'b-sukhumvit', name: 'สาขา สุขุมวิท (กรุงเทพฯ)' },
+            { id: 'b-pattaya', name: 'สาขา พัทยา' },
+            { id: 'b-chiangmai', name: 'สาขา เชียงใหม่' }
+        ];
+
+        // Seed initial room data if not exists in localStorage
+        const INITIAL_ROOMS = {
+            'b-sukhumvit': [
+                { id: 'r-201', number: '201', type: 'Standard', floor: '2', status: 'Available', lastInspected: '2026-05-24', inspector: 'วิชัย บำรุงดี', details: { electrical: 'Normal', ac: 'Normal', plumbing: 'Normal', furniture: 'Normal', appliances: 'Normal' } },
+                { id: 'r-202', number: '202', type: 'Standard', floor: '2', status: 'Available', lastInspected: '2026-05-25', inspector: 'วิชัย บำรุงดี', details: { electrical: 'Normal', ac: 'Normal', plumbing: 'Normal', furniture: 'Normal', appliances: 'Normal' } },
+                { id: 'r-203', number: '203', type: 'Deluxe', floor: '2', status: 'Needs Repair', lastInspected: '2026-05-23', inspector: 'สมชาย วิศวกรรม', details: { electrical: 'Needs Repair', ac: 'Normal', plumbing: 'Normal', furniture: 'Normal', appliances: 'Normal' }, activeTicket: { id: 'tk-1', desc: 'ปลั๊กไฟข้างหัวเตียงชำรุด 1 จุด', category: 'Electrical', priority: 'Medium', assignee: 'สมชาย วิศวกรรม', cost: 250 } },
+                { id: 'r-204', number: '204', type: 'Deluxe', floor: '2', status: 'Repairing', lastInspected: '2026-05-22', inspector: 'วิชัย บำรุงดี', details: { electrical: 'Normal', ac: 'Needs Repair', plumbing: 'Normal', furniture: 'Normal', appliances: 'Normal' }, activeTicket: { id: 'tk-2', desc: 'แอร์มีเสียงดังหน่วงและลมร้อน', category: 'AC', priority: 'High', assignee: 'วิชัย บำรุงดี', cost: 1200 } },
+                
+                { id: 'r-301', number: '301', type: 'Suite', floor: '3', status: 'Available', lastInspected: '2026-05-25', inspector: 'เกรียงไกร ช่างไฟ', details: { electrical: 'Normal', ac: 'Normal', plumbing: 'Normal', furniture: 'Normal', appliances: 'Normal' } },
+                { id: 'r-302', number: '302', type: 'Suite', floor: '3', status: 'Available', lastInspected: '2026-05-21', inspector: 'เกรียงไกร ช่างไฟ', details: { electrical: 'Normal', ac: 'Normal', plumbing: 'Normal', furniture: 'Normal', appliances: 'Normal' } },
+                { id: 'r-303', number: '303', type: 'Standard', floor: '3', status: 'Available', lastInspected: '2026-05-24', inspector: 'วิชัย บำรุงดี', details: { electrical: 'Normal', ac: 'Normal', plumbing: 'Normal', furniture: 'Normal', appliances: 'Normal' } },
+                { id: 'r-304', number: '304', type: 'Standard', floor: '3', status: 'Available', lastInspected: '2026-05-20', inspector: 'เกรียงไกร ช่างไฟ', details: { electrical: 'Normal', ac: 'Normal', plumbing: 'Normal', furniture: 'Normal', appliances: 'Normal' } },
+                
+                { id: 'r-501', number: '501', type: 'Penthouse', floor: '5', status: 'Available', lastInspected: '2026-05-25', inspector: 'สมชาย วิศวกรรม', details: { electrical: 'Normal', ac: 'Normal', plumbing: 'Normal', furniture: 'Normal', appliances: 'Normal' } },
+                { id: 'r-502', number: '502', type: 'Deluxe', floor: '5', status: 'Available', lastInspected: '2026-05-25', inspector: 'วิชัย บำรุงดี', details: { electrical: 'Normal', ac: 'Normal', plumbing: 'Normal', furniture: 'Normal', appliances: 'Normal' } },
+                { id: 'r-503', number: '503', type: 'Standard', floor: '5', status: 'Needs Repair', lastInspected: '2026-05-25', inspector: 'วิชัย บำรุงดี', details: { electrical: 'Normal', ac: 'Normal', plumbing: 'Needs Repair', furniture: 'Normal', appliances: 'Normal' }, activeTicket: { id: 'tk-3', desc: 'ชักโครกน้ำรั่วซึมที่ฐาน', category: 'Plumbing', priority: 'Medium', assignee: 'วิชัย บำรุงดี', cost: 450 } }
+            ],
+            'b-pattaya': [
+                { id: 'r-p101', number: '101', type: 'Deluxe', floor: '1', status: 'Available', lastInspected: '2026-05-25', inspector: 'สมชาย วิศวกรรม', details: { electrical: 'Normal', ac: 'Normal', plumbing: 'Normal', furniture: 'Normal', appliances: 'Normal' } },
+                { id: 'r-p102', number: '102', type: 'Deluxe', floor: '1', status: 'Repairing', lastInspected: '2026-05-24', inspector: 'สมชาย วิศวกรรม', details: { electrical: 'Normal', ac: 'Normal', plumbing: 'Normal', furniture: 'Needs Repair', appliances: 'Normal' }, activeTicket: { id: 'tk-4', desc: 'บานประตูห้องน้ำพังปิดไม่สนิท', category: 'Furniture', priority: 'Low', assignee: 'สมชาย วิศวกรรม', cost: 800 } },
+                { id: 'r-p201', number: '201', type: 'Standard', floor: '2', status: 'Available', lastInspected: '2026-05-24', inspector: 'วิชัย บำรุงดี', details: { electrical: 'Normal', ac: 'Normal', plumbing: 'Normal', furniture: 'Normal', appliances: 'Normal' } },
+                { id: 'r-p202', number: '202', type: 'Standard', floor: '2', status: 'Needs Repair', lastInspected: '2026-05-25', inspector: 'วิชัย บำรุงดี', details: { electrical: 'Normal', ac: 'Normal', plumbing: 'Normal', furniture: 'Normal', appliances: 'Needs Repair' }, activeTicket: { id: 'tk-5', desc: 'ตู้เย็นมีเสียงแปลกๆ และความเย็นไม่ถึง 10 องศา', category: 'Appliances', priority: 'Medium', assignee: 'วิชัย บำรุงดี', cost: 1500 } }
+            ],
+            'b-chiangmai': [
+                { id: 'r-c101', number: '101', type: 'Standard', floor: '1', status: 'Available', lastInspected: '2026-05-25', inspector: 'เกรียงไกร ช่างไฟ', details: { electrical: 'Normal', ac: 'Normal', plumbing: 'Normal', furniture: 'Normal', appliances: 'Normal' } },
+                { id: 'r-c102', number: '102', type: 'Suite', floor: '1', status: 'Available', lastInspected: '2026-05-25', inspector: 'เกรียงไกร ช่างไฟ', details: { electrical: 'Normal', ac: 'Normal', plumbing: 'Normal', furniture: 'Normal', appliances: 'Normal' } }
+            ]
+        };
+
+        const INITIAL_LOGS = [
+            { time: '2026-05-25T13:20:00Z', user: 'วิชัย บำรุงดี', action: 'ตรวจเช็คระบบ', text: 'ตรวจเช็คระบบห้อง 202 สถานะภาพรวม: ผ่านปกติ (Available)' },
+            { time: '2026-05-25T12:45:00Z', user: 'สมชาย วิศวกรรม', action: 'เปิดแจ้งซ่อม', text: 'เปิดบันทึกแจ้งซ่อมห้อง 203 ปัญหา: ปลั๊กไฟข้างหัวเตียงชำรุด 1 จุด (Electrical)' },
+            { time: '2026-05-25T10:15:00Z', user: 'เกรียงไกร ช่างไฟ', action: 'ตรวจเช็คระบบ', text: 'ตรวจเช็คระบบห้อง 301 สถานะภาพรวม: ผ่านปกติ (Available)' }
+        ];
+
+        // Core UI state
+        let branchesDB = [];
+        let roomsDB = {};
+        let logsDB = [];
+        let selectedRoom = null;
+        
+        // Choices.js instances
+        let choiceBranch = null;
+        let choiceCategory = null;
+        let choicePriority = null;
+        let choiceAssignee = null;
+        let choiceFormBranch = null;
+        let choiceFormType = null;
+
+        // Custom Checklist state for active inspection modal
+        let activeChecklistState = {
+            electrical: 'Normal',
+            ac: 'Normal',
+            plumbing: 'Normal',
+            furniture: 'Normal',
+            appliances: 'Normal'
+        };
+
+        // 1. Initial Seeding and Page setup
+        function initLocalStorageDB() {
+            if (!localStorage.getItem('roomcare_branches')) {
+                localStorage.setItem('roomcare_branches', JSON.stringify(MOCK_BRANCHES));
+            }
+            if (!localStorage.getItem('roomcare_rooms')) {
+                localStorage.setItem('roomcare_rooms', JSON.stringify(INITIAL_ROOMS));
+            }
+            if (!localStorage.getItem('roomcare_logs')) {
+                localStorage.setItem('roomcare_logs', JSON.stringify(INITIAL_LOGS));
+            }
+            branchesDB = JSON.parse(localStorage.getItem('roomcare_branches'));
+            roomsDB = JSON.parse(localStorage.getItem('roomcare_rooms'));
+            logsDB = JSON.parse(localStorage.getItem('roomcare_logs'));
+        }
+
+        function saveDB() {
+            localStorage.setItem('roomcare_branches', JSON.stringify(branchesDB));
+            localStorage.setItem('roomcare_rooms', JSON.stringify(roomsDB));
+            localStorage.setItem('roomcare_logs', JSON.stringify(logsDB));
+            renderDashboard();
+            renderLogsPanel();
+        }
+
+        function addActionLog(action, text) {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const newLog = {
+                time: new Date().toISOString(),
+                user: user.name || 'System User',
+                action: action,
+                text: text
+            };
+            logsDB.unshift(newLog);
+            saveDB();
+        }
+
+        function clearLocalStorageLogs() {
+            Swal.fire({
+                title: 'ยืนยันการล้างข้อมูล?',
+                text: 'ระบบจะรีเซ็ตข้อมูลสาขา ห้องพัก และการบันทึกทั้งหมดกลับไปเป็นค่าเริ่มต้นทดลองซ้ำอีกครั้ง',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#e2e8f0',
+                confirmButtonText: 'ใช่, รีเซ็ตข้อมูล',
+                cancelButtonText: 'ยกเลิก',
+                customClass: {
+                    popup: 'rounded-3xl border-0 shadow-2xl',
+                    confirmButton: 'rounded-xl px-6 py-2.5 font-bold',
+                    cancelButton: 'rounded-xl px-6 py-2.5 font-bold text-slate-600'
+                }
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    localStorage.removeItem('roomcare_branches');
+                    localStorage.removeItem('roomcare_rooms');
+                    localStorage.removeItem('roomcare_logs');
+                    initLocalStorageDB();
+                    rebuildBranchSelects();
+                    renderDashboard();
+                    renderLogsPanel();
+                    notify.success('รีเซ็ตข้อมูลทดลองเสร็จเรียบร้อยแล้ว!');
+                }
+            });
+        }
+
+        // 2. Rendering Dashboards & Grids
+        function renderDashboard() {
+            const branchId = document.getElementById('branchSelect').value;
+            const rooms = roomsDB[branchId] || [];
+            
+            // Calculate stats
+            const total = rooms.length;
+            const available = rooms.filter(r => r.status === 'Available').length;
+            const needsRepair = rooms.filter(r => r.status === 'Needs Repair').length;
+            const repairing = rooms.filter(r => r.status === 'Repairing').length;
+
+            document.getElementById('statTotalRooms').innerText = total;
+            document.getElementById('statAvailableRooms').innerText = available;
+            document.getElementById('statNeedsRepairRooms').innerText = needsRepair;
+            document.getElementById('statRepairingRooms').innerText = repairing;
+
+            // Group rooms by Floor
+            const floorsMap = {};
+            rooms.forEach(room => {
+                if (!floorsMap[room.floor]) floorsMap[room.floor] = [];
+                floorsMap[room.floor].push(room);
+            });
+
+            // Sort Floors
+            const sortedFloors = Object.keys(floorsMap).sort((a, b) => parseInt(a) - parseInt(b));
+            
+            const floorsContainer = document.getElementById('floorsContainer');
+            if (total === 0) {
+                floorsContainer.innerHTML = `
+                    <div class="py-16 bg-white rounded-3xl border border-slate-100 shadow-sm text-center text-slate-400">
+                        <i data-lucide="hotel" class="w-12 h-12 text-slate-200 mx-auto mb-3"></i>
+                        <p class="font-bold text-sm">ไม่มีข้อมูลห้องพักในสาขานี้</p>
+                        <p class="text-[11px] text-slate-300 mt-1">คุณสามารถเพิ่มห้องพักห้องแรกของสาขานี้ได้โดยกดปุ่ม "เพิ่มห้องพัก"</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            floorsContainer.innerHTML = sortedFloors.map(floor => {
+                const floorRooms = floorsMap[floor].sort((a, b) => a.number.localeCompare(b.number));
+                
+                return `
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+                        <div class="flex items-center gap-2 pb-2 border-b border-slate-50">
+                            <span class="w-6 h-6 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center font-bold text-xs">${floor}</span>
+                            <h3 class="font-black text-sm text-slate-700 uppercase tracking-wider">ห้องพักบริเวณชั้น ${floor}</h3>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                            ${floorRooms.map(room => {
+                                let statusClass = 'bg-emerald-50 border-emerald-100 hover:border-emerald-300';
+                                let iconColor = 'text-emerald-500';
+                                let statusLabel = 'ปกติ';
+                                let subtext = `<p class="text-[9.5px] text-emerald-600 font-bold mt-1">✔ พร้อมใช้งาน</p>`;
+                                
+                                if (room.status === 'Needs Repair') {
+                                    statusClass = 'bg-rose-50/50 border-rose-100 hover:border-rose-300';
+                                    iconColor = 'text-rose-500';
+                                    statusLabel = 'ค้างซ่อม';
+                                    subtext = `<p class="text-[9.5px] text-rose-500 font-bold truncate mt-1">⚠ ${room.activeTicket?.desc || 'พบจุดเสียหาย'}</p>`;
+                                } else if (room.status === 'Repairing') {
+                                    statusClass = 'bg-blue-50/30 border-blue-100 hover:border-blue-300';
+                                    iconColor = 'text-blue-500';
+                                    statusLabel = 'กำลังซ่อม';
+                                    subtext = `<p class="text-[9.5px] text-blue-500 font-bold mt-1">⚙ ซ่อมโดย: ${room.activeTicket?.assignee || 'ช่างบำรุง'}</p>`;
+                                }
+
+                                return `
+                                    <div onclick="openRoomDetails('${room.id}')" class="room-card p-4 bg-white border rounded-2xl cursor-pointer ${statusClass} flex flex-col justify-between shadow-sm h-[115px]">
+                                        <div class="flex justify-between items-start">
+                                            <span class="text-sm font-black text-slate-800 tracking-tight">#${room.number}</span>
+                                            <span class="text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${room.status === 'Available' ? 'bg-emerald-100 text-emerald-700' : room.status === 'Needs Repair' ? 'bg-rose-100 text-rose-700' : 'bg-blue-100 text-blue-700'}">${statusLabel}</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-[10px] text-slate-400 font-semibold">${room.type}</span>
+                                            ${subtext}
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            lucide.createIcons();
+        }
+
+        function renderLogsPanel() {
+            const logsContainer = document.getElementById('logsContainer');
+            document.getElementById('logBadgeCount').innerText = logsDB.length;
+
+            if (logsDB.length === 0) {
+                logsContainer.innerHTML = `
+                    <div class="py-10 text-center text-slate-400 text-xs font-medium space-y-2">
+                        <i data-lucide="database-backup" class="w-8 h-8 text-slate-300 mx-auto"></i>
+                        <p>ยังไม่มีประวัติการบันทึกข้อมูล</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            logsContainer.innerHTML = logsDB.map(log => {
+                let badgeClass = 'bg-slate-50 text-slate-500';
+                if (log.action === 'ตรวจเช็คระบบ') badgeClass = 'bg-emerald-50 text-emerald-600';
+                if (log.action === 'เปิดแจ้งซ่อม') badgeClass = 'bg-amber-50 text-amber-600';
+                if (log.action === 'ซ่อมสำเร็จ') badgeClass = 'bg-blue-50 text-blue-600';
+                if (log.action === 'เพิ่มสาขา') badgeClass = 'bg-teal-50 text-teal-600';
+                if (log.action === 'เพิ่มห้องพัก') badgeClass = 'bg-indigo-50 text-indigo-600';
+                if (log.action === 'แก้ไขห้องพัก') badgeClass = 'bg-purple-50 text-purple-600';
+                if (log.action === 'ลบห้องพัก') badgeClass = 'bg-rose-50 text-rose-600';
+
+                const timeStr = new Date(log.time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+                return `
+                    <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-1.5 hover:border-slate-200 transition-colors">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${badgeClass}">${log.action}</span>
+                            <span class="text-[9px] text-slate-400 font-semibold">${timeStr}</span>
+                        </div>
+                        <p class="text-xs text-slate-700 font-bold leading-relaxed">${escapeHTML(log.text)}</p>
+                        <p class="text-[9px] text-slate-400 font-medium flex items-center gap-1">
+                            <i data-lucide="user" class="w-3 h-3 text-slate-300"></i> ดำเนินการโดย: ${escapeHTML(log.user)}
+                        </p>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        // 3. Dropdowns & Controls triggers
+        function branchChanged() {
+            renderDashboard();
+        }
+
+        // 4. Room Detail Drawer logic
+        function openRoomDetails(roomId) {
+            // Find room across all branches
+            let foundRoom = null;
+            let foundBranchId = null;
+
+            for (const bId in roomsDB) {
+                const room = roomsDB[bId].find(r => r.id === roomId);
+                if (room) {
+                    foundRoom = room;
+                    foundBranchId = bId;
+                    break;
+                }
+            }
+
+            if (!foundRoom) return;
+            selectedRoom = foundRoom;
+
+            document.getElementById('detailRoomBadge').innerText = selectedRoom.number;
+            document.getElementById('detailRoomTitle').innerText = `ห้อง ${selectedRoom.number} - ${selectedRoom.type}`;
+            
+            const branchObj = branchesDB.find(b => b.id === foundBranchId);
+            document.getElementById('detailBranchTitle').innerText = `สาขา ${branchObj?.name || 'โรงแรม'}`;
+
+            // Set Status Badge
+            const badgeEl = document.getElementById('detailStatusBadge');
+            badgeEl.className = 'status-badge';
+            if (selectedRoom.status === 'Available') {
+                badgeEl.classList.add('status-success');
+                badgeEl.innerText = 'ปกติ (Available)';
+            } else if (selectedRoom.status === 'Needs Repair') {
+                badgeEl.classList.add('status-danger');
+                badgeEl.innerText = 'มีปัญหารอซ่อมบำรุง';
+            } else if (selectedRoom.status === 'Repairing') {
+                badgeEl.classList.add('status-warning');
+                badgeEl.innerText = 'กำลังดำเนินการซ่อมบำรุง';
+            }
+
+            // Set Last Inspected info
+            document.getElementById('lastCheckDate').innerText = `ตรวจเมื่อ: ${new Date(selectedRoom.lastInspected).toLocaleDateString('th-TH')} โดย ${selectedRoom.inspector}`;
+            
+            const summaryContainer = document.getElementById('lastInspectionSummary');
+            const details = selectedRoom.details || { electrical: 'Normal', ac: 'Normal', plumbing: 'Normal', furniture: 'Normal', appliances: 'Normal' };
+            
+            const renderIcon = (stat) => stat === 'Normal' ? '✔' : '⚠';
+            const renderClass = (stat) => stat === 'Normal' ? 'text-emerald-600 font-extrabold' : 'text-rose-500 font-extrabold';
+
+            summaryContainer.innerHTML = `
+                <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-100">
+                    <span class="text-slate-500">1. ไฟฟ้า</span>
+                    <span class="${renderClass(details.electrical)}">${renderIcon(details.electrical)} ${details.electrical === 'Normal' ? 'ปกติ' : 'ชำรุด'}</span>
+                </div>
+                <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-100">
+                    <span class="text-slate-500">2. ปรับอากาศ</span>
+                    <span class="${renderClass(details.ac)}">${renderIcon(details.ac)} ${details.ac === 'Normal' ? 'ปกติ' : 'ชำรุด'}</span>
+                </div>
+                <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-100">
+                    <span class="text-slate-500">3. สุขภัณฑ์</span>
+                    <span class="${renderClass(details.plumbing)}">${renderIcon(details.plumbing)} ${details.plumbing === 'Normal' ? 'ปกติ' : 'ชำรุด'}</span>
+                </div>
+                <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-100">
+                    <span class="text-slate-500">4. เฟอร์นิเจอร์</span>
+                    <span class="${renderClass(details.furniture)}">${renderIcon(details.furniture)} ${details.furniture === 'Normal' ? 'ปกติ' : 'ชำรุด'}</span>
+                </div>
+                <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-100 col-span-2">
+                    <span class="text-slate-500">5. โทรทัศน์/เครื่องใช้ไฟฟ้า</span>
+                    <span class="${renderClass(details.appliances)}">${renderIcon(details.appliances)} ${details.appliances === 'Normal' ? 'ปกติ' : 'ชำรุด'}</span>
+                </div>
+            `;
+
+            // Render Repair History Card
+            const historyList = document.getElementById('repairHistoryList');
+            if (selectedRoom.activeTicket) {
+                const t = selectedRoom.activeTicket;
+                let actionBtn = '';
+                if (selectedRoom.status === 'Needs Repair') {
+                    actionBtn = `<button onclick="startRepairJob('${selectedRoom.id}')" class="px-2.5 py-1.5 text-[9px] font-black uppercase text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-all active:scale-95 cursor-pointer">เริ่มซ่อม</button>`;
+                } else if (selectedRoom.status === 'Repairing') {
+                    actionBtn = `<button onclick="finishRepairJob('${selectedRoom.id}')" class="px-2.5 py-1.5 text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-all active:scale-95 cursor-pointer">ซ่อมเสร็จ</button>`;
+                }
+
+                historyList.innerHTML = `
+                    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2 hover:border-slate-200 transition-colors">
+                        <div class="flex justify-between items-start">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">#TICKET-${t.id.toUpperCase()}</span>
+                            <span class="status-badge ${selectedRoom.status === 'Needs Repair' ? 'status-danger' : 'status-warning'} scale-75">${selectedRoom.status === 'Needs Repair' ? 'รอยืนยันซ่อม' : 'กำลังซ่อม'}</span>
+                        </div>
+                        <h4 class="text-xs font-bold text-slate-700 leading-snug">${escapeHTML(t.desc)}</h4>
+                        <div class="text-[10px] text-slate-400 font-semibold flex items-center justify-between pt-1 border-t border-slate-100">
+                            <span>หมวดหมู่: ${t.category} | ช่าง: ${t.assignee || 'ไม่ระบุ'}</span>
+                            <span class="text-indigo-600 font-bold">ค่าอะไหล่: ${t.cost}.-</span>
+                        </div>
+                        <div class="flex justify-end gap-2 pt-2 border-t border-slate-100/50">
+                            ${actionBtn}
+                        </div>
+                    </div>
+                `;
+            } else {
+                historyList.innerHTML = `
+                    <div class="p-8 text-center bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-slate-400 font-medium text-xs">
+                        <i data-lucide="wrench" class="w-6 h-6 text-slate-300 mx-auto mb-2"></i>
+                        ไม่มีงานซ่อมค้างในขณะนี้
+                    </div>
+                `;
+            }
+
+            document.getElementById('roomDetailsModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeRoomDetailsModal() {
+            document.getElementById('roomDetailsModal').classList.add('hidden');
+        }
+
+        // 5. Checklist Inspection Logic
+        function openInspectionModal() {
+            if (!selectedRoom) return;
+            document.getElementById('inspectRoomLabel').innerText = selectedRoom.number;
+            
+            // Set initial state from room details
+            const details = selectedRoom.details || { electrical: 'Normal', ac: 'Normal', plumbing: 'Normal', furniture: 'Normal', appliances: 'Normal' };
+            
+            for (const key in details) {
+                setSystemStatus(key, details[key]);
+                document.getElementById(`inspect_${key}_notes`).value = '';
+            }
+
+            document.getElementById('inspectionModal').classList.remove('hidden');
+        }
+
+        function closeInspectionModal() {
+            document.getElementById('inspectionModal').classList.add('hidden');
+        }
+
+        function setSystemStatus(systemKey, status) {
+            activeChecklistState[systemKey] = status;
+            
+            // Reset pills
+            const normalBtn = document.getElementById(`inspect_${systemKey}_Normal`);
+            const repairBtn = document.getElementById(`inspect_${systemKey}_Repair`);
+
+            if (normalBtn) normalBtn.className = 'system-pill px-2.5 py-1 rounded-lg border border-slate-200';
+            if (repairBtn) repairBtn.className = 'system-pill px-2.5 py-1 rounded-lg border border-slate-200';
+
+            if (status === 'Normal') {
+                if (normalBtn) normalBtn.classList.add('active-normal');
+            } else {
+                if (repairBtn) repairBtn.classList.add('active-repair');
+            }
+        }
+
+        // Handle inspection checklist submission
+        document.getElementById('inspectionForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!selectedRoom) return;
+
+            // Copy activeState back to room
+            selectedRoom.details = { ...activeChecklistState };
+            selectedRoom.lastInspected = new Date().toISOString().split('T')[0];
+            
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            selectedRoom.inspector = user.name || 'System Auditor';
+
+            // Check if any system is marked as Repair
+            let needsRepair = false;
+            let brokenItems = [];
+            for (const key in activeChecklistState) {
+                if (activeChecklistState[key] === 'Needs Repair') {
+                    needsRepair = true;
+                    let sysLabel = 'ระบบไฟฟ้า';
+                    if (key === 'ac') sysLabel = 'ระบบแอร์';
+                    if (key === 'plumbing') sysLabel = 'ระบบน้ำ/สุขภัณฑ์';
+                    if (key === 'furniture') sysLabel = 'เฟอร์นิเจอร์';
+                    if (key === 'appliances') sysLabel = 'ทีวี/เครื่องใช้ไฟฟ้า';
+                    
+                    const note = document.getElementById(`inspect_${key}_notes`).value.trim();
+                    brokenItems.push(sysLabel + (note ? ` (${note})` : ''));
+                }
+            }
+
+            let logText = `ตรวจเช็คระบบห้อง ${selectedRoom.number} สถานะภาพรวม: `;
+            if (needsRepair) {
+                selectedRoom.status = 'Needs Repair';
+                logText += `ชำรุดรอซ่อมแซม (Needs Repair) - ชำรุดจุด: ${brokenItems.join(', ')}`;
+                
+                // Auto create repair ticket if checked
+                if (document.getElementById('inspectAutoCreateRepair').checked) {
+                    const ticketId = 'tk-' + Math.floor(Math.random() * 1000);
+                    selectedRoom.activeTicket = {
+                        id: ticketId,
+                        desc: brokenItems.join(' และ '),
+                        category: activeChecklistState.electrical === 'Needs Repair' ? 'Electrical' : 'Other',
+                        priority: 'Medium',
+                        assignee: 'วิชัย บำรุงดี',
+                        cost: 300
+                    };
+                    addActionLog('เปิดแจ้งซ่อม', `สร้างใบซ่อม #${ticketId.toUpperCase()} ห้อง ${selectedRoom.number} จากผลเช็คสภาพห้องชำรุด`);
+                }
+            } else {
+                selectedRoom.status = 'Available';
+                selectedRoom.activeTicket = null;
+                logText += 'ปกติผ่านเกณฑ์ (Available)';
+            }
+
+            addActionLog('ตรวจเช็คระบบ', logText);
+            closeInspectionModal();
+            openRoomDetails(selectedRoom.id); // Reload Drawer view
+            notify.success('บันทึกผลการเช็คห้องพักสำเร็จ!');
+        });
+
+        // 6. Maintenance Repair Modal Logic
+        function openRepairModal() {
+            if (!selectedRoom) return;
+            document.getElementById('repairRoomLabel').innerText = selectedRoom.number;
+            document.getElementById('repairDescription').value = '';
+            document.getElementById('repairCost').value = '0';
+            
+            document.getElementById('repairModal').classList.remove('hidden');
+        }
+
+        function closeRepairModal() {
+            document.getElementById('repairModal').classList.add('hidden');
+        }
+
+        function setQuickDescription(text) {
+            document.getElementById('repairDescription').value = text;
+        }
+
+        document.getElementById('repairForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!selectedRoom) return;
+
+            const category = document.getElementById('repairCategory').value;
+            const desc = document.getElementById('repairDescription').value.trim();
+            const priority = document.getElementById('repairPriority').value;
+            const assignee = document.getElementById('repairAssignee').value;
+            const cost = parseFloat(document.getElementById('repairCost').value) || 0;
+
+            const ticketId = 'tk-' + Math.floor(Math.random() * 1000);
+            
+            selectedRoom.status = 'Needs Repair';
+            selectedRoom.activeTicket = {
+                id: ticketId,
+                desc: desc,
+                category: category,
+                priority: priority,
+                assignee: assignee || null,
+                cost: cost
+            };
+
+            addActionLog('เปิดแจ้งซ่อม', `เปิดบันทึกแจ้งซ่อมใหม่ #${ticketId.toUpperCase()} ห้อง ${selectedRoom.number} - ปัญหา: ${desc} (ช่าง: ${assignee || 'รอช่างเข้าดู'})`);
+            closeRepairModal();
+            openRoomDetails(selectedRoom.id); // Reload Drawer view
+            notify.success('สร้างบันทึกใบแจ้งซ่อมห้องพักสำเร็จ!');
+        });
+
+        // Interactive states: Start/Finish Jobs
+        function startRepairJob(roomId) {
+            const branchId = document.getElementById('branchSelect').value;
+            const rooms = roomsDB[branchId] || [];
+            const r = rooms.find(room => room.id === roomId);
+            if (!r || !r.activeTicket) return;
+
+            r.status = 'Repairing';
+            addActionLog('เริ่มซ่อม', `ช่าง ${r.activeTicket.assignee || 'ช่างประจำ'} เริ่มต้นดำเนินการตรวจสอบซ่อมแซมห้อง ${r.number}`);
+            openRoomDetails(r.id);
+            notify.toast('เปลี่ยนสถานะห้องเป็น: กำลังซ่อมบำรุง', 'info');
+        }
+
+        function finishRepairJob(roomId) {
+            const branchId = document.getElementById('branchSelect').value;
+            const rooms = roomsDB[branchId] || [];
+            const r = rooms.find(room => room.id === roomId);
+            if (!r || !r.activeTicket) return;
+
+            const t = r.activeTicket;
+            r.status = 'Available';
+            r.activeTicket = null;
+            r.details = { electrical: 'Normal', ac: 'Normal', plumbing: 'Normal', furniture: 'Normal', appliances: 'Normal' };
+
+            addActionLog('ซ่อมสำเร็จ', `ซ่อมเสร็จเรียบร้อยห้อง ${r.number} ปัญหา: "${t.desc}" สถานะเป็นปกติผ่านเกณฑ์ (ค่าใช้จ่าย: ${t.cost}.-)`);
+            openRoomDetails(r.id);
+            notify.success('บันทึกการปิดงานซ่อมแซมเสร็จสิ้น!');
+        }
+
+        // ==========================================
+        // NEW FEATURE: Add Branch Direct Prompt
+        // ==========================================
+        function addNewBranch() {
+            Swal.fire({
+                title: 'เพิ่มสาขาโรงแรมใหม่',
+                input: 'text',
+                inputLabel: 'ชื่อสาขาโรงแรม (เช่น สาขา หัวหิน)',
+                inputPlaceholder: 'กรอกชื่อสาขาโรงแรม...',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#e2e8f0',
+                confirmButtonText: 'บันทึก',
+                cancelButtonText: 'ยกเลิก',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'กรุณาระบุชื่อสาขาโรงแรม!';
+                    }
+                    // Avoid duplicate names
+                    const cleanVal = value.trim();
+                    const exists = branchesDB.find(b => b.name.toLowerCase() === cleanVal.toLowerCase() || b.name.toLowerCase() === ('สาขา ' + cleanVal).toLowerCase());
+                    if (exists) {
+                        return 'ชื่อสาขานี้มีในระบบแล้ว!';
+                    }
+                },
+                customClass: {
+                    popup: 'rounded-3xl border-0 shadow-2xl',
+                    confirmButton: 'rounded-xl px-6 py-2.5 font-bold',
+                    cancelButton: 'rounded-xl px-6 py-2.5 font-bold text-slate-600'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    let branchName = result.value.trim();
+                    if (!branchName.startsWith('สาขา')) {
+                        branchName = 'สาขา ' + branchName;
+                    }
+                    const newBranchId = 'b-' + Date.now();
+                    
+                    const newBranch = {
+                        id: newBranchId,
+                        name: branchName
+                    };
+
+                    branchesDB.push(newBranch);
+                    roomsDB[newBranchId] = []; // Initialize empty rooms list
+
+                    addActionLog('เพิ่มสาขา', `เพิ่มสาขาโรงแรมใหม่: "${branchName}"`);
+                    rebuildBranchSelects(newBranchId);
+                    notify.success(`บันทึกสาขา "${branchName}" สำเร็จ!`);
+                }
+            });
+        }
+
+        function rebuildBranchSelects(selectedBranchId = null) {
+            const selectEl = document.getElementById('branchSelect');
+            const formSelectEl = document.getElementById('roomFormBranch');
+
+            // Save currently selected if none parameter is provided
+            const currentSelected = selectedBranchId || selectEl.value;
+
+            // 1. Destroy Choices
+            if (choiceBranch) { try { choiceBranch.destroy(); } catch(e){} choiceBranch = null; }
+            if (choiceFormBranch) { try { choiceFormBranch.destroy(); } catch(e){} choiceFormBranch = null; }
+
+            // 2. Re-render Select inputs
+            const optionsHtml = branchesDB.map(b => `<option value="${b.id}" ${b.id === currentSelected ? 'selected' : ''}>${b.name}</option>`).join('');
+            selectEl.innerHTML = optionsHtml;
+            formSelectEl.innerHTML = optionsHtml;
+
+            // 3. Rebuild Choices.js
+            if (typeof Choices !== 'undefined') {
+                choiceBranch = new Choices(selectEl, { searchEnabled: false, itemSelectText: '', allowHTML: false });
+                choiceFormBranch = new Choices(formSelectEl, { searchEnabled: false, itemSelectText: '', allowHTML: false });
+            }
+
+            // 4. Update view
+            renderDashboard();
+        }
+
+        // ==========================================
+        // NEW FEATURE: Add / Edit Room Modals
+        // ==========================================
+        function openRoomModal(mode = 'create', roomId = '') {
+            const form = document.getElementById('roomForm');
+            form.reset();
+
+            // Set Mode
+            document.getElementById('roomFormMode').value = mode;
+            document.getElementById('editRoomId').value = roomId;
+
+            // Sync selectors in modal
+            const currentBranch = document.getElementById('branchSelect').value;
+            
+            if (choiceFormBranch) {
+                choiceFormBranch.setChoiceByValue(currentBranch);
+            } else {
+                document.getElementById('roomFormBranch').value = currentBranch;
+            }
+
+            if (choiceFormType) {
+                choiceFormType.setChoiceByValue('Standard');
+            } else {
+                document.getElementById('roomFormType').value = 'Standard';
+            }
+
+            if (mode === 'create') {
+                document.getElementById('roomModalTitle').innerText = 'เพิ่มห้องพักใหม่';
+                document.getElementById('roomFormNumber').disabled = false;
+            } else {
+                // EDIT MODE
+                document.getElementById('roomModalTitle').innerText = 'แก้ไขข้อมูลห้องพัก';
+                
+                // Find room details
+                let foundRoom = null;
+                let foundBranchId = null;
+                for (const bId in roomsDB) {
+                    const r = roomsDB[bId].find(rm => rm.id === roomId);
+                    if (r) {
+                        foundRoom = r;
+                        foundBranchId = bId;
+                        break;
+                    }
+                }
+
+                if (foundRoom) {
+                    document.getElementById('roomFormNumber').value = foundRoom.number;
+                    document.getElementById('roomFormFloor').value = foundRoom.floor;
+                    
+                    if (choiceFormBranch) {
+                        choiceFormBranch.setChoiceByValue(foundBranchId);
+                    } else {
+                        document.getElementById('roomFormBranch').value = foundBranchId;
+                    }
+
+                    if (choiceFormType) {
+                        choiceFormType.setChoiceByValue(foundRoom.type);
+                    } else {
+                        document.getElementById('roomFormType').value = foundRoom.type;
+                    }
+                }
+            }
+
+            document.getElementById('roomModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeRoomModal() {
+            document.getElementById('roomModal').classList.add('hidden');
+        }
+
+        // Add/Edit Room submission
+        document.getElementById('roomForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const mode = document.getElementById('roomFormMode').value;
+            const roomId = document.getElementById('editRoomId').value;
+            
+            const targetBranchId = document.getElementById('roomFormBranch').value;
+            const roomNumber = document.getElementById('roomFormNumber').value.trim();
+            const floor = document.getElementById('roomFormFloor').value.trim();
+            const roomType = document.getElementById('roomFormType').value;
+
+            // Validation
+            if (!roomNumber || !floor) {
+                notify.error('กรุณากรอกข้อมูลห้องพักให้ครบถ้วน!');
+                return;
+            }
+
+            const targetBranchName = branchesDB.find(b => b.id === targetBranchId)?.name || 'โรงแรม';
+
+            if (mode === 'create') {
+                // Check if Room Number exists in that branch
+                const exists = (roomsDB[targetBranchId] || []).find(r => r.number === roomNumber);
+                if (exists) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'หมายเลขห้องซ้ำ!',
+                        text: `มีห้องเลขที่ ${roomNumber} อยู่ในสาขา "${targetBranchName}" เรียบร้อยแล้ว`,
+                        confirmButtonColor: '#4f46e5'
+                    });
+                    return;
+                }
+
+                const newRoomId = 'r-' + Date.now();
+                const newRoom = {
+                    id: newRoomId,
+                    number: roomNumber,
+                    type: roomType,
+                    floor: floor,
+                    status: 'Available',
+                    lastInspected: new Date().toISOString().split('T')[0],
+                    inspector: JSON.parse(localStorage.getItem('user') || '{}').name || 'System Auditor',
+                    details: { electrical: 'Normal', ac: 'Normal', plumbing: 'Normal', furniture: 'Normal', appliances: 'Normal' }
+                };
+
+                if (!roomsDB[targetBranchId]) roomsDB[targetBranchId] = [];
+                roomsDB[targetBranchId].push(newRoom);
+
+                addActionLog('เพิ่มห้องพัก', `เพิ่มห้องพักใหม่ #${roomNumber} ชั้น ${floor} ประเภท ${roomType} (สาขา ${targetBranchName})`);
+                
+                // Select branch automatically in dashboard filter
+                const selectBranchEl = document.getElementById('branchSelect');
+                if (choiceBranch) {
+                    choiceBranch.setChoiceByValue(targetBranchId);
+                } else {
+                    selectBranchEl.value = targetBranchId;
+                }
+
+                closeRoomModal();
+                saveDB();
+                notify.success(`เพิ่มห้องพัก #${roomNumber} สำเร็จ!`);
+
+            } else {
+                // EDIT MODE
+                // Find old room references
+                let oldRoom = null;
+                let oldBranchId = null;
+                for (const bId in roomsDB) {
+                    const r = roomsDB[bId].find(rm => rm.id === roomId);
+                    if (r) {
+                        oldRoom = r;
+                        oldBranchId = bId;
+                        break;
+                    }
+                }
+
+                if (!oldRoom) {
+                    notify.error('ไม่พบข้อมูลห้องพักที่ต้องการแก้ไข');
+                    return;
+                }
+
+                // Check duplicates if number changed or branch changed
+                if (oldRoom.number !== roomNumber || oldBranchId !== targetBranchId) {
+                    const exists = (roomsDB[targetBranchId] || []).find(r => r.number === roomNumber && r.id !== roomId);
+                    if (exists) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'หมายเลขห้องซ้ำ!',
+                            text: `มีห้องเลขที่ ${roomNumber} อยู่ในสาขา "${targetBranchName}" เรียบร้อยแล้ว`,
+                            confirmButtonColor: '#4f46e5'
+                        });
+                        return;
+                    }
+                }
+
+                const logOldText = `ห้อง ${oldRoom.number} (ชั้น ${oldRoom.floor}, ${oldRoom.type})`;
+
+                // Apply changes
+                oldRoom.number = roomNumber;
+                oldRoom.floor = floor;
+                oldRoom.type = roomType;
+
+                // Move array if branch changed
+                if (oldBranchId !== targetBranchId) {
+                    // Remove from old branch list
+                    roomsDB[oldBranchId] = roomsDB[oldBranchId].filter(r => r.id !== roomId);
+                    // Add to new branch list
+                    if (!roomsDB[targetBranchId]) roomsDB[targetBranchId] = [];
+                    roomsDB[targetBranchId].push(oldRoom);
+                }
+
+                addActionLog('แก้ไขห้องพัก', `แก้ไขข้อมูล ${logOldText} -> เป็นห้อง #${roomNumber} ชั้น ${floor} ประเภท ${roomType} (สาขา ${targetBranchName})`);
+
+                // Select branch automatically in dashboard filter if changed
+                const selectBranchEl = document.getElementById('branchSelect');
+                if (choiceBranch) {
+                    choiceBranch.setChoiceByValue(targetBranchId);
+                } else {
+                    selectBranchEl.value = targetBranchId;
+                }
+
+                closeRoomModal();
+                closeRoomDetailsModal();
+                saveDB();
+                notify.success(`แก้ไขข้อมูลห้องพักสำเร็จ!`);
+            }
+        });
+
+        // Triggered inside Room Details drawer
+        function editCurrentRoom() {
+            if (!selectedRoom) return;
+            openRoomModal('edit', selectedRoom.id);
+        }
+
+        function deleteCurrentRoom() {
+            if (!selectedRoom) return;
+            
+            Swal.fire({
+                title: 'ยืนยันการลบห้องพัก?',
+                text: `คุณต้องการลบห้องพัก #${selectedRoom.number} ออกจากระบบถาวรหรือไม่?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#e2e8f0',
+                confirmButtonText: 'ลบห้องพัก',
+                cancelButtonText: 'ยกเลิก',
+                customClass: {
+                    popup: 'rounded-3xl border-0 shadow-2xl',
+                    confirmButton: 'rounded-xl px-6 py-2.5 font-bold',
+                    cancelButton: 'rounded-xl px-6 py-2.5 font-bold text-slate-600'
+                }
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    const branchId = document.getElementById('branchSelect').value;
+                    const branchName = branchesDB.find(b => b.id === branchId)?.name || '';
+
+                    // Remove
+                    roomsDB[branchId] = roomsDB[branchId].filter(r => r.id !== selectedRoom.id);
+
+                    addActionLog('ลบห้องพัก', `ลบห้องพัก #${selectedRoom.number} ชั้น ${selectedRoom.floor} ออกจากสารบบสาขา ${branchName}`);
+                    closeRoomDetailsModal();
+                    saveDB();
+                    notify.success('ลบห้องพักออกจากระบบสำเร็จ!');
+                }
+            });
+        }
+
+        // On DOM Loaded
+        document.addEventListener('DOMContentLoaded', async () => {
+            initLocalStorageDB();
+
+            // Populate mock Branches
+            const selectEl = document.getElementById('branchSelect');
+            const formSelectEl = document.getElementById('roomFormBranch');
+            
+            const optionsHtml = branchesDB.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+            selectEl.innerHTML = optionsHtml;
+            formSelectEl.innerHTML = optionsHtml;
+
+            // Render Header and Sidebar using core ui object in app.js
+            const settings = await ui.getSystemSettings();
+            ui.renderHeader('บำรุงรักษาห้องพัก (RoomCare)', false);
+            ui.renderSidebar('sidebar-container', settings);
+
+            // Bind Choices.js for premium selection boxes
+            if (typeof Choices !== 'undefined') {
+                choiceBranch = new Choices(selectEl, { searchEnabled: false, itemSelectText: '', allowHTML: false });
+                choiceFormBranch = new Choices(formSelectEl, { searchEnabled: false, itemSelectText: '', allowHTML: false });
+                choiceCategory = new Choices(document.getElementById('repairCategory'), { searchEnabled: false, itemSelectText: '', allowHTML: false });
+                choicePriority = new Choices(document.getElementById('repairPriority'), { searchEnabled: false, itemSelectText: '', allowHTML: false });
+                choiceAssignee = new Choices(document.getElementById('repairAssignee'), { searchEnabled: true, itemSelectText: '', placeholder: true, placeholderValue: 'ค้นหาชื่อช่าง...', allowHTML: false });
+                choiceFormType = new Choices(document.getElementById('roomFormType'), { searchEnabled: false, itemSelectText: '', allowHTML: false });
+            }
+
+            renderDashboard();
+            renderLogsPanel();
+        });
+    </script>
+</body>
+</html>

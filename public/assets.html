@@ -514,7 +514,15 @@
             notify.success('กำลังดาวน์โหลดข้อมูล...');
         });
 
-        document.addEventListener('DOMContentLoaded', loadInitialData);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadInitialData();
+            
+            // Check for quick action trigger
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'add') {
+                setTimeout(openAssetModal, 500); // Small delay to ensure meta data is loading
+            }
+        });
     </script>
 </body>
 </html>

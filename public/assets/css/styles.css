@@ -416,3 +416,21 @@ button:active, .btn-click:active {
 .btn-icon-rose:hover { background-color: #fff1f2; color: #e11d48; }
 .btn-icon-emerald:hover { background-color: #ecfdf5; color: #059669; }
 .btn-icon-amber:hover { background-color: #fffbeb; color: #d97706; }
+
+/* Notification Dropdown */
+#notificationDropdown {
+    transform-origin: top right;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#notificationDropdown.hidden {
+    display: none;
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+#notificationDropdown:not(.hidden) {
+    display: block;
+    opacity: 1;
+    transform: scale(1);
+}

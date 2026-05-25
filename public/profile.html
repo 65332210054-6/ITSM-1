@@ -52,7 +52,7 @@
                                 </div>
                                 <div>
                                     <label class="form-label">ชื่อผู้ใช้งาน / อีเมล</label>
-                                    <input type="text" id="profileEmail" required class="form-input">
+                                    <input type="text" id="profileEmail" readonly class="form-input bg-slate-50 text-slate-500 cursor-not-allowed" title="แก้ไขได้โดยผู้ดูแลระบบเท่านั้น">
                                 </div>
                                 <div>
                                     <label class="form-label">ตำแหน่ง / บทบาท</label>
@@ -75,7 +75,10 @@
                             <div class="pt-4 border-t border-slate-100">
                                 <label class="form-label">เปลี่ยนรหัสผ่านใหม่ (ปล่อยว่างหากไม่ต้องการเปลี่ยน)</label>
                                 <div class="relative">
-                                    <input type="password" id="profilePassword" class="form-input" placeholder="••••••••">
+                                    <input type="password" id="profilePassword" class="form-input pr-12" placeholder="••••••••">
+                                    <button type="button" onclick="togglePassword('profilePassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors">
+                                        <i data-lucide="eye" class="w-5 h-5"></i>
+                                    </button>
                                 </div>
                             </div>
 
@@ -168,6 +171,15 @@
                 notify.error('เกิดข้อผิดพลาดในการเชื่อมต่อ');
             }
         });
+
+        function togglePassword(id, btn) {
+            const input = document.getElementById(id);
+            const icon = btn.querySelector('i');
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            icon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+            lucide.createIcons();
+        }
 
         document.addEventListener('DOMContentLoaded', loadProfile);
     </script>
