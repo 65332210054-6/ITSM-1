@@ -111,7 +111,7 @@ async function deleteFloor(floor) {
     }).then(async (res) => {
         if (res.isConfirmed) {
             try {
-                await apiFetch(`/api/room-care?action=delete_floor&branch_id=${branchId}&floor=${floor}`, { method: 'DELETE' });
+                await rcFetch(`/api/room-care?action=delete_floor&branch_id=${branchId}&floor=${floor}`, { method: 'DELETE' });
                 await addActionLog('ลบห้องพัก', `ลบชั้น ${floor} ทั้งหมด (${floorRooms.length} ห้อง) จากสาขา ${branchName}`);
                 await loadBranchRooms(branchId);
                 renderDashboard();
@@ -158,7 +158,7 @@ async function handleRoomFormSubmit(e) {
         }
 
         try {
-            await apiFetch('/api/room-care?action=add_room', {
+            await rcFetch('/api/room-care?action=add_room', {
                 method: 'POST',
                 body: JSON.stringify({ branch_id: targetBranchId, number: roomNumber, type: roomType, floor })
             });
@@ -202,7 +202,7 @@ async function handleRoomFormSubmit(e) {
         const logOldText = `ห้อง ${oldRoom.number} (ชั้น ${oldRoom.floor}, ${oldRoom.type})`;
 
         try {
-            await apiFetch('/api/room-care?action=update_room', {
+            await rcFetch('/api/room-care?action=update_room', {
                 method: 'PUT',
                 body: JSON.stringify({ room_id: roomId, number: roomNumber, type: roomType })
             });
@@ -256,7 +256,7 @@ async function deleteCurrentRoom() {
             const branchName = branchesDB.find(b => b.id === branchId)?.name || '';
 
             try {
-                await apiFetch(`/api/room-care?action=delete_room&room_id=${selectedRoom.id}`, { method: 'DELETE' });
+                await rcFetch(`/api/room-care?action=delete_room&room_id=${selectedRoom.id}`, { method: 'DELETE' });
                 await addActionLog('ลบห้องพัก', `ลบห้องพัก #${selectedRoom.number} ชั้น ${selectedRoom.floor} ออกจากสารบบสาขา ${branchName}`);
                 await loadBranchRooms(branchId);
                 closeRoomDetailsModal();

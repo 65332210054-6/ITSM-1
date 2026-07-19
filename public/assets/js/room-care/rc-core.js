@@ -3,6 +3,25 @@
 // Migrated to use Neon PostgreSQL via /api/room-care
 // ============================================================
 
+// --- Helper: rcFetch automatically parses JSON and handles non-OK responses ---
+async function rcFetch(url, options = {}) {
+    const res = await apiFetch(url, options);
+    if (!res) return null;
+    if (!res.ok) {
+        let errMsg = `HTTP ${res.status}`;
+        try {
+            const errData = await res.clone().json();
+            errMsg = errData.message || errMsg;
+        } catch (e) {}
+        throw new Error(errMsg);
+    }
+    try {
+        return await res.json();
+    } catch (e) {
+        return res;
+    }
+}
+
 // --- Global state variables ---
 let roomsDB = {};       // { [branchId]: Room[] }
 let branchesDB = [];    // Branch[]
@@ -110,7 +129,7 @@ function mapLogFromApi(l) {
 // ─────────────────────────────────────────────────────────────
 async function initDB() {
     try {
-        const data = await apiFetch('/api/room-care');
+        const data = await rcFetch('/api/room-care');
         branchesDB = data.branches || [];
         logsDB = (data.logs || []).map(mapLogFromApi);
         // data.rooms is an array of rooms for the default branch
@@ -134,7 +153,7 @@ async function initDB() {
 // ─────────────────────────────────────────────────────────────
 async function loadBranchRooms(branchId) {
     try {
-        const rows = await apiFetch(`/api/room-care?action=rooms&branch_id=${branchId}`);
+        const rows = await rcFetch(`/api/room-care?action=rooms&branch_id=${branchId}`);
         roomsDB[branchId] = (Array.isArray(rows) ? rows : []).map(mapRoomFromApi);
     } catch (err) {
         console.error('loadBranchRooms failed:', err);
@@ -149,7 +168,7 @@ async function addActionLog(action, text) {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const branchId = document.getElementById('branchSelect')?.value || null;
     try {
-        await apiFetch('/api/room-care?action=add_log', {
+        await rcFetch('/api/room-care?action=add_log', {
             method: 'POST',
             body: JSON.stringify({
                 branch_id: branchId,
@@ -159,7 +178,7 @@ async function addActionLog(action, text) {
             })
         });
         // Reload logs
-        const updatedLogs = await apiFetch(`/api/room-care?action=logs${branchId ? '&branch_id=' + branchId : ''}`);
+        const updatedLogs = await rcFetch(`/api/room-care?action=logs${branchId ? '&branch_id=' + branchId : ''}`);
         logsDB = (Array.isArray(updatedLogs) ? updatedLogs : []).map(mapLogFromApi);
         renderLogsPanel();
     } catch (err) {
@@ -172,7 +191,7 @@ async function addActionLog(action, text) {
 // ─────────────────────────────────────────────────────────────
 async function initSystemsList() {
     try {
-        const settings = await apiFetch('/api/room-care?action=settings');
+        const settings = await rcFetch('/api/room-care?action=settings');
         systemsList = settings.systems || ['Electrical', 'AC', 'Plumbing', 'Furniture', 'Appliances'];
         roomTypesList = settings.room_types || ['Standard', 'Deluxe', 'Suite', 'Penthouse'];
         assigneesList = settings.assignees || [];
@@ -185,7 +204,7 @@ async function initSystemsList() {
 
 async function saveSystemsList() {
     try {
-        await apiFetch('/api/room-care?action=update_settings', {
+        await rcFetch('/api/room-care?action=update_settings', {
             method: 'POST',
             body: JSON.stringify({ key: 'systems', value: systemsList })
         });
@@ -194,7 +213,7 @@ async function saveSystemsList() {
 
 async function saveRoomTypesList() {
     try {
-        await apiFetch('/api/room-care?action=update_settings', {
+        await rcFetch('/api/room-care?action=update_settings', {
             method: 'POST',
             body: JSON.stringify({ key: 'room_types', value: roomTypesList })
         });
@@ -203,7 +222,7 @@ async function saveRoomTypesList() {
 
 async function saveAssigneesList() {
     try {
-        await apiFetch('/api/room-care?action=update_settings', {
+        await rcFetch('/api/room-care?action=update_settings', {
             method: 'POST',
             body: JSON.stringify({ key: 'assignees', value: assigneesList })
         });

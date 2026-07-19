@@ -39,7 +39,7 @@ async function handleRepairFormSubmit(e) {
     const branchId = document.getElementById('branchSelect').value;
 
     try {
-        const ticket = await apiFetch('/api/room-care?action=add_ticket', {
+        const ticket = await rcFetch('/api/room-care?action=add_ticket', {
             method: 'POST',
             body: JSON.stringify({
                 room_id: selectedRoom.id,
@@ -75,7 +75,7 @@ async function startRepairJob(roomId, ticketId) {
         const t = r?.activeTickets?.find(ticket => ticket.id === ticketId);
         if (!r || !t) return;
 
-        await apiFetch('/api/room-care?action=start_ticket', {
+        await rcFetch('/api/room-care?action=start_ticket', {
             method: 'PUT',
             body: JSON.stringify({ ticket_id: ticketId })
         });
@@ -98,7 +98,7 @@ async function finishRepairJob(roomId, ticketId, closeNotes = 'ไม่มี�
         const t = r?.activeTickets?.find(ticket => ticket.id === ticketId);
         if (!r || !t) return;
 
-        await apiFetch('/api/room-care?action=finish_ticket', {
+        await rcFetch('/api/room-care?action=finish_ticket', {
             method: 'PUT',
             body: JSON.stringify({ ticket_id: ticketId, room_id: roomId, close_notes: closeNotes })
         });
@@ -206,7 +206,7 @@ async function handleEditTicketFormSubmit(e) {
     if (isNaN(cost) || cost < 0) cost = 0;
 
     try {
-        await apiFetch('/api/room-care?action=update_ticket', {
+        await rcFetch('/api/room-care?action=update_ticket', {
             method: 'PUT',
             body: JSON.stringify({ ticket_id: ticketId, desc, category, priority, assignee, cost })
         });

@@ -47,13 +47,13 @@ function addNewBranch() {
 
             try {
                 // 1. Post to main branches API
-                await apiFetch('/api/branches', {
+                await rcFetch('/api/branches', {
                     method: 'POST',
                     body: JSON.stringify({ name: branchName, location: '' })
                 });
 
                 // 2. Fetch updated branches from room-care settings
-                const updatedBranches = await apiFetch('/api/room-care?action=branches');
+                const updatedBranches = await rcFetch('/api/room-care?action=branches');
                 branchesDB = updatedBranches || [];
 
                 // 3. Find the newly created branch ID
@@ -115,19 +115,19 @@ function deleteCurrentBranch() {
         if (res.isConfirmed) {
             try {
                 // 1. Delete associated rooms/logs/tickets from room-care tables first
-                await apiFetch(`/api/room-care?action=delete_branch&branch_id=${branchId}`, {
+                await rcFetch(`/api/room-care?action=delete_branch&branch_id=${branchId}`, {
                     method: 'DELETE'
                 });
 
                 // 2. Delete branch from main branches API
-                await apiFetch(`/api/branches?action=delete&id=${branchId}`, {
+                await rcFetch(`/api/branches?action=delete&id=${branchId}`, {
                     method: 'POST'
                 });
 
                 await addActionLog('ลบสาขา', `ลบสาขาโรงแรม: "${branchName}" และข้อมูลห้องพักที่เกี่ยวข้องทั้งหมด`);
 
                 // 3. Fetch updated branches list
-                const updatedBranches = await apiFetch('/api/room-care?action=branches');
+                const updatedBranches = await rcFetch('/api/room-care?action=branches');
                 branchesDB = updatedBranches || [];
 
                 // 4. Select first available branch
@@ -234,7 +234,7 @@ async function handleFloorFormSubmit(e) {
     }
 
     try {
-        const result = await apiFetch('/api/room-care?action=add_floor', {
+        const result = await rcFetch('/api/room-care?action=add_floor', {
             method: 'POST',
             body: JSON.stringify({
                 branch_id: branchId,

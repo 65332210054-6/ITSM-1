@@ -255,7 +255,7 @@ async function handleInspectionFormSubmit(e) {
 
     try {
         // 1. Save inspection result to API
-        await apiFetch('/api/room-care?action=update_room_inspection', {
+        await rcFetch('/api/room-care?action=update_room_inspection', {
             method: 'PUT',
             body: JSON.stringify({
                 room_id: selectedRoom.id,
@@ -282,7 +282,7 @@ async function handleInspectionFormSubmit(e) {
                     let cost = costEl ? parseFloat(costEl.value) : 0;
                     if (isNaN(cost) || cost < 0) cost = 0;
 
-                    const ticket = await apiFetch('/api/room-care?action=add_ticket', {
+                    const ticket = await rcFetch('/api/room-care?action=add_ticket', {
                         method: 'POST',
                         body: JSON.stringify({
                             room_id: selectedRoom.id,
