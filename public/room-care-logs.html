@@ -62,8 +62,8 @@
                 <!-- Main Grid Layout: Controls & Room View on Left, Logs Panel on Right -->
                 <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
-                    <!-- Rooms & Controls Area (Col Span 3) -->
-                    <div class="lg:col-span-3 space-y-6">
+                    <!-- Rooms & Controls Area (Col Span 3) - Hidden in logs view -->
+                    <div class="hidden lg:col-span-3 space-y-6">
 
                         <!-- Control Toolbar -->
                         <div
@@ -135,9 +135,9 @@
 
                     </div>
 
-                    <!-- Logs Panel (Col Span 1) -->
-                    <div class="lg:col-span-1 space-y-6">
-                        <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col h-[600px]">
+                    <!-- Logs Panel (Col Span 4 in logs view) -->
+                    <div class="lg:col-span-4 space-y-6">
+                        <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col min-h-[600px] h-[750px]">
                             <div class="flex items-center justify-between pb-4 border-b border-slate-50">
                                 <div class="flex items-center gap-2">
                                     <div

@@ -163,7 +163,19 @@ const ui = {
         { id: 'consumables', name: 'วัสดุสิ้นเปลือง', icon: 'package', color: 'text-rose-600', key: 'module_consumables_enabled', path: '/consumables.html', desc: 'คลังพัสดุไอทีและวัสดุสิ้นเปลือง' },
         { id: 'reports', name: 'รายงาน & Export', icon: 'bar-chart-2', color: 'text-emerald-600', key: 'module_reports_enabled', path: '/reports.html', desc: 'สรุปข้อมูลทางสถิติและส่งออกไฟล์ CSV' },
         { id: 'categories', name: 'หมวดหมู่ทรัพย์สิน', icon: 'layers', color: 'text-rose-600', key: 'module_categories_enabled', path: '/categories.html', desc: 'จัดการประเภทและหมวดหมู่ของอุปกรณ์' },
-        { id: 'room_care', name: 'บำรุงรักษาห้องพัก', icon: 'hotel', color: 'text-emerald-600', key: 'module_room_care_enabled', path: '/room-care.html', desc: 'ตรวจเช็คระบบภายในห้องและบันทึกงานซ่อมบำรุงโรงแรม' }
+        { 
+            id: 'room_care', 
+            name: 'ระบบบำรุงรักษาห้องพัก', 
+            icon: 'hotel', 
+            color: 'text-emerald-600', 
+            key: 'module_room_care_enabled', 
+            path: '/room-care.html', 
+            desc: 'ตรวจเช็คระบบภายในห้องและบันทึกงานซ่อมบำรุงโรงแรม',
+            submodules: [
+                { name: 'ระบบบำรุงรักษาห้องพัก', path: '/room-care.html' },
+                { name: 'บันทึกการทำงาน (Logs)', path: '/room-care-logs.html' }
+            ]
+        }
     ],
 
     verifySession: async () => {
@@ -519,10 +531,43 @@ const ui = {
                     <div class="space-y-1 px-3">
                         <a href="/" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all"><i data-lucide="layout-dashboard" class="mr-3 h-5 w-5"></i> หน้าแรก</a>
                         ${ui.modules.map(m => {
-                            if (ui.checkAccess(m.id, settings, user, 'view')) {
+                            if (!ui.checkAccess(m.id, settings, user, 'view')) return '';
+                            
+                            const hasSub = m.submodules && m.submodules.length > 0;
+                            if (!hasSub) {
                                 return `<a href="${m.path}" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="${m.icon}" class="mr-3 h-5 w-5"></i> ${m.name}</a>`;
                             }
-                            return '';
+                            
+                            const path = window.location.pathname;
+                            const normPath = path.replace(/\/$/, '').replace(/\.html$/, '') || '/';
+                            const hasActiveSub = m.submodules.some(sub => {
+                                const normSubPath = sub.path.replace(/\/$/, '').replace(/\.html$/, '') || '/';
+                                return normPath === normSubPath;
+                            });
+
+                            return `
+                                <details class="group select-none" ${hasActiveSub ? 'open' : ''}>
+                                    <summary class="flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                                        <div class="flex items-center">
+                                            <i data-lucide="${m.icon}" class="mr-3 h-5 w-5"></i>
+                                            <span>${m.name}</span>
+                                        </div>
+                                        <i data-lucide="chevron-down" class="h-4 w-4 text-slate-500 transition-transform duration-200 group-open:rotate-180"></i>
+                                    </summary>
+                                    <div class="pl-8 pr-3 py-1 space-y-1 mt-1 border-l border-slate-800 ml-6">
+                                        ${m.submodules.map(sub => {
+                                            const subNormPath = sub.path.replace(/\/$/, '').replace(/\.html$/, '') || '/';
+                                            const isSubActive = normPath === subNormPath;
+                                            const activeClass = isSubActive ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:bg-slate-800 hover:text-white';
+                                            return `
+                                                <a href="${sub.path}" class="flex items-center px-4 py-2 text-xs rounded-lg transition-all ${activeClass}">
+                                                    ${sub.name}
+                                                </a>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                </details>
+                            `;
                         }).join('')}
                         ${isAdmin ? `<a href="/settings.html" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="settings" class="mr-3 h-5 w-5"></i> ตั้งค่าระบบ</a>` : ''}
                     </div>
@@ -545,6 +590,7 @@ const ui = {
         };
         if (openSidebar) openSidebar.onclick = toggleSidebar;
         if (closeSidebar) closeSidebar.onclick = toggleSidebar;
+        if (sidebarOverlay) sidebarOverlay.onclick = toggleSidebar;
 
         const path = window.location.pathname;
         const normPath = path.replace(/\/$/, '').replace(/\.html$/, '') || '/';
@@ -717,6 +763,49 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Initialize Notifications
         ui.updateNotifications();
+
+        // Universal click handler for modal overlays to close them when clicking outside
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) {
+                const modalId = e.target.id;
+                if (!modalId) return;
+
+                // 1. Check if closeModal function exists (used in consumables.html)
+                if (typeof window.closeModal === 'function') {
+                    window.closeModal(modalId);
+                    return;
+                }
+
+                // 2. Check if toggleModal function exists (used in settings.html)
+                if (typeof window.toggleModal === 'function') {
+                    window.toggleModal(modalId, false);
+                    return;
+                }
+
+                // 3. Check if toggleEditStatus function exists (used in ticket-detail.html)
+                if (modalId === 'statusModal' && typeof window.toggleEditStatus === 'function') {
+                    window.toggleEditStatus();
+                    return;
+                }
+
+                // 4. Try standard close{ModalId}Modal() or close{CapitalizedId}Modal()
+                // Special case: ipModal in ipam.html -> closeIPModal (IP uppercase)
+                if (modalId === 'ipModal' && typeof window.closeIPModal === 'function') {
+                    window.closeIPModal();
+                    return;
+                }
+
+                const suffix = modalId.charAt(0).toUpperCase() + modalId.slice(1);
+                const fnName = 'close' + suffix;
+                if (typeof window[fnName] === 'function') {
+                    window[fnName]();
+                    return;
+                }
+
+                // 5. Fallback: hide the modal directly
+                e.target.classList.add('hidden');
+            }
+        });
 
         if (window.lucide) lucide.createIcons();
     } catch (err) { console.error("Global init failed:", err); }

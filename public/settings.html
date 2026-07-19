@@ -96,7 +96,7 @@
                         </div>
                         
                         <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Line Notify Token</label>
+                            <label class="label-sm">Line Notify Token</label>
                             <div class="flex gap-2">
                                 <input type="password" id="lineNotifyToken" class="form-input flex-1" placeholder="กรอก Line Notify Token ที่นี่...">
                                 <button onclick="saveToken()" class="btn-primary py-2 text-xs">บันทึก Token</button>
@@ -219,17 +219,11 @@
                     <table class="w-full text-left">
                         <thead>
                             <tr class="border-b border-slate-100">
-                                <th class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">
-                                    วัน-เวลา</th>
-                                <th class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">
-                                    ผู้กระทำ</th>
-                                <th class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">
-                                    โมดูล</th>
-                                <th class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">
-                                    การกระทำ</th>
-                                <th
-                                    class="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 text-right">
-                                    รายละเอียด</th>
+                                <th class="pb-4 label-xs px-2">วัน-เวลา</th>
+                                <th class="pb-4 label-xs px-2">ผู้กระทำ</th>
+                                <th class="pb-4 label-xs px-2">โมดูล</th>
+                                <th class="pb-4 label-xs px-2">การกระทำ</th>
+                                <th class="pb-4 label-xs px-2 text-right">รายละเอียด</th>
                             </tr>
                         </thead>
                         <tbody id="auditLogsBody" class="divide-y divide-slate-50">
@@ -254,18 +248,17 @@
             </div>
             <div class="p-6 space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ชื่อสาขา</label>
+                    <label class="label-sm">ชื่อสาขา</label>
                     <input type="hidden" id="editBranchId" value="">
                     <input type="text" id="branchName" class="form-input" placeholder="เช่น สำนักงานใหญ่, สาขาระยอง">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ที่อยู่ /
-                        รายละเอียด</label>
+                    <label class="label-sm">ที่อยู่ / รายละเอียด</label>
                     <textarea id="branchLocation" class="form-input w-full resize-none" rows="3"
                         placeholder="กรอกที่อยู่แบบเต็ม เช่น 123 อาคาร ABC ชั้น 2 ถนน..."></textarea>
                 </div>
                 <div class="flex gap-3 pt-4">
-                    <button onclick="toggleModal('branchModal', false)" class="flex-1 btn-secondary">ยกเลิก</button>
+                    <button onclick="toggleModal('branchModal', false)" class="flex-1 btn-cancel">ยกเลิก</button>
                     <button onclick="saveBranch()" class="flex-1 btn-primary">บันทึกสาขา</button>
                 </div>
             </div>
@@ -283,19 +276,18 @@
             </div>
             <div class="p-6 space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ชื่อแผนก</label>
+                    <label class="label-sm">ชื่อแผนก</label>
                     <input type="hidden" id="editDeptId" value="">
                     <input type="text" id="deptName" class="form-input" placeholder="เช่น ฝ่ายบุคคล, ฝ่ายไอที">
                 </div>
                 <div>
-                    <label
-                        class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">สังกัดสาขา</label>
+                    <label class="label-sm">สังกัดสาขา</label>
                     <select id="parentBranch" class="form-input">
                         <!-- Options loaded here -->
                     </select>
                 </div>
                 <div class="flex gap-3 pt-4">
-                    <button onclick="toggleModal('deptModal', false)" class="flex-1 btn-secondary">ยกเลิก</button>
+                    <button onclick="toggleModal('deptModal', false)" class="flex-1 btn-cancel">ยกเลิก</button>
                     <button onclick="saveDept()" class="flex-1 btn-primary">บันทึกแผนก</button>
                 </div>
             </div>
@@ -315,12 +307,12 @@
             </div>
             <div class="p-6 space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ชื่อบทบาท</label>
+                    <label class="label-sm">ชื่อบทบาท</label>
                     <input type="hidden" id="editRoleId" value="">
                     <input type="text" id="roleName" class="form-input" placeholder="เช่น Support, Manager">
                 </div>
                 <div class="flex gap-3 pt-4">
-                    <button onclick="toggleModal('roleModal', false)" class="flex-1 btn-secondary">ยกเลิก</button>
+                    <button onclick="toggleModal('roleModal', false)" class="flex-1 btn-cancel">ยกเลิก</button>
                     <button onclick="saveRole()" class="flex-1 btn-primary">บันทึกบทบาท</button>
                 </div>
             </div>

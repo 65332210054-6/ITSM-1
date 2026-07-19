@@ -1,0 +1,81 @@
+/* ============================================================
+   RoomCare Module — Custom Styles
+   Extracted from room-care.html <style> block
+   ============================================================ */
+
+/* Custom Premium Glassmorphism Cards & Room items */
+.room-card {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
+}
+
+.room-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+.room-card:active {
+    transform: scale(0.97);
+}
+
+.system-pill {
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.system-pill.active-normal {
+    background-color: #f0fdf4;
+    color: #166534;
+    border-color: #bbf7d0;
+}
+
+.system-pill.active-repair {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+.system-pill.active-process {
+    background-color: #eff6ff;
+    color: #1e40af;
+    border-color: #bfdbfe;
+}
+
+.custom-tab-active {
+    border-bottom: 2px solid #4f46e5;
+    color: #4f46e5;
+}
+
+/* Custom scrollbar for logs list */
+.logs-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+
+
+
+/* Ensure Choices.js dropdown options are frontmost inside modals or sweetalerts */
+.choices__list--dropdown {
+    z-index: 100000 !important;
+}
+
+.choices {
+    position: relative;
+    z-index: 1;
+}
+
+.choices.is-open {
+    z-index: 100000 !important;
+}
+
+/* Ensure SweetAlert HTML container allows dropdown to overflow and stay frontmost */
+.swal2-html-container {
+    overflow: visible !important;
+    position: relative !important;
+    z-index: 10000 !important;
+}
+
+/* Limit SweetAlert status dropdown choices list to exactly 3 items, scroll if more */
+.swal2-html-container .choices__list--dropdown .choices__list {
+    max-height: 135px !important; /* Fits exactly 3 items (45px each) */
+    overflow-y: auto !important;
+}

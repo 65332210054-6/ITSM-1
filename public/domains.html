@@ -157,7 +157,7 @@
                 </div>
 
                 <div class="pt-6 flex gap-3 sticky bottom-0 bg-white py-4 border-t border-slate-100 mt-auto">
-                    <button type="button" onclick="closeDomainModal()" class="flex-1 btn-secondary">ยกเลิก</button>
+                    <button type="button" onclick="closeDomainModal()" class="flex-1 btn-cancel">ยกเลิก</button>
                     <button type="submit" class="flex-1 btn-primary">
                         <i data-lucide="save" class="w-5 h-5"></i> บันทึกข้อมูล
                     </button>
@@ -306,7 +306,7 @@
             const saveBtn = form.querySelector('button[type="submit"]');
 
             inputs.forEach(input => input.disabled = !canEdit);
-            if (saveBtn) saveBtn.style.display = canEdit ? 'block' : 'none';
+            if (saveBtn) saveBtn.style.display = canEdit ? '' : 'none';
 
             document.getElementById('domainModal').classList.remove('hidden');
         }
@@ -340,7 +340,7 @@
             const saveBtn = form.querySelector('button[type="submit"]');
 
             inputs.forEach(input => input.disabled = !canEdit);
-            if (saveBtn) saveBtn.style.display = canEdit ? 'block' : 'none';
+            if (saveBtn) saveBtn.style.display = canEdit ? '' : 'none';
 
             document.getElementById('domainModal').classList.remove('hidden');
         }
