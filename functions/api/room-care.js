@@ -486,6 +486,15 @@ export async function onRequest(context) {
         return ok({ message: 'Floor deleted' });
       }
 
+      // DELETE branch (clean up all rooms/tickets/logs for a branch)
+      if (action === 'delete_branch') {
+        const branchId = url.searchParams.get('branch_id');
+        if (!branchId) return err('branch_id is required');
+        await sql`DELETE FROM rc_rooms WHERE branch_id = ${branchId}`;
+        await sql`DELETE FROM rc_logs WHERE branch_id = ${branchId}`;
+        return ok({ message: 'Branch room care data deleted' });
+      }
+
       return err('Unknown action', 400);
     }
 
