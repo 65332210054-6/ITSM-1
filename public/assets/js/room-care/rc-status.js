@@ -150,29 +150,51 @@ function openChangeStatusModal() {
             }
             return document.getElementById('swal-status-select').value;
         }
-    }).then(res => {
+    }).then(async res => {
         if (res.isConfirmed) {
             const newStatus = res.value;
             const oldStatus = selectedRoom.status;
             if (newStatus === oldStatus) return;
 
-            selectedRoom.status = newStatus;
+            const branchId = document.getElementById('branchSelect')?.value;
 
-            // If set to Available or Closed, clear active tickets
-            if (newStatus === 'Available' || newStatus === 'Closed') {
-                selectedRoom.activeTickets = [];
-                selectedRoom.details = {};
-                systemsList.forEach(sys => {
-                    const sysKey = sys.toLowerCase().replace(/\s+/g, '_');
-                    selectedRoom.details[sysKey] = 'Normal';
+            try {
+                let details = selectedRoom.details || {};
+                if (newStatus === 'Available' || newStatus === 'Closed') {
+                    details = {};
+                    systemsList.forEach(sys => {
+                        const sysKey = sys.toLowerCase().replace(/\s+/g, '_');
+                        details[sysKey] = 'Normal';
+                    });
+                }
+
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+                await rcFetch('/api/room-care?action=update_room_inspection', {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        room_id: selectedRoom.id,
+                        status: newStatus,
+                        details: details,
+                        inspector: user.name || 'System User'
+                    })
                 });
-            }
 
-            const statusThai = { 'Available': 'ปกติ', 'Needs Repair': 'รอการแก้ไข', 'Closed': 'ปิดปรับปรุง' };
-            addActionLog('แก้ไขสถานะ', `เปลี่ยนสถานะห้อง ${selectedRoom.number} จาก "${statusThai[oldStatus] || oldStatus}" เป็น "${statusThai[newStatus] || newStatus}"`);
-            saveDB();
-            openRoomDetails(selectedRoom.id);
-            notify.success(`อัปเดตสถานะห้อง ${selectedRoom.number} เป็น "${statusThai[newStatus] || newStatus}" เรียบร้อย!`);
+                const statusThai = { 'Available': 'ปกติ', 'Needs Repair': 'รอการแก้ไข', 'Closed': 'ปิดปรับปรุง' };
+                await addActionLog('แก้ไขสถานะ', `เปลี่ยนสถานะห้อง ${selectedRoom.number} จาก "${statusThai[oldStatus] || oldStatus}" เป็น "${statusThai[newStatus] || newStatus}"`);
+
+                if (branchId) {
+                    await loadBranchRooms(branchId);
+                    selectedRoom = (roomsDB[branchId] || []).find(r => r.id === selectedRoom.id) || selectedRoom;
+                }
+
+                openRoomDetails(selectedRoom.id);
+                if (typeof renderDashboard === 'function') renderDashboard();
+                notify.success(`อัปเดตสถานะห้อง ${selectedRoom.number} เป็น "${statusThai[newStatus] || newStatus}" เรียบร้อย!`);
+            } catch (err) {
+                console.error('openChangeStatusModal error:', err);
+                notify.error('เกิดข้อผิดพลาดในการอัปเดตสถานะห้องพัก');
+            }
         }
     });
 }

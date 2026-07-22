@@ -523,7 +523,7 @@ function downloadRepairHistoryCSV() {
     notify.success('ดาวน์โหลดรายงานประวัติการซ่อมสำเร็จ!');
 }
 
-function toggleRoomUsage() {
+async function toggleRoomUsage() {
     if (!selectedRoom) return;
     const checkbox = document.getElementById('detailUsageCheckbox');
     const usageText = document.getElementById('detailUsageText');
@@ -540,9 +540,8 @@ function toggleRoomUsage() {
         usageText.innerText = isChecked ? 'กำลังใช้งาน' : 'ว่าง';
     }
 
-    addActionLog('แก้ไขสถานะใช้งาน', `เปลี่ยนสถานะใช้งานห้อง ${selectedRoom.number} เป็น "${isChecked ? 'กำลังใช้งาน' : 'ว่าง'}"`);
-    saveDB();
-    renderDashboard();
+    await addActionLog('แก้ไขสถานะใช้งาน', `เปลี่ยนสถานะใช้งานห้อง ${selectedRoom.number} เป็น "${isChecked ? 'กำลังใช้งาน' : 'ว่าง'}"`);
+    if (typeof renderDashboard === 'function') renderDashboard();
     
     notify.success(`อัปเดตสถานะห้องเป็น "${isChecked ? 'กำลังใช้งาน' : 'ว่าง'}" สำเร็จ!`);
 }

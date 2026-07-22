@@ -25,103 +25,58 @@ export async function onRequest(context) {
 
     const sql = neon(databaseUrl);
 
-    // ── Auto-Migration: Create tables if not exists ──────────────────────
-    try {
-      await sql`
-        CREATE TABLE IF NOT EXISTS rc_rooms (
-          id            TEXT PRIMARY KEY,
-          branch_id     TEXT NOT NULL,
-          number        TEXT NOT NULL,
-          type          TEXT NOT NULL DEFAULT 'Standard',
-          floor         TEXT NOT NULL,
-          status        TEXT NOT NULL DEFAULT 'Available',
-          last_inspected DATE,
-          inspector     TEXT,
-          details       JSONB DEFAULT '{}',
-          created_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-          updated_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-        )
-      `;
-
-      await sql`
-        CREATE TABLE IF NOT EXISTS rc_tickets (
-          id          TEXT PRIMARY KEY,
-          room_id     TEXT NOT NULL REFERENCES rc_rooms(id) ON DELETE CASCADE,
-          branch_id   TEXT NOT NULL,
-          desc        TEXT NOT NULL,
-          category    TEXT NOT NULL,
-          priority    TEXT DEFAULT 'Medium',
-          assignee    TEXT,
-          cost        NUMERIC DEFAULT 0,
-          status      TEXT DEFAULT 'Needs Repair',
-          opened_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-          closed_at   TIMESTAMP WITH TIME ZONE,
-          closed_by   TEXT,
-          close_notes TEXT,
-          is_history  BOOLEAN DEFAULT FALSE,
-          created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-          updated_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-        )
-      `;
-
-      await sql`
-        CREATE TABLE IF NOT EXISTS rc_logs (
-          id         TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-          branch_id  TEXT,
-          user_name  TEXT NOT NULL,
-          action     TEXT NOT NULL,
-          detail     TEXT NOT NULL,
-          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-        )
-      `;
-
-      await sql`
-        CREATE TABLE IF NOT EXISTS rc_settings (
-          key   TEXT PRIMARY KEY,
-          value JSONB NOT NULL DEFAULT '[]'
-        )
-      `;
-    } catch (migErr) {
-      console.error('RC Migration Error:', migErr);
-    }
-
-    // ── Auto-Seed: If rc_rooms is empty, seed from branches table ──────
-    try {
-      const roomCount = await sql`SELECT COUNT(*) as count FROM rc_rooms`;
-      if (parseInt(roomCount[0].count) === 0) {
-        const branchRows = await sql`SELECT id, name FROM branches ORDER BY name`;
-        if (branchRows.length > 0) {
-          const branch = branchRows[0];
-          const defaultRooms = [
-            { number: '101', type: 'Standard', floor: '1' },
-            { number: '102', type: 'Standard', floor: '1' },
-            { number: '103', type: 'Deluxe',   floor: '1' },
-            { number: '201', type: 'Standard', floor: '2' },
-            { number: '202', type: 'Deluxe',   floor: '2' },
-            { number: '301', type: 'Suite',    floor: '3' },
-          ];
-          for (const r of defaultRooms) {
-            const rid = 'r-' + Date.now() + '-' + r.number;
-            await sql`
-              INSERT INTO rc_rooms (id, branch_id, number, type, floor, status, last_inspected, inspector, details)
-              VALUES (
-                ${rid},
-                ${branch.id},
-                ${r.number},
-                ${r.type},
-                ${r.floor},
-                'Available',
-                CURRENT_DATE,
-                'ระบบ (Auto Seed)',
-                '{"electrical":"Normal","ac":"Normal","plumbing":"Normal","furniture":"Normal","appliances":"Normal"}'::jsonb
-              )
-              ON CONFLICT (id) DO NOTHING
-            `;
-          }
-        }
+    // ── Auto-Migration: Run once per worker isolate instance ──────────────
+    if (!globalThis._rcMigrated) {
+      try {
+        await sql`
+          CREATE TABLE IF NOT EXISTS rc_rooms (
+            id            TEXT PRIMARY KEY,
+            branch_id     TEXT NOT NULL,
+            number        TEXT NOT NULL,
+            type          TEXT NOT NULL DEFAULT 'Standard',
+            floor         TEXT NOT NULL,
+            status        TEXT NOT NULL DEFAULT 'Available',
+            last_inspected DATE,
+            inspector     TEXT,
+            details       JSONB DEFAULT '{}',
+            created_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+          );
+          CREATE TABLE IF NOT EXISTS rc_tickets (
+            id          TEXT PRIMARY KEY,
+            room_id     TEXT NOT NULL REFERENCES rc_rooms(id) ON DELETE CASCADE,
+            branch_id   TEXT NOT NULL,
+            "desc"      TEXT NOT NULL,
+            category    TEXT NOT NULL,
+            priority    TEXT DEFAULT 'Medium',
+            assignee    TEXT,
+            cost        NUMERIC DEFAULT 0,
+            status      TEXT DEFAULT 'Needs Repair',
+            opened_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            closed_at   TIMESTAMP WITH TIME ZONE,
+            closed_by   TEXT,
+            close_notes TEXT,
+            is_history  BOOLEAN DEFAULT FALSE,
+            created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+          );
+          CREATE TABLE IF NOT EXISTS rc_logs (
+            id         TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+            branch_id  TEXT,
+            user_name  TEXT NOT NULL,
+            action     TEXT NOT NULL,
+            detail     TEXT NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+          );
+          CREATE TABLE IF NOT EXISTS rc_settings (
+            key   TEXT PRIMARY KEY,
+            value JSONB NOT NULL DEFAULT '[]'
+          );
+        `;
+        globalThis._rcMigrated = true;
+      } catch (migErr) {
+        console.error('RC Migration Error:', migErr);
       }
-    } catch (seedErr) {
-      console.error('RC Seed Error:', seedErr);
     }
 
     const url = new URL(request.url);
@@ -174,13 +129,18 @@ export async function onRequest(context) {
 
         const rooms = await sql`
           SELECT r.*,
-            COALESCE(json_agg(t.*) FILTER (WHERE t.id IS NOT NULL AND t.is_history = false), '[]') AS active_tickets,
-            COALESCE(json_agg(h.*) FILTER (WHERE h.id IS NOT NULL AND h.is_history = true), '[]')  AS repair_history
+            COALESCE((
+              SELECT json_agg(t.* ORDER BY t.created_at DESC)
+              FROM rc_tickets t
+              WHERE t.room_id = r.id AND t.is_history = false
+            ), '[]'::json) AS active_tickets,
+            COALESCE((
+              SELECT json_agg(h.* ORDER BY h.created_at DESC)
+              FROM rc_tickets h
+              WHERE h.room_id = r.id AND h.is_history = true
+            ), '[]'::json) AS repair_history
           FROM rc_rooms r
-          LEFT JOIN rc_tickets t ON t.room_id = r.id AND t.is_history = false
-          LEFT JOIN rc_tickets h ON h.room_id = r.id AND h.is_history = true
           WHERE r.branch_id = ${branchId}
-          GROUP BY r.id
           ORDER BY r.number
         `;
         return ok(rooms);
@@ -201,13 +161,18 @@ export async function onRequest(context) {
 
       const rooms = await sql`
         SELECT r.*,
-          COALESCE(json_agg(t.*) FILTER (WHERE t.id IS NOT NULL AND t.is_history = false), '[]') AS active_tickets,
-          COALESCE(json_agg(h.*) FILTER (WHERE h.id IS NOT NULL AND h.is_history = true), '[]')  AS repair_history
+          COALESCE((
+            SELECT json_agg(t.* ORDER BY t.created_at DESC)
+            FROM rc_tickets t
+            WHERE t.room_id = r.id AND t.is_history = false
+          ), '[]'::json) AS active_tickets,
+          COALESCE((
+            SELECT json_agg(h.* ORDER BY h.created_at DESC)
+            FROM rc_tickets h
+            WHERE h.room_id = r.id AND h.is_history = true
+          ), '[]'::json) AS repair_history
         FROM rc_rooms r
-        LEFT JOIN rc_tickets t ON t.room_id = r.id AND t.is_history = false
-        LEFT JOIN rc_tickets h ON h.room_id = r.id AND h.is_history = true
         WHERE r.branch_id = ${targetBranchId}
-        GROUP BY r.id
         ORDER BY r.number
       `;
 
@@ -292,7 +257,7 @@ export async function onRequest(context) {
         const ticketStatus = assignee ? 'Repairing' : 'Needs Repair';
 
         const ticket = await sql`
-          INSERT INTO rc_tickets (id, room_id, branch_id, desc, category, priority, assignee, cost, status, is_history)
+          INSERT INTO rc_tickets (id, room_id, branch_id, "desc", category, priority, assignee, cost, status, is_history)
           VALUES (
             ${tid}, ${room_id}, ${branch_id || null}, ${desc}, ${category},
             ${priority || 'Medium'}, ${assignee || null}, ${cost || 0}, ${ticketStatus}, false
@@ -336,10 +301,14 @@ export async function onRequest(context) {
 
       // PUT update_room
       if (action === 'update_room') {
-        const { room_id, number, type } = body;
+        const { room_id, number, type, status } = body;
         if (!room_id) return err('room_id is required');
         await sql`
-          UPDATE rc_rooms SET number = ${number}, type = ${type}, updated_at = NOW()
+          UPDATE rc_rooms 
+          SET number = COALESCE(${number}, number), 
+              type = COALESCE(${type}, type), 
+              status = COALESCE(${status}, status), 
+              updated_at = NOW()
           WHERE id = ${room_id}
         `;
         return ok({ message: 'Room updated' });
@@ -385,7 +354,7 @@ export async function onRequest(context) {
         const ticketStatus = assignee ? 'Repairing' : 'Needs Repair';
         await sql`
           UPDATE rc_tickets
-          SET desc = ${desc}, category = ${category}, priority = ${priority},
+          SET "desc" = ${desc}, category = ${category}, priority = ${priority},
               assignee = ${assignee || null}, cost = ${cost || 0},
               status = ${ticketStatus}, updated_at = NOW()
           WHERE id = ${ticket_id}
