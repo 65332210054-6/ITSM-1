@@ -253,6 +253,16 @@ async function handleInspectionFormSubmit(e) {
     // Collect ticket IDs to auto-close if room passes inspection
     const closeTicketIds = !needsRepair ? (selectedRoom.activeTickets || []).map(t => t.id) : [];
 
+    Swal.fire({
+        title: 'กำลังบันทึกผลการตรวจเช็ค...',
+        text: `กำลังประมวลผลและบันทึกข้อมูลห้อง #${selectedRoom.number}...`,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        customClass: { popup: 'rounded-3xl border-0 shadow-2xl' },
+        didOpen: () => { Swal.showLoading(); }
+    });
+
     try {
         // 1. Save inspection result to API
         await rcFetch('/api/room-care?action=update_room_inspection', {
@@ -307,8 +317,10 @@ async function handleInspectionFormSubmit(e) {
         selectedRoom = (roomsDB[branchId] || []).find(r => r.id === selectedRoom.id) || selectedRoom;
         closeInspectionModal();
         openRoomDetails(selectedRoom.id);
+        Swal.close();
         notify.success('บันทึกผลการเช็คห้องพักสำเร็จ!');
     } catch (err) {
+        Swal.close();
         console.error('handleInspectionFormSubmit:', err);
         notify.error('เกิดข้อผิดพลาดในการบันทึกผลการตรวจเช็ค');
     }

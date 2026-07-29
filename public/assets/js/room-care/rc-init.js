@@ -4,9 +4,13 @@
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Show loading spinner
-    const loadingEl = document.getElementById('rc-loading-overlay');
-    if (loadingEl) loadingEl.classList.remove('hidden');
+    // Show container loading state using global UI standard
+    if (document.getElementById('floorsContainer')) {
+        ui.renderContainerLoading('floorsContainer', 'กำลังโหลดข้อมูลห้องพัก...');
+    }
+    if (document.getElementById('logsContainer')) {
+        ui.renderContainerLoading('logsContainer', 'กำลังโหลดประวัติการทำงาน...');
+    }
 
     // Render Header and Sidebar using core ui object in app.js
     const settings = await ui.getSystemSettings();
@@ -20,9 +24,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load settings (systems, roomTypes, assignees) and data from API
     await initSystemsList();
     await initDB();
-
-    // Hide loading spinner
-    if (loadingEl) loadingEl.classList.add('hidden');
 
     // Populate Branches dropdown
     const selectEl = document.getElementById('branchSelect');
@@ -86,11 +87,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Bind form submissions via named handler functions
-    document.getElementById('inspectionForm').addEventListener('submit', handleInspectionFormSubmit);
-    document.getElementById('repairForm').addEventListener('submit', handleRepairFormSubmit);
-    document.getElementById('editTicketForm').addEventListener('submit', handleEditTicketFormSubmit);
-    document.getElementById('floorForm').addEventListener('submit', handleFloorFormSubmit);
-    document.getElementById('roomForm').addEventListener('submit', handleRoomFormSubmit);
+    if (document.getElementById('inspectionForm')) document.getElementById('inspectionForm').addEventListener('submit', handleInspectionFormSubmit);
+    if (document.getElementById('repairForm')) document.getElementById('repairForm').addEventListener('submit', handleRepairFormSubmit);
+    if (document.getElementById('incidentForm')) document.getElementById('incidentForm').addEventListener('submit', handleIncidentFormSubmit);
+    if (document.getElementById('editTicketForm')) document.getElementById('editTicketForm').addEventListener('submit', handleEditTicketFormSubmit);
+    if (document.getElementById('floorForm')) document.getElementById('floorForm').addEventListener('submit', handleFloorFormSubmit);
+    if (document.getElementById('roomForm')) document.getElementById('roomForm').addEventListener('submit', handleRoomFormSubmit);
 
     renderDashboard();
     renderLogsPanel();

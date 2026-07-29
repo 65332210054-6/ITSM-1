@@ -103,22 +103,28 @@ async function deleteFloor(floor) {
         cancelButtonColor: '#e2e8f0',
         confirmButtonText: 'ลบชั้นนี้',
         cancelButtonText: 'ยกเลิก',
+        showLoaderOnConfirm: true,
+        allowOutsideClick: () => !Swal.isLoading(),
         customClass: {
             popup: 'rounded-3xl border-0 shadow-2xl',
             confirmButton: 'rounded-xl px-6 py-2.5 font-bold',
             cancelButton: 'rounded-xl px-6 py-2.5 font-bold text-slate-600'
-        }
-    }).then(async (res) => {
-        if (res.isConfirmed) {
+        },
+        preConfirm: async () => {
+            const cancelBtn = Swal.getCancelButton();
+            if (cancelBtn) cancelBtn.style.display = 'none';
+            Swal.showLoading();
             try {
                 await rcFetch(`/api/room-care?action=delete_floor&branch_id=${branchId}&floor=${floor}`, { method: 'DELETE' });
                 await addActionLog('ลบห้องพัก', `ลบชั้น ${floor} ทั้งหมด (${floorRooms.length} ห้อง) จากสาขา ${branchName}`);
                 await loadBranchRooms(branchId);
                 renderDashboard();
                 notify.success(`ลบชั้น ${floor} ออกจากระบบสำเร็จ!`);
+                return true;
             } catch (err) {
                 console.error('deleteFloor:', err);
                 notify.error('เกิดข้อผิดพลาดในการลบชั้น');
+                return false;
             }
         }
     });
@@ -157,6 +163,16 @@ async function handleRoomFormSubmit(e) {
             return;
         }
 
+        Swal.fire({
+            title: 'กำลังเพิ่มห้องพัก...',
+            text: `กำลังสร้างห้องพัก #${roomNumber} ชั้น ${floor}...`,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            customClass: { popup: 'rounded-3xl border-0 shadow-2xl' },
+            didOpen: () => { Swal.showLoading(); }
+        });
+
         try {
             await rcFetch('/api/room-care?action=add_room', {
                 method: 'POST',
@@ -166,8 +182,10 @@ async function handleRoomFormSubmit(e) {
             await loadBranchRooms(targetBranchId);
             closeRoomModal();
             renderDashboard();
+            Swal.close();
             notify.success(`เพิ่มห้องพัก #${roomNumber} สำเร็จ!`);
         } catch (err) {
+            Swal.close();
             console.error('handleRoomFormSubmit create:', err);
             notify.error('เกิดข้อผิดพลาดในการเพิ่มห้องพัก');
         }
@@ -201,6 +219,16 @@ async function handleRoomFormSubmit(e) {
 
         const logOldText = `ห้อง ${oldRoom.number} (ชั้น ${oldRoom.floor}, ${oldRoom.type})`;
 
+        Swal.fire({
+            title: 'กำลังบันทึกการแก้ไข...',
+            text: `กำลังอัปเดตข้อมูลห้อง #${roomNumber}...`,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            customClass: { popup: 'rounded-3xl border-0 shadow-2xl' },
+            didOpen: () => { Swal.showLoading(); }
+        });
+
         try {
             await rcFetch('/api/room-care?action=update_room', {
                 method: 'PUT',
@@ -211,8 +239,10 @@ async function handleRoomFormSubmit(e) {
             closeRoomModal();
             closeRoomDetailsModal();
             renderDashboard();
+            Swal.close();
             notify.success(`แก้ไขข้อมูลห้องพักสำเร็จ!`);
         } catch (err) {
+            Swal.close();
             console.error('handleRoomFormSubmit edit:', err);
             notify.error('เกิดข้อผิดพลาดในการแก้ไขห้องพัก');
         }
@@ -245,13 +275,17 @@ async function deleteCurrentRoom() {
         cancelButtonColor: '#e2e8f0',
         confirmButtonText: 'ลบห้องพัก',
         cancelButtonText: 'ยกเลิก',
+        showLoaderOnConfirm: true,
+        allowOutsideClick: () => !Swal.isLoading(),
         customClass: {
             popup: 'rounded-3xl border-0 shadow-2xl',
             confirmButton: 'rounded-xl px-6 py-2.5 font-bold',
             cancelButton: 'rounded-xl px-6 py-2.5 font-bold text-slate-600'
-        }
-    }).then(async (res) => {
-        if (res.isConfirmed) {
+        },
+        preConfirm: async () => {
+            const cancelBtn = Swal.getCancelButton();
+            if (cancelBtn) cancelBtn.style.display = 'none';
+            Swal.showLoading();
             const branchId = document.getElementById('branchSelect').value;
             const branchName = branchesDB.find(b => b.id === branchId)?.name || '';
 
@@ -262,9 +296,11 @@ async function deleteCurrentRoom() {
                 closeRoomDetailsModal();
                 renderDashboard();
                 notify.success('ลบห้องพักออกจากระบบสำเร็จ!');
+                return true;
             } catch (err) {
                 console.error('deleteCurrentRoom:', err);
                 notify.error('เกิดข้อผิดพลาดในการลบห้องพัก');
+                return false;
             }
         }
     });

@@ -38,6 +38,16 @@ async function handleRepairFormSubmit(e) {
 
     const branchId = document.getElementById('branchSelect').value;
 
+    Swal.fire({
+        title: 'กำลังบันทึกใบงานซ่อม...',
+        text: `กำลังสร้างบันทึกแจ้งซ่อมห้อง #${selectedRoom.number}...`,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        customClass: { popup: 'rounded-3xl border-0 shadow-2xl' },
+        didOpen: () => { Swal.showLoading(); }
+    });
+
     try {
         const ticket = await rcFetch('/api/room-care?action=add_ticket', {
             method: 'POST',
@@ -52,7 +62,8 @@ async function handleRepairFormSubmit(e) {
             })
         });
 
-        await addActionLog('เปิดแจ้งซ่อม', `เปิดบันทึกแจ้งซ่อมใหม่ #${ticket.id?.toUpperCase()} ห้อง ${selectedRoom.number} - ปัญหา: ${desc} (ช่าง: ${assignee || 'รอช่างเข้าดู'})`);
+        const dispNo = ticket.ticket_no || ticket.ticketNo || (ticket.id ? '#' + ticket.id.toUpperCase() : '');
+        await addActionLog('เปิดแจ้งซ่อม', `เปิดบันทึกแจ้งซ่อมใหม่ ${dispNo} ห้อง ${selectedRoom.number} - ปัญหา: ${desc} (ช่าง: ${assignee || 'รอช่างเข้าดู'})`);
         await loadBranchRooms(branchId);
 
         // Update selectedRoom reference
@@ -60,8 +71,10 @@ async function handleRepairFormSubmit(e) {
 
         closeRepairModal();
         openRoomDetails(selectedRoom.id);
+        Swal.close();
         notify.success('สร้างบันทึกใบแจ้งซ่อมห้องพักสำเร็จ!');
     } catch (err) {
+        Swal.close();
         console.error('handleRepairFormSubmit:', err);
         notify.error('เกิดข้อผิดพลาดในการสร้างใบแจ้งซ่อม');
     }
@@ -329,4 +342,85 @@ async function addNewSystem(selectId) {
             }
         }
     });
+}
+
+// ============================================================
+// Incident Logging Handlers
+// ============================================================
+function openIncidentModal() {
+    if (!checkRoomCareAccess('create')) {
+        notify.error('คุณไม่มีสิทธิ์ในการบันทึกเหตุการณ์');
+        return;
+    }
+    if (!selectedRoom) return;
+    document.getElementById('incidentRoomLabel').innerText = selectedRoom.number;
+    document.getElementById('incidentTitle').value = '';
+    document.getElementById('incidentDetail').value = '';
+    if (document.getElementById('incidentCategory')) document.getElementById('incidentCategory').value = 'General';
+    if (document.getElementById('incidentSeverity')) document.getElementById('incidentSeverity').value = 'Normal';
+
+    document.getElementById('incidentModal').classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+}
+
+function closeIncidentModal() {
+    document.getElementById('incidentModal').classList.add('hidden');
+}
+
+function setQuickIncidentTitle(text) {
+    document.getElementById('incidentTitle').value = text;
+}
+
+async function handleIncidentFormSubmit(e) {
+    e.preventDefault();
+    if (!selectedRoom) return;
+
+    const title = document.getElementById('incidentTitle').value.trim();
+    const detail = document.getElementById('incidentDetail').value.trim();
+    const category = document.getElementById('incidentCategory').value;
+    const severity = document.getElementById('incidentSeverity').value;
+    const branchId = document.getElementById('branchSelect').value;
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    if (!title) {
+        notify.error('กรุณาระบุหัวข้อเหตุการณ์');
+        return;
+    }
+
+    Swal.fire({
+        title: 'กำลังบันทึกเหตุการณ์...',
+        text: `กำลังบันทึกเหตุการณ์สำหรับห้อง #${selectedRoom.number}...`,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        customClass: { popup: 'rounded-3xl border-0 shadow-2xl' },
+        didOpen: () => { Swal.showLoading(); }
+    });
+
+    try {
+        await rcFetch('/api/room-care?action=add_incident', {
+            method: 'POST',
+            body: JSON.stringify({
+                branch_id: branchId,
+                room_id: selectedRoom.id,
+                title,
+                detail,
+                category,
+                severity,
+                reporter: user.name || 'System User'
+            })
+        });
+
+        await loadBranchRooms(branchId);
+        selectedRoom = (roomsDB[branchId] || []).find(r => r.id === selectedRoom.id) || selectedRoom;
+
+        closeIncidentModal();
+        openRoomDetails(selectedRoom.id);
+        Swal.close();
+        notify.success('บันทึกเหตุการณ์สำเร็จ!');
+    } catch (err) {
+        Swal.close();
+        console.error('handleIncidentFormSubmit:', err);
+        notify.error('เกิดข้อผิดพลาดในการบันทึกเหตุการณ์');
+    }
 }

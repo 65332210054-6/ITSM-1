@@ -20,13 +20,6 @@
 </head>
 
 <body class="h-full flex overflow-hidden">
-    <!-- Loading Overlay -->
-    <div id="rc-loading-overlay" class="fixed inset-0 z-[9999] flex items-center justify-center bg-white/80 backdrop-blur-sm hidden">
-        <div class="flex flex-col items-center gap-4">
-            <div class="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-            <span class="text-slate-600 text-sm font-semibold">กำลังโหลดข้อมูล...</span>
-        </div>
-    </div>
     <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden transition-opacity lg:hidden"></div>
     <div id="sidebar-container" class="lg:static"></div>
 
@@ -354,13 +347,16 @@
                 </div>
 
                 <!-- Actions Row -->
-                <div class="grid grid-cols-2 gap-3 pt-2">
+                <div class="grid grid-cols-3 gap-3 pt-2">
                     <button onclick="openInspectionModal()"
                         class="btn-secondary text-indigo-600 hover:text-indigo-700 bg-indigo-50 border-indigo-100 hover:bg-indigo-100">
                         <i data-lucide="check-square" class="w-4 h-4"></i> ตรวจเช็คระบบใหม่
                     </button>
                     <button onclick="openRepairModal()" class="btn-primary">
                         <i data-lucide="wrench" class="w-4 h-4"></i> บันทึกงานซ่อมใหม่
+                    </button>
+                    <button onclick="openIncidentModal()" class="btn-secondary text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100">
+                        <i data-lucide="alert-triangle" class="w-4 h-4"></i> บันทึกเหตุการณ์
                     </button>
                 </div>
 
@@ -373,68 +369,90 @@
                     </div>
                 </div>
 
-                <!-- Past Repairs History with Filters -->
+                <!-- Past History with Tabs: Repairs vs Incidents -->
                 <div class="space-y-3 border-t border-slate-100 pt-4">
                     <div class="flex items-center justify-between">
                         <h4 class="text-base font-bold text-slate-400 uppercase tracking-wider ml-1">
-                            ประวัติการซ่อมบำรุงทั้งหมด</h4>
+                            ประวัติย้อนหลัง</h4>
                         <div class="flex items-center gap-3">
                             <button type="button" onclick="downloadRepairHistoryCSV()"
                                 class="text-sm font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-1.5 cursor-pointer bg-transparent border-0 outline-none"
-                                title="ดาวน์โหลดประวัติการซ่อมเป็น CSV">
-                                <i data-lucide="download" class="w-4 h-4"></i> ดาวน์โหลดประวัติ
+                                title="ดาวน์โหลดประวัติเป็น CSV">
+                                <i data-lucide="download" class="w-4 h-4"></i> ดาวน์โหลด CSV
                             </button>
-                            <button type="button" onclick="toggleRepairFilters()"
+                            <button type="button" id="toggleFilterBtn" onclick="toggleRepairFilters()"
                                 class="text-sm font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 cursor-pointer bg-transparent border-0 outline-none">
                                 <i data-lucide="filter" class="w-4 h-4"></i> กรองข้อมูล
                             </button>
                         </div>
                     </div>
 
-                    <!-- Filters Grid (Hidden by default) -->
-                    <div id="repairFiltersArea"
-                        class="hidden p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-3 text-sm">
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label
-                                    class="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">ระบบที่ต้องการกรอง</label>
-                                <select id="filterRepairCategory"
-                                    class="w-full text-sm rounded-xl border-slate-200 py-1.5 px-2 bg-white"
-                                    onchange="applyRepairFilters()">
-                                    <option value="All">ทุกระบบ</option>
-                                    <option value="Electrical">ระบบไฟฟ้า (Electrical)</option>
-                                    <option value="AC">ระบบปรับอากาศ (AC)</option>
-                                    <option value="Plumbing">ระบบประปา/สุขภัณฑ์ (Plumbing)</option>
-                                    <option value="Furniture">เฟอร์นิเจอร์ (Furniture)</option>
-                                    <option value="Appliances">เครื่องใช้ไฟฟ้า (Appliances)</option>
-                                    <option value="Other">อื่นๆ (Other)</option>
-                                </select>
+                    <!-- History Tabs Navigation -->
+                    <div class="flex border-b border-slate-100 gap-4">
+                        <button type="button" id="tabBtnRepairs" onclick="switchHistoryTab('repairs')"
+                            class="pb-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition-all cursor-pointer">
+                            🔧 ประวัติงานซ่อม
+                        </button>
+                        <button type="button" id="tabBtnIncidents" onclick="switchHistoryTab('incidents')"
+                            class="pb-2 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-all cursor-pointer">
+                            ⚠️ เหตุการณ์ที่บันทึก
+                        </button>
+                    </div>
+
+                    <!-- Tab 1: Repairs History Area -->
+                    <div id="repairsHistoryArea" class="space-y-3">
+                        <!-- Filters Grid (Hidden by default) -->
+                        <div id="repairFiltersArea"
+                            class="hidden p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-3 text-sm">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label
+                                        class="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">ระบบที่ต้องการกรอง</label>
+                                    <select id="filterRepairCategory"
+                                        class="w-full text-sm rounded-xl border-slate-200 py-1.5 px-2 bg-white"
+                                        onchange="applyRepairFilters()">
+                                        <option value="All">ทุกระบบ</option>
+                                        <option value="Electrical">ระบบไฟฟ้า (Electrical)</option>
+                                        <option value="AC">ระบบปรับอากาศ (AC)</option>
+                                        <option value="Plumbing">ระบบประปา/สุขภัณฑ์ (Plumbing)</option>
+                                        <option value="Furniture">เฟอร์นิเจอร์ (Furniture)</option>
+                                        <option value="Appliances">เครื่องใช้ไฟฟ้า (Appliances)</option>
+                                        <option value="Other">อื่นๆ (Other)</option>
+                                    </select>
+                                </div>
+                                <div class="grid grid-cols-2 gap-1.5">
+                                    <div>
+                                        <label
+                                            class="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">วันที่เริ่มต้น</label>
+                                        <input type="date" id="filterRepairStart"
+                                            class="w-full text-sm rounded-2xl border border-slate-200 py-2.5 px-4 bg-white h-[48px] focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
+                                            onchange="applyRepairFilters()">
+                                    </div>
+                                    <div>
+                                        <label
+                                            class="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">วันที่สิ้นสุด</label>
+                                        <input type="date" id="filterRepairEnd"
+                                            class="w-full text-sm rounded-2xl border border-slate-200 py-2.5 px-4 bg-white h-[48px] focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
+                                            onchange="applyRepairFilters()">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="grid grid-cols-2 gap-1.5">
-                                <div>
-                                    <label
-                                        class="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">วันที่เริ่มต้น</label>
-                                    <input type="date" id="filterRepairStart"
-                                        class="w-full text-sm rounded-2xl border border-slate-200 py-2.5 px-4 bg-white h-[48px] focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
-                                        onchange="applyRepairFilters()">
-                                </div>
-                                <div>
-                                    <label
-                                        class="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">วันที่สิ้นสุด</label>
-                                    <input type="date" id="filterRepairEnd"
-                                        class="w-full text-sm rounded-2xl border border-slate-200 py-2.5 px-4 bg-white h-[48px] focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
-                                        onchange="applyRepairFilters()">
-                                </div>
+                            <div class="flex justify-end gap-1.5 pt-1">
+                                <button type="button" onclick="resetRepairFilters()"
+                                    class="px-3.5 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 bg-slate-200/50 hover:bg-slate-200 rounded-lg cursor-pointer transition-all">รีเซ็ตตัวกรอง</button>
                             </div>
                         </div>
-                        <div class="flex justify-end gap-1.5 pt-1">
-                            <button type="button" onclick="resetRepairFilters()"
-                                class="px-3.5 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 bg-slate-200/50 hover:bg-slate-200 rounded-lg cursor-pointer transition-all">รีเซ็ตตัวกรอง</button>
+
+                        <div id="pastRepairsList" class="space-y-2 max-h-[220px] overflow-y-auto logs-scrollbar">
+                            <!-- Historical items injected here -->
                         </div>
                     </div>
 
-                    <div id="pastRepairsList" class="space-y-2 max-h-[220px] overflow-y-auto logs-scrollbar">
-                        <!-- Historical items injected here -->
+                    <!-- Tab 2: Incidents History Area -->
+                    <div id="incidentsHistoryArea" class="hidden space-y-3">
+                        <div id="pastIncidentsList" class="space-y-2 max-h-[260px] overflow-y-auto logs-scrollbar">
+                            <!-- Incident items injected here -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -582,6 +600,79 @@
                     <button type="button" onclick="closeRepairModal()" class="flex-1 btn-cancel">ยกเลิก</button>
                     <button type="submit" class="flex-1 btn-primary">
                         <i data-lucide="wrench" class="w-5 h-5"></i> บันทึกใบงานซ่อม
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2.4. Incident Logging Form Modal (แบบฟอร์มบันทึกเหตุการณ์) -->
+    <div id="incidentModal" class="modal-overlay hidden" style="z-index: 120;">
+        <div class="modal-content max-w-lg animate-in fade-in zoom-in duration-200">
+            <div
+                class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                <div>
+                    <h3 class="text-base font-black text-slate-800 tracking-tight">บันทึกเหตุการณ์ห้อง <span
+                            id="incidentRoomLabel" class="text-amber-600">301</span></h3>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                        บันทึกเหตุการณ์ ข้อร้องเรียน หรือหมายเหตุพิเศษประจำห้องพัก</p>
+                </div>
+                <button onclick="closeIncidentModal()" class="btn-icon">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <form id="incidentForm" class="p-8 space-y-5">
+                <div>
+                    <label class="form-label">หัวข้อเหตุการณ์ <span class="text-red-500">*</span></label>
+                    <input type="text" id="incidentTitle" required class="form-input bg-white"
+                        placeholder="เช่น ผู้เข้าพักแจ้งลืมกุญแจ, มีเสียงดังรบกวน, ตรวจพบอุปกรณ์ชำรุดเล็กน้อย...">
+
+                    <!-- Pre-populated Quick Tags -->
+                    <div class="mt-2 flex flex-wrap gap-1.5 items-center">
+                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mr-1">คำค้นด่วน:</span>
+                        <button type="button" onclick="setQuickIncidentTitle('ผู้เข้าพักลืมคีย์การ์ดไว้ในห้อง')"
+                            class="px-2 py-0.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 text-slate-600 hover:text-amber-600 rounded-lg text-[10px] font-bold transition-all">🔑 ลืมคีย์การ์ด</button>
+                        <button type="button" onclick="setQuickIncidentTitle('มีเสียงดังรบกวนช่วงกลางคืน')"
+                            class="px-2 py-0.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 text-slate-600 hover:text-amber-600 rounded-lg text-[10px] font-bold transition-all">🔊 เสียงดัง</button>
+                        <button type="button" onclick="setQuickIncidentTitle('ข้อร้องเรียนบริการความสะอาด')"
+                            class="px-2 py-0.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 text-slate-600 hover:text-amber-600 rounded-lg text-[10px] font-bold transition-all">🧹 ความสะอาด</button>
+                        <button type="button" onclick="setQuickIncidentTitle('ตรวจพบรอยขีดข่วนบนเฟอร์นิเจอร์')"
+                            class="px-2 py-0.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 text-slate-600 hover:text-amber-600 rounded-lg text-[10px] font-bold transition-all">🛋️ รอยขีดข่วน</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="form-label">หมวดหมู่เหตุการณ์</label>
+                        <select id="incidentCategory" class="form-input bg-white">
+                            <option value="Guest Complaint">ข้อร้องเรียนผู้เข้าพัก (Guest Complaint)</option>
+                            <option value="Property Damage">สิ่งของชำรุด/เสียหาย (Property Damage)</option>
+                            <option value="Lost & Found">ของหาย/ลืมของ (Lost & Found)</option>
+                            <option value="Special Check">การตรวจเช็คพิเศษ (Special Check)</option>
+                            <option value="General" selected>ทั่วไป (General)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">ระดับความสำคัญ</label>
+                        <select id="incidentSeverity" class="form-input bg-white">
+                            <option value="Low">ต่ำ (Low)</option>
+                            <option value="Normal" selected>ปกติ (Normal)</option>
+                            <option value="High">สูง (High)</option>
+                            <option value="Urgent">เร่งด่วน (Urgent)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">รายละเอียดเพิ่มเติม</label>
+                    <textarea id="incidentDetail" rows="3" class="form-input bg-white" placeholder="ระบุรายละเอียดเพิ่มเติม (ถ้ามี)..."></textarea>
+                </div>
+
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="closeIncidentModal()" class="flex-1 btn-cancel">ยกเลิก</button>
+                    <button type="submit" class="flex-1 btn-primary bg-amber-600 hover:bg-amber-700 border-amber-600">
+                        <i data-lucide="alert-triangle" class="w-5 h-5"></i> บันทึกเหตุการณ์
                     </button>
                 </div>
             </form>

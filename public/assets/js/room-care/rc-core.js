@@ -90,6 +90,7 @@ function mapRoomFromApi(apiRoom) {
         details: apiRoom.details || {},
         activeTickets: (apiRoom.active_tickets || []).map(mapTicketFromApi),
         repairHistory: (apiRoom.repair_history || []).map(mapTicketFromApi),
+        incidents: (apiRoom.incidents || []).map(mapIncidentFromApi),
     };
 }
 
@@ -97,6 +98,7 @@ function mapTicketFromApi(t) {
     if (!t) return t;
     return {
         id: t.id,
+        ticketNo: t.ticket_no || t.ticketNo || (t.id ? '#' + t.id.slice(0, 8).toUpperCase() : ''),
         room_id: t.room_id,
         desc: t.desc,
         category: t.category,
@@ -109,6 +111,21 @@ function mapTicketFromApi(t) {
         closedBy: t.closed_by || t.closedBy || null,
         closeNotes: t.close_notes || t.closeNotes || null,
         date: t.closed_at ? t.closed_at.split('T')[0] : (t.date || null),
+    };
+}
+
+function mapIncidentFromApi(i) {
+    if (!i) return i;
+    return {
+        id: i.id,
+        branch_id: i.branch_id,
+        room_id: i.room_id,
+        title: i.title,
+        detail: i.detail || '',
+        category: i.category || 'General',
+        severity: i.severity || 'Normal',
+        reporter: i.reporter || 'System',
+        createdAt: i.created_at || new Date().toISOString()
     };
 }
 

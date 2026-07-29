@@ -20,13 +20,6 @@
 </head>
 
 <body class="h-full flex overflow-hidden">
-    <!-- Loading Overlay -->
-    <div id="rc-loading-overlay" class="fixed inset-0 z-[9999] flex items-center justify-center bg-white/80 backdrop-blur-sm hidden">
-        <div class="flex flex-col items-center gap-4">
-            <div class="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-            <span class="text-slate-600 text-sm font-semibold">กำลังโหลดข้อมูล...</span>
-        </div>
-    </div>
     <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden transition-opacity lg:hidden"></div>
     <div id="sidebar-container" class="lg:static"></div>
 
@@ -137,7 +130,8 @@
 
                     <!-- Logs Panel (Col Span 4 in logs view) -->
                     <div class="lg:col-span-4 space-y-6">
-                        <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col min-h-[600px] h-[750px]">
+                        <div
+                            class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col min-h-[600px] h-[750px]">
                             <div class="flex items-center justify-between pb-4 border-b border-slate-50">
                                 <div class="flex items-center gap-2">
                                     <div
@@ -376,65 +370,84 @@
                 <!-- Past Repairs History with Filters -->
                 <div class="space-y-3 border-t border-slate-100 pt-4">
                     <div class="flex items-center justify-between">
-                        <h4 class="text-base font-bold text-slate-400 uppercase tracking-wider ml-1">
-                            ประวัติการซ่อมบำรุงทั้งหมด</h4>
+                        <!-- Tab Buttons -->
+                        <div class="flex items-center gap-4">
+                            <button type="button" id="tabBtnRepairs" onclick="switchHistoryTab('repairs')"
+                                class="pb-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition-all cursor-pointer bg-transparent outline-none">
+                                <i data-lucide="wrench" class="w-3.5 h-3.5 inline-block mr-1"></i>งานซ่อม
+                            </button>
+                            <button type="button" id="tabBtnIncidents" onclick="switchHistoryTab('incidents')"
+                                class="pb-2 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-all cursor-pointer bg-transparent outline-none">
+                                <i data-lucide="alert-circle" class="w-3.5 h-3.5 inline-block mr-1"></i>เหตุการณ์
+                            </button>
+                        </div>
                         <div class="flex items-center gap-3">
                             <button type="button" onclick="downloadRepairHistoryCSV()"
                                 class="text-sm font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-1.5 cursor-pointer bg-transparent border-0 outline-none"
-                                title="ดาวน์โหลดประวัติการซ่อมเป็น CSV">
-                                <i data-lucide="download" class="w-4 h-4"></i> ดาวน์โหลดประวัติ
+                                title="ดาวน์โหลดประวัติเป็น CSV">
+                                <i data-lucide="download" class="w-4 h-4"></i> ดาวน์โหลด
                             </button>
-                            <button type="button" onclick="toggleRepairFilters()"
+                            <button type="button" id="toggleFilterBtn" onclick="toggleRepairFilters()"
                                 class="text-sm font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 cursor-pointer bg-transparent border-0 outline-none">
                                 <i data-lucide="filter" class="w-4 h-4"></i> กรองข้อมูล
                             </button>
                         </div>
                     </div>
 
-                    <!-- Filters Grid (Hidden by default) -->
-                    <div id="repairFiltersArea"
-                        class="hidden p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-3 text-sm">
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label
-                                    class="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">ระบบที่ต้องการกรอง</label>
-                                <select id="filterRepairCategory"
-                                    class="w-full text-sm rounded-xl border-slate-200 py-1.5 px-2 bg-white"
-                                    onchange="applyRepairFilters()">
-                                    <option value="All">ทุกระบบ</option>
-                                    <option value="Electrical">ระบบไฟฟ้า (Electrical)</option>
-                                    <option value="AC">ระบบปรับอากาศ (AC)</option>
-                                    <option value="Plumbing">ระบบประปา/สุขภัณฑ์ (Plumbing)</option>
-                                    <option value="Furniture">เฟอร์นิเจอร์ (Furniture)</option>
-                                    <option value="Appliances">เครื่องใช้ไฟฟ้า (Appliances)</option>
-                                    <option value="Other">อื่นๆ (Other)</option>
-                                </select>
+                    <!-- Repairs Tab Area -->
+                    <div id="repairsHistoryArea">
+                        <!-- Filters Grid (Hidden by default) -->
+                        <div id="repairFiltersArea"
+                            class="hidden p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-3 text-sm mb-3">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label
+                                        class="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">ระบบที่ต้องการกรอง</label>
+                                    <select id="filterRepairCategory"
+                                        class="w-full text-sm rounded-xl border-slate-200 py-1.5 px-2 bg-white"
+                                        onchange="applyRepairFilters()">
+                                        <option value="All">ทุกระบบ</option>
+                                        <option value="Electrical">ระบบไฟฟ้า (Electrical)</option>
+                                        <option value="AC">ระบบปรับอากาศ (AC)</option>
+                                        <option value="Plumbing">ระบบประปา/สุขภัณฑ์ (Plumbing)</option>
+                                        <option value="Furniture">เฟอร์นิเจอร์ (Furniture)</option>
+                                        <option value="Appliances">เครื่องใช้ไฟฟ้า (Appliances)</option>
+                                        <option value="Other">อื่นๆ (Other)</option>
+                                    </select>
+                                </div>
+                                <div class="grid grid-cols-2 gap-1.5">
+                                    <div>
+                                        <label
+                                            class="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">วันที่เริ่มต้น</label>
+                                        <input type="date" id="filterRepairStart"
+                                            class="w-full text-sm rounded-2xl border border-slate-200 py-2.5 px-4 bg-white h-[48px] focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
+                                            onchange="applyRepairFilters()">
+                                    </div>
+                                    <div>
+                                        <label
+                                            class="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">วันที่สิ้นสุด</label>
+                                        <input type="date" id="filterRepairEnd"
+                                            class="w-full text-sm rounded-2xl border border-slate-200 py-2.5 px-4 bg-white h-[48px] focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
+                                            onchange="applyRepairFilters()">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="grid grid-cols-2 gap-1.5">
-                                <div>
-                                    <label
-                                        class="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">วันที่เริ่มต้น</label>
-                                    <input type="date" id="filterRepairStart"
-                                        class="w-full text-sm rounded-2xl border border-slate-200 py-2.5 px-4 bg-white h-[48px] focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
-                                        onchange="applyRepairFilters()">
-                                </div>
-                                <div>
-                                    <label
-                                        class="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">วันที่สิ้นสุด</label>
-                                    <input type="date" id="filterRepairEnd"
-                                        class="w-full text-sm rounded-2xl border border-slate-200 py-2.5 px-4 bg-white h-[48px] focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
-                                        onchange="applyRepairFilters()">
-                                </div>
+                            <div class="flex justify-end gap-1.5 pt-1">
+                                <button type="button" onclick="resetRepairFilters()"
+                                    class="px-3.5 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 bg-slate-200/50 hover:bg-slate-200 rounded-lg cursor-pointer transition-all">รีเซ็ตตัวกรอง</button>
                             </div>
                         </div>
-                        <div class="flex justify-end gap-1.5 pt-1">
-                            <button type="button" onclick="resetRepairFilters()"
-                                class="px-3.5 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 bg-slate-200/50 hover:bg-slate-200 rounded-lg cursor-pointer transition-all">รีเซ็ตตัวกรอง</button>
+
+                        <div id="pastRepairsList" class="space-y-2 max-h-[220px] overflow-y-auto logs-scrollbar">
+                            <!-- Historical items injected here -->
                         </div>
                     </div>
 
-                    <div id="pastRepairsList" class="space-y-2 max-h-[220px] overflow-y-auto logs-scrollbar">
-                        <!-- Historical items injected here -->
+                    <!-- Incidents Tab Area (Hidden by default) -->
+                    <div id="incidentsHistoryArea" class="hidden">
+                        <div id="pastIncidentsList" class="space-y-2 max-h-[220px] overflow-y-auto logs-scrollbar">
+                            <!-- Incident items injected here -->
+                        </div>
                     </div>
                 </div>
             </div>

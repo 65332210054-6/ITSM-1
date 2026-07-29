@@ -33,6 +33,7 @@ function openLogDetailModal(index) {
     if (log.action === 'ลบห้องพัก') badgeClass = 'bg-rose-50 text-rose-600 border border-rose-100';
     if (log.action === 'เพิ่มระบบใหม่') badgeClass = 'bg-pink-50 text-pink-600 border border-pink-100';
     if (log.action === 'แก้ไขสถานะ') badgeClass = 'bg-slate-50 text-slate-700 border border-slate-200';
+    if (log.action === 'บันทึกเหตุการณ์') badgeClass = 'bg-amber-100 text-amber-800 border border-amber-200';
 
     const badgeEl = document.getElementById('logDetailActionBadge');
     badgeEl.className = `text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${badgeClass}`;

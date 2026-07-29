@@ -42,6 +42,8 @@ export async function onRequest(context) {
             created_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
             updated_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW()
           );
+        `;
+        await sql`
           CREATE TABLE IF NOT EXISTS rc_tickets (
             id          TEXT PRIMARY KEY,
             room_id     TEXT NOT NULL REFERENCES rc_rooms(id) ON DELETE CASCADE,
@@ -60,6 +62,8 @@ export async function onRequest(context) {
             created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
             updated_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
           );
+        `;
+        await sql`
           CREATE TABLE IF NOT EXISTS rc_logs (
             id         TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
             branch_id  TEXT,
@@ -68,11 +72,27 @@ export async function onRequest(context) {
             detail     TEXT NOT NULL,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
           );
+        `;
+        await sql`
           CREATE TABLE IF NOT EXISTS rc_settings (
             key   TEXT PRIMARY KEY,
             value JSONB NOT NULL DEFAULT '[]'
           );
         `;
+        await sql`
+          CREATE TABLE IF NOT EXISTS rc_incidents (
+            id          TEXT PRIMARY KEY,
+            branch_id   TEXT NOT NULL,
+            room_id     TEXT,
+            title       TEXT NOT NULL,
+            detail      TEXT,
+            category    TEXT DEFAULT 'General',
+            severity    TEXT DEFAULT 'Normal',
+            reporter    TEXT NOT NULL,
+            created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+          );
+        `;
+        await sql`ALTER TABLE rc_tickets ADD COLUMN IF NOT EXISTS ticket_no TEXT;`;
         globalThis._rcMigrated = true;
       } catch (migErr) {
         console.error('RC Migration Error:', migErr);
@@ -122,6 +142,22 @@ export async function onRequest(context) {
         return ok(logs);
       }
 
+      // GET /api/room-care?action=incidents&branch_id=...&room_id=...
+      if (action === 'incidents') {
+        const branchId = url.searchParams.get('branch_id');
+        const roomId = url.searchParams.get('room_id');
+        const limit = parseInt(url.searchParams.get('limit') || '100');
+        let incidents;
+        if (roomId) {
+          incidents = await sql`SELECT * FROM rc_incidents WHERE room_id = ${roomId} ORDER BY created_at DESC LIMIT ${limit}`;
+        } else if (branchId) {
+          incidents = await sql`SELECT * FROM rc_incidents WHERE branch_id = ${branchId} ORDER BY created_at DESC LIMIT ${limit}`;
+        } else {
+          incidents = await sql`SELECT * FROM rc_incidents ORDER BY created_at DESC LIMIT ${limit}`;
+        }
+        return ok(incidents);
+      }
+
       // GET /api/room-care?action=rooms&branch_id=...
       if (action === 'rooms') {
         const branchId = url.searchParams.get('branch_id');
@@ -138,7 +174,12 @@ export async function onRequest(context) {
               SELECT json_agg(h.* ORDER BY h.created_at DESC)
               FROM rc_tickets h
               WHERE h.room_id = r.id AND h.is_history = true
-            ), '[]'::json) AS repair_history
+            ), '[]'::json) AS repair_history,
+            COALESCE((
+              SELECT json_agg(inc.* ORDER BY inc.created_at DESC)
+              FROM rc_incidents inc
+              WHERE inc.room_id = r.id
+            ), '[]'::json) AS incidents
           FROM rc_rooms r
           WHERE r.branch_id = ${branchId}
           ORDER BY r.number
@@ -170,7 +211,12 @@ export async function onRequest(context) {
             SELECT json_agg(h.* ORDER BY h.created_at DESC)
             FROM rc_tickets h
             WHERE h.room_id = r.id AND h.is_history = true
-          ), '[]'::json) AS repair_history
+          ), '[]'::json) AS repair_history,
+          COALESCE((
+            SELECT json_agg(inc.* ORDER BY inc.created_at DESC)
+            FROM rc_incidents inc
+            WHERE inc.room_id = r.id
+          ), '[]'::json) AS incidents
         FROM rc_rooms r
         WHERE r.branch_id = ${targetBranchId}
         ORDER BY r.number
@@ -248,18 +294,54 @@ export async function onRequest(context) {
         return ok({ created });
       }
 
+      // POST add_incident
+      if (action === 'add_incident') {
+        const { branch_id, room_id, title, detail, category, severity, reporter } = body;
+        if (!branch_id || !title) return err('branch_id and title are required');
+
+        const incId = 'inc-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+        const inc = await sql`
+          INSERT INTO rc_incidents (id, branch_id, room_id, title, detail, category, severity, reporter)
+          VALUES (
+            ${incId}, ${branch_id}, ${room_id || null}, ${title}, ${detail || ''},
+            ${category || 'General'}, ${severity || 'Normal'}, ${reporter || userSession.name || 'System'}
+          )
+          RETURNING *
+        `;
+
+        // Log action
+        let logDetail = `บันทึกเหตุการณ์: ${title}`;
+        if (detail) logDetail += ` (${detail})`;
+        await sql`
+          INSERT INTO rc_logs (branch_id, user_name, action, detail)
+          VALUES (${branch_id}, ${reporter || userSession.name || 'System'}, 'บันทึกเหตุการณ์', ${logDetail})
+        `;
+
+        return ok(inc[0], 201);
+      }
+
       // POST add_ticket
       if (action === 'add_ticket') {
         const { room_id, branch_id, desc, category, priority, assignee, cost } = body;
         if (!room_id || !desc || !category) return err('room_id, desc, and category are required');
 
         const tid = 'tk-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+        const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const todayCount = await sql`
+          SELECT COUNT(*)::int as count FROM rc_tickets
+          WHERE TO_CHAR(created_at, 'YYYYMMDD') = ${todayStr}
+        `;
+        const seq = (todayCount[0]?.count || 0) + 1;
+        const roomRes = await sql`SELECT number FROM rc_rooms WHERE id = ${room_id}`;
+        const roomNum = roomRes[0]?.number || '000';
+        const ticketNo = `${String(seq).padStart(3, '0')}-${roomNum}RC-${todayStr}`;
+
         const ticketStatus = assignee ? 'Repairing' : 'Needs Repair';
 
         const ticket = await sql`
-          INSERT INTO rc_tickets (id, room_id, branch_id, "desc", category, priority, assignee, cost, status, is_history)
+          INSERT INTO rc_tickets (id, ticket_no, room_id, branch_id, "desc", category, priority, assignee, cost, status, is_history)
           VALUES (
-            ${tid}, ${room_id}, ${branch_id || null}, ${desc}, ${category},
+            ${tid}, ${ticketNo}, ${room_id}, ${branch_id || null}, ${desc}, ${category},
             ${priority || 'Medium'}, ${assignee || null}, ${cost || 0}, ${ticketStatus}, false
           )
           RETURNING *

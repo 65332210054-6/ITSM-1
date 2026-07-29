@@ -23,6 +23,8 @@ function addNewBranch() {
         cancelButtonColor: '#e2e8f0',
         confirmButtonText: 'บันทึก',
         cancelButtonText: 'ยกเลิก',
+        showLoaderOnConfirm: true,
+        allowOutsideClick: () => !Swal.isLoading(),
         inputValidator: (value) => {
             if (!value) {
                 return 'กรุณาระบุชื่อสาขาโรงแรม!';
@@ -37,10 +39,13 @@ function addNewBranch() {
             popup: 'rounded-3xl border-0 shadow-2xl',
             confirmButton: 'rounded-xl px-6 py-2.5 font-bold',
             cancelButton: 'rounded-xl px-6 py-2.5 font-bold text-slate-600'
-        }
-    }).then(async (result) => {
-        if (result.isConfirmed) {
-            let branchName = result.value.trim();
+        },
+        preConfirm: async (value) => {
+            const cancelBtn = Swal.getCancelButton();
+            if (cancelBtn) cancelBtn.style.display = 'none';
+            Swal.showLoading();
+
+            let branchName = value.trim();
             if (!branchName.startsWith('สาขา')) {
                 branchName = 'สาขา ' + branchName;
             }
@@ -63,9 +68,11 @@ function addNewBranch() {
                 await addActionLog('เพิ่มสาขา', `เพิ่มสาขาโรงแรมใหม่: "${branchName}"`);
                 await rebuildBranchSelects(newBranchId);
                 notify.success(`บันทึกสาขา "${branchName}" สำเร็จ!`);
+                return true;
             } catch (err) {
                 console.error('addNewBranch failed:', err);
                 notify.error('ไม่สามารถเพิ่มสาขาได้: ' + (err.message || 'เกิดข้อผิดพลาด หรือคุณไม่มีสิทธิ์ผู้ดูแลระบบ (Admin)'));
+                return false;
             }
         }
     });
@@ -106,13 +113,18 @@ function deleteCurrentBranch() {
         cancelButtonColor: '#e2e8f0',
         confirmButtonText: 'ใช่, ลบสาขานี้',
         cancelButtonText: 'ยกเลิก',
+        showLoaderOnConfirm: true,
+        allowOutsideClick: () => !Swal.isLoading(),
         customClass: {
             popup: 'rounded-3xl border-0 shadow-2xl',
             confirmButton: 'rounded-xl px-6 py-2.5 font-bold',
             cancelButton: 'rounded-xl px-6 py-2.5 font-bold text-slate-600'
-        }
-    }).then(async (res) => {
-        if (res.isConfirmed) {
+        },
+        preConfirm: async () => {
+            const cancelBtn = Swal.getCancelButton();
+            if (cancelBtn) cancelBtn.style.display = 'none';
+            Swal.showLoading();
+
             try {
                 // 1. Delete associated rooms/logs/tickets from room-care tables first
                 await rcFetch(`/api/room-care?action=delete_branch&branch_id=${branchId}`, {
@@ -135,9 +147,11 @@ function deleteCurrentBranch() {
                 await rebuildBranchSelects(nextBranchId);
 
                 notify.success(`ลบสาขา "${branchName}" เรียบร้อยแล้ว!`);
+                return true;
             } catch (err) {
                 console.error('deleteCurrentBranch failed:', err);
                 notify.error('ไม่สามารถลบสาขาได้: ' + (err.message || 'เกิดข้อผิดพลาด หรือคุณไม่มีสิทธิ์ผู้ดูแลระบบ (Admin)'));
+                return false;
             }
         }
     });
@@ -233,6 +247,18 @@ async function handleFloorFormSubmit(e) {
         return;
     }
 
+    Swal.fire({
+        title: 'กำลังสร้างชั้นและห้องพัก...',
+        text: `กำลังจัดเตรียมและสร้างห้องพักชั้น ${floorNum} จำนวน ${roomCount} ห้อง...`,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        customClass: { popup: 'rounded-3xl border-0 shadow-2xl' },
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
     try {
         const result = await rcFetch('/api/room-care?action=add_floor', {
             method: 'POST',
@@ -248,8 +274,10 @@ async function handleFloorFormSubmit(e) {
         await loadBranchRooms(branchId);
         closeFloorModal();
         renderDashboard();
+        Swal.close();
         notify.success(`สร้างชั้น ${floorNum} จำนวน ${result.created?.length || roomCount} ห้องสำเร็จ!`);
     } catch (err) {
+        Swal.close();
         console.error('handleFloorFormSubmit:', err);
         notify.error('เกิดข้อผิดพลาดในการเพิ่มชั้น');
     }

@@ -358,6 +358,17 @@ const ui = {
         `;
     },
 
+    renderContainerLoading: (containerId, message = 'กำลังโหลดข้อมูล...') => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = `
+            <div class="py-16 text-center text-slate-400 flex flex-col items-center justify-center gap-3">
+                <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <p class="font-medium text-sm">${escapeHTML(message)}</p>
+            </div>
+        `;
+    },
+
     renderHeader: (title, showBack = false, breadcrumb = null) => {
         const container = document.getElementById('header-container');
         if (!container) return;

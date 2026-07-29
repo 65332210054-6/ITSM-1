@@ -113,7 +113,7 @@ function openRoomDetails(roomId) {
             return `
                 <div class="p-4 bg-white rounded-2xl border-l-4 ${t.status === 'Needs Repair' ? 'border-l-rose-500 border-rose-100' : 'border-l-blue-500 border-blue-100'} border space-y-2.5 hover:border-slate-200 transition-colors shadow-sm">
                     <div class="flex justify-between items-start">
-                        <span class="text-xs font-black text-slate-400 uppercase tracking-widest">#TICKET-${t.id.toUpperCase()}</span>
+                        <span class="text-xs font-black text-indigo-600 uppercase tracking-widest">${t.ticketNo || ('#' + t.id.slice(0, 8).toUpperCase())}</span>
                         <span class="status-badge ${t.status === 'Needs Repair' ? 'status-danger' : 'status-warning'} text-sm font-extrabold px-3 py-1">${t.status === 'Needs Repair' ? 'รอยืนยันซ่อม' : 'กำลังซ่อม'}</span>
                     </div>
                     <h4 class="text-sm font-bold text-slate-700 leading-snug">${escapeHTML(t.desc)}</h4>
@@ -153,7 +153,7 @@ function openRoomDetails(roomId) {
     if (document.getElementById('repairFiltersArea')) {
         document.getElementById('repairFiltersArea').classList.add('hidden');
     }
-    applyRepairFilters();
+    switchHistoryTab('repairs');
 
     document.getElementById('roomDetailsModal').classList.remove('hidden');
     lucide.createIcons();
@@ -242,7 +242,7 @@ function applyRepairFilters() {
             <tr class="border-b border-slate-100 hover:bg-slate-50/50 text-[11px] text-slate-700">
                 <td class="py-2.5 px-3 font-extrabold text-indigo-600 whitespace-nowrap">
                     <button type="button" onclick="viewTicketDetails('${item.id}')" class="text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer border-0 bg-transparent p-0 font-extrabold outline-none">
-                        #${item.id.toUpperCase().replace('TK-AUTO-', 'AUTO-').replace('TK-', '')}
+                        ${item.ticketNo || ('#' + item.id.slice(0, 8).toUpperCase())}
                     </button>
                 </td>
                 <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeColor}">${sysName}</span></td>
@@ -258,17 +258,17 @@ function applyRepairFilters() {
 
     pastRepairsList.innerHTML = `
         <div class="overflow-x-auto border border-slate-100 rounded-xl logs-scrollbar">
-            <table class="w-full text-left border-collapse min-w-[800px]">
+            <table class="w-full text-left border-collapse">
                 <thead>
-                    <tr class="bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                        <th class="py-2.5 px-3">Ticket</th>
-                        <th class="py-2.5 px-3">ระบบ</th>
-                        <th class="py-2.5 px-3">ข้อมูลเพิ่มเติม</th>
-                        <th class="py-2.5 px-3">วันที่เปิด</th>
-                        <th class="py-2.5 px-3">ผู้รับผิดชอบ</th>
-                        <th class="py-2.5 px-3">วันที่ปิด</th>
-                        <th class="py-2.5 px-3">ผู้ปิดงาน</th>
-                        <th class="py-2.5 px-3">หมายเหตุ</th>
+                    <tr class="bg-slate-50 text-[10px] uppercase text-slate-400 font-extrabold border-b border-slate-100">
+                        <th class="py-2 px-3">Ticket ID</th>
+                        <th class="py-2 px-3">ระบบ</th>
+                        <th class="py-2 px-3">อาการเสีย</th>
+                        <th class="py-2 px-3">วันที่เปิด</th>
+                        <th class="py-2 px-3">ช่างผู้รับผิดชอบ</th>
+                        <th class="py-2 px-3">วันที่ปิด</th>
+                        <th class="py-2 px-3">ผู้ปิดงาน</th>
+                        <th class="py-2 px-3">หมายเหตุปิดงาน</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -279,6 +279,90 @@ function applyRepairFilters() {
     `;
 
     lucide.createIcons();
+}
+
+// ==========================================
+// History Tab Switching & Incidents Rendering
+// ==========================================
+let currentHistoryTab = 'repairs';
+
+function switchHistoryTab(tabName) {
+    currentHistoryTab = tabName;
+    const tabRepairs = document.getElementById('tabBtnRepairs');
+    const tabIncidents = document.getElementById('tabBtnIncidents');
+    const repairsArea = document.getElementById('repairsHistoryArea');
+    const incidentsArea = document.getElementById('incidentsHistoryArea');
+    const toggleFilterBtn = document.getElementById('toggleFilterBtn');
+
+    if (tabName === 'repairs') {
+        if (tabRepairs) tabRepairs.className = 'pb-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition-all cursor-pointer';
+        if (tabIncidents) tabIncidents.className = 'pb-2 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-all cursor-pointer';
+        if (repairsArea) repairsArea.classList.remove('hidden');
+        if (incidentsArea) incidentsArea.classList.add('hidden');
+        if (toggleFilterBtn) toggleFilterBtn.style.display = '';
+        applyRepairFilters();
+    } else {
+        if (tabIncidents) tabIncidents.className = 'pb-2 text-sm font-bold border-b-2 border-amber-600 text-amber-600 transition-all cursor-pointer';
+        if (tabRepairs) tabRepairs.className = 'pb-2 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-all cursor-pointer';
+        if (repairsArea) repairsArea.classList.add('hidden');
+        if (incidentsArea) incidentsArea.classList.remove('hidden');
+        if (toggleFilterBtn) toggleFilterBtn.style.display = 'none';
+        renderRoomIncidents();
+    }
+}
+
+function renderRoomIncidents() {
+    if (!selectedRoom) return;
+    const incidentsList = document.getElementById('pastIncidentsList');
+    if (!incidentsList) return;
+
+    const incidents = selectedRoom.incidents || [];
+    if (incidents.length === 0) {
+        incidentsList.innerHTML = `
+            <div class="p-8 text-center bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-slate-400 font-medium text-xs">
+                <i data-lucide="alert-triangle" class="w-6 h-6 text-slate-300 mx-auto mb-2"></i>
+                ไม่มีประวัติเหตุการณ์ที่บันทึกไว้ในห้องนี้
+            </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+        return;
+    }
+
+    incidentsList.innerHTML = incidents.map(inc => {
+        let badgeColor = 'bg-slate-100 text-slate-700 border-slate-200';
+        if (inc.severity === 'Urgent' || inc.severity === 'High') badgeColor = 'bg-rose-50 text-rose-600 border-rose-200';
+        else if (inc.severity === 'Normal') badgeColor = 'bg-amber-50 text-amber-700 border-amber-200';
+        else if (inc.severity === 'Low') badgeColor = 'bg-emerald-50 text-emerald-600 border-emerald-200';
+
+        let catBadge = 'bg-slate-50 text-slate-500';
+        if (inc.category === 'Guest Complaint') catBadge = 'bg-rose-50 text-rose-500';
+        else if (inc.category === 'Property Damage') catBadge = 'bg-amber-50 text-amber-600';
+        else if (inc.category === 'Lost & Found') catBadge = 'bg-teal-50 text-teal-600';
+        else if (inc.category === 'Special Check') catBadge = 'bg-indigo-50 text-indigo-600';
+
+        const createdDate = new Date(inc.createdAt).toLocaleString('th-TH', {
+            year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+
+        return `
+            <div class="p-3.5 bg-white rounded-2xl border border-slate-100 space-y-1.5 hover:border-slate-200 transition-colors shadow-sm text-xs">
+                <div class="flex justify-between items-center">
+                    <span class="font-extrabold text-slate-800 flex items-center gap-1.5">
+                        <i data-lucide="alert-circle" class="w-4 h-4 text-amber-500"></i>
+                        ${escapeHTML(inc.title)}
+                    </span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${badgeColor}">${escapeHTML(inc.severity)}</span>
+                </div>
+                ${inc.detail ? `<p class="text-slate-500 font-medium">${escapeHTML(inc.detail)}</p>` : ''}
+                <div class="flex items-center justify-between pt-1.5 border-t border-slate-100 text-[10px] text-slate-400 font-semibold">
+                    <span><span class="px-1.5 py-0.5 rounded-full ${catBadge} text-[9px] font-bold">${escapeHTML(inc.category)}</span> &middot; บันทึกโดย: ${escapeHTML(inc.reporter)}</span>
+                    <span>${createdDate}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
 }
 
 function viewTicketDetails(ticketId) {
@@ -337,7 +421,7 @@ function viewTicketDetails(ticketId) {
         </span>`;
     }
 
-    const ticketNo = `#TICKET-${ticket.id.toUpperCase().replace('TK-AUTO-', 'AUTO-').replace('TK-', '')}`;
+    const ticketNo = ticket.ticketNo || ticket.ticket_no || `#TICKET-${ticket.id.toUpperCase().replace('TK-AUTO-', 'AUTO-').replace('TK-', '')}`;
 
     Swal.fire({
         title: `<div style="text-align: left; font-weight: 800; color: #1e293b; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; width: 100%; font-size: 22px;">
@@ -442,6 +526,48 @@ function resetRepairFilters() {
 function downloadRepairHistoryCSV() {
     if (!selectedRoom) return;
 
+    if (currentHistoryTab === 'incidents') {
+        const incidents = selectedRoom.incidents || [];
+        if (incidents.length === 0) {
+            Swal.fire({
+                title: 'ไม่พบข้อมูล',
+                text: 'ไม่พบประวัติเหตุการณ์เพื่อดาวน์โหลด',
+                icon: 'warning',
+                confirmButtonText: 'ตกลง',
+                confirmButtonColor: '#4f46e5',
+                customClass: { popup: 'rounded-3xl border-0 shadow-2xl', confirmButton: 'rounded-xl px-6 py-2.5 font-bold' }
+            });
+            return;
+        }
+
+        const headers = ['Incident Title', 'Category', 'Severity', 'Details', 'Reporter', 'Date'];
+        const rows = incidents.map(inc => [
+            inc.title,
+            inc.category,
+            inc.severity,
+            inc.detail || '',
+            inc.reporter,
+            new Date(inc.createdAt).toLocaleString('th-TH')
+        ]);
+
+        const csvContent = [headers, ...rows]
+            .map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))
+            .join('\n');
+
+        const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `incidents_history_room_${selectedRoom.number}_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        notify.success('ดาวน์โหลดรายงานประวัติเหตุการณ์สำเร็จ!');
+        return;
+    }
+
     const category = document.getElementById('filterRepairCategory').value;
     const startDateStr = document.getElementById('filterRepairStart').value;
     const endDateStr = document.getElementById('filterRepairEnd').value;
@@ -492,7 +618,7 @@ function downloadRepairHistoryCSV() {
         const sysThai = sysDetails ? sysDetails.thai : item.category;
 
         return [
-            item.id.toUpperCase(),
+            item.ticketNo || item.id.toUpperCase(),
             sysThai,
             item.priority || 'Medium',
             item.desc || '',
@@ -532,7 +658,7 @@ async function toggleRoomUsage() {
     const isChecked = checkbox.checked;
     const oldUsage = selectedRoom.usageStatus || 'Vacant';
     const newUsage = isChecked ? 'InUse' : 'Vacant';
-    
+
     if (oldUsage === newUsage) return;
 
     selectedRoom.usageStatus = newUsage;
@@ -542,6 +668,6 @@ async function toggleRoomUsage() {
 
     await addActionLog('แก้ไขสถานะใช้งาน', `เปลี่ยนสถานะใช้งานห้อง ${selectedRoom.number} เป็น "${isChecked ? 'กำลังใช้งาน' : 'ว่าง'}"`);
     if (typeof renderDashboard === 'function') renderDashboard();
-    
+
     notify.success(`อัปเดตสถานะห้องเป็น "${isChecked ? 'กำลังใช้งาน' : 'ว่าง'}" สำเร็จ!`);
 }

@@ -132,6 +132,8 @@ function openChangeStatusModal() {
         cancelButtonText: 'ยกเลิก',
         confirmButtonColor: '#4f46e5',
         cancelButtonColor: '#e2e8f0',
+        showLoaderOnConfirm: true,
+        allowOutsideClick: () => !Swal.isLoading(),
         customClass: {
             popup: 'rounded-3xl border-0 shadow-2xl overflow-visible',
             confirmButton: 'rounded-xl px-6 py-2.5 font-bold',
@@ -144,17 +146,14 @@ function openChangeStatusModal() {
                 swalChoicesInstance = new Choices(selectEl, { searchEnabled: false, itemSelectText: '', allowHTML: true });
             }
         },
-        preConfirm: () => {
-            if (swalChoicesInstance) {
-                return swalChoicesInstance.getValue(true);
-            }
-            return document.getElementById('swal-status-select').value;
-        }
-    }).then(async res => {
-        if (res.isConfirmed) {
-            const newStatus = res.value;
+        preConfirm: async () => {
+            const cancelBtn = Swal.getCancelButton();
+            if (cancelBtn) cancelBtn.style.display = 'none';
+            Swal.showLoading();
+
+            const newStatus = swalChoicesInstance ? swalChoicesInstance.getValue(true) : document.getElementById('swal-status-select').value;
             const oldStatus = selectedRoom.status;
-            if (newStatus === oldStatus) return;
+            if (newStatus === oldStatus) return true;
 
             const branchId = document.getElementById('branchSelect')?.value;
 
@@ -191,9 +190,11 @@ function openChangeStatusModal() {
                 openRoomDetails(selectedRoom.id);
                 if (typeof renderDashboard === 'function') renderDashboard();
                 notify.success(`อัปเดตสถานะห้อง ${selectedRoom.number} เป็น "${statusThai[newStatus] || newStatus}" เรียบร้อย!`);
+                return true;
             } catch (err) {
                 console.error('openChangeStatusModal error:', err);
                 notify.error('เกิดข้อผิดพลาดในการอัปเดตสถานะห้องพัก');
+                return false;
             }
         }
     });
