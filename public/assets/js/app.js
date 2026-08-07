@@ -173,7 +173,7 @@ const ui = {
             desc: 'ตรวจเช็คระบบภายในห้องและบันทึกงานซ่อมบำรุงโรงแรม',
             submodules: [
                 { name: 'ระบบบำรุงรักษาห้องพัก', path: '/room-care.html' },
-                { name: 'บันทึกการทำงาน (Logs)', path: '/room-care-logs.html' }
+                { name: 'ข้อมูล', path: '/room-care-logs.html' }
             ]
         }
     ],

@@ -245,10 +245,10 @@ function applyRepairFilters() {
                         ${item.ticketNo || ('#' + item.id.slice(0, 8).toUpperCase())}
                     </button>
                 </td>
-                <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeColor}">${sysName}</span></td>
+                <td class="py-2.5 px-3 min-w-[130px] whitespace-nowrap"><span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${badgeColor}">${sysName}</span></td>
                 <td class="py-2.5 px-3 font-medium max-w-[150px] truncate" title="${detailsText}">${detailsText}</td>
                 <td class="py-2.5 px-3 text-slate-500 font-medium whitespace-nowrap">${formattedOpenDate}</td>
-                <td class="py-2.5 px-3 text-slate-500 font-medium whitespace-nowrap">${escapeHTML(item.assignee || 'ไม่ระบุ')}</td>
+                <td class="py-2.5 px-3 text-slate-500 font-medium min-w-[130px] whitespace-nowrap">${escapeHTML(item.assignee || 'ไม่ระบุ')}</td>
                 <td class="py-2.5 px-3 text-slate-500 font-medium whitespace-nowrap">${formattedCloseDate}</td>
                 <td class="py-2.5 px-3 text-slate-500 font-medium whitespace-nowrap">${escapeHTML(closedBy)}</td>
                 <td class="py-2.5 px-3 font-medium max-w-[150px] truncate text-slate-500" title="${escapeHTML(closeNotes)}">${escapeHTML(closeNotes)}</td>
@@ -262,10 +262,10 @@ function applyRepairFilters() {
                 <thead>
                     <tr class="bg-slate-50 text-[10px] uppercase text-slate-400 font-extrabold border-b border-slate-100">
                         <th class="py-2 px-3">Ticket ID</th>
-                        <th class="py-2 px-3">ระบบ</th>
+                        <th class="py-2 px-3 min-w-[130px] whitespace-nowrap">ระบบ</th>
                         <th class="py-2 px-3">อาการเสีย</th>
-                        <th class="py-2 px-3">วันที่เปิด</th>
-                        <th class="py-2 px-3">ช่างผู้รับผิดชอบ</th>
+                        <th class="py-2 px-3 whitespace-nowrap">วันที่เปิด</th>
+                        <th class="py-2 px-3 min-w-[130px] whitespace-nowrap">ช่างผู้รับผิดชอบ</th>
                         <th class="py-2 px-3">วันที่ปิด</th>
                         <th class="py-2 px-3">ผู้ปิดงาน</th>
                         <th class="py-2 px-3">หมายเหตุปิดงาน</th>

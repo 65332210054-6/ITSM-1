@@ -52,11 +52,11 @@
                     <div class="absolute -right-16 -bottom-16 w-60 h-60 bg-white/10 rounded-full blur-3xl"></div>
                 </div>
 
-                <!-- Main Grid Layout: Controls & Room View on Left, Logs Panel on Right -->
-                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- Main Content Area -->
+                <div>
 
-                    <!-- Rooms & Controls Area (Col Span 3) -->
-                    <div class="lg:col-span-3 space-y-6">
+                    <!-- Rooms & Controls Area -->
+                    <div class="space-y-6">
 
                         <!-- Control Toolbar -->
                         <div
@@ -126,70 +126,6 @@
                             <!-- Injected by JavaScript -->
                         </div>
 
-                    </div>
-
-                    <!-- Logs Panel (Col Span 1) -->
-                    <div class="lg:col-span-1 space-y-6">
-                        <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col h-[600px]">
-                            <div class="flex items-center justify-between pb-4 border-b border-slate-50">
-                                <div class="flex items-center gap-2">
-                                    <div
-                                        class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center shrink-0">
-                                        <i data-lucide="file-clock" class="w-4.5 h-4.5"></i>
-                                    </div>
-                                    <h3 class="font-bold text-slate-800 text-sm">ประวัติการบันทึก (Action Logs)</h3>
-                                </div>
-                                <div class="flex items-center gap-1.5">
-                                    <button onclick="toggleLogFilters()"
-                                        class="text-slate-400 hover:text-indigo-600 p-1.5 hover:bg-slate-50 rounded-xl transition-all cursor-pointer border-0 bg-transparent outline-none"
-                                        title="กรองประวัติการบันทึก">
-                                        <i data-lucide="filter" class="w-4.5 h-4.5"></i>
-                                    </button>
-                                    <span id="logBadgeCount"
-                                        class="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-black">0</span>
-                                </div>
-                            </div>
-
-                            <!-- Logs Filtering Area (Hidden by default) -->
-                            <div id="logFiltersArea"
-                                class="hidden p-3 bg-slate-50 border-b border-slate-100 space-y-2 text-xs">
-                                <div>
-                                    <input type="text" id="searchLogText" placeholder="ค้นหาประวัติ..."
-                                        class="w-full text-xs rounded-xl border-slate-200 py-1.5 px-3 bg-white"
-                                        oninput="applyLogFilters()">
-                                </div>
-                                <div class="grid grid-cols-2 gap-1.5">
-                                    <select id="filterLogAction"
-                                        class="w-full text-xs rounded-xl border-slate-200 py-1.5 px-2 bg-white"
-                                        onchange="applyLogFilters()">
-                                        <option value="All">ทุกกิจกรรม</option>
-                                        <option value="ตรวจเช็คระบบ">ตรวจเช็คระบบ</option>
-                                        <option value="เปิดแจ้งซ่อม">เปิดแจ้งซ่อม</option>
-                                        <option value="เริ่มซ่อม">เริ่มซ่อม</option>
-                                        <option value="แก้ไขใบงาน">แก้ไขใบงาน</option>
-                                        <option value="ซ่อมสำเร็จ">ซ่อมสำเร็จ</option>
-                                        <option value="เพิ่มสาขา">เพิ่มสาขา</option>
-                                        <option value="เพิ่มห้องพัก">เพิ่มห้องพัก</option>
-                                        <option value="แก้ไขห้องพัก">แก้ไขห้องพัก</option>
-                                        <option value="ลบห้องพัก">ลบห้องพัก</option>
-                                        <option value="เพิ่มระบบใหม่">เพิ่มระบบใหม่</option>
-                                    </select>
-                                    <button onclick="resetLogFilters()"
-                                        class="w-full py-1.5 px-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition-all cursor-pointer text-center text-xs border-0 outline-none">
-                                        รีเซ็ต
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Logs Feed -->
-                            <div id="logsContainer" class="flex-1 overflow-y-auto py-4 space-y-3 logs-scrollbar">
-                                <!-- Logs will be injected here -->
-                                <div class="py-10 text-center text-slate-400 text-xs font-medium space-y-2">
-                                    <i data-lucide="database-backup" class="w-8 h-8 text-slate-300 mx-auto"></i>
-                                    <p>ยังไม่มีประวัติการบันทึกข้อมูล</p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                 </div>
@@ -355,7 +291,8 @@
                     <button onclick="openRepairModal()" class="btn-primary">
                         <i data-lucide="wrench" class="w-4 h-4"></i> บันทึกงานซ่อมใหม่
                     </button>
-                    <button onclick="openIncidentModal()" class="btn-secondary text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100">
+                    <button onclick="openIncidentModal()"
+                        class="btn-secondary text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100">
                         <i data-lucide="alert-triangle" class="w-4 h-4"></i> บันทึกเหตุการณ์
                     </button>
                 </div>
@@ -630,15 +567,20 @@
 
                     <!-- Pre-populated Quick Tags -->
                     <div class="mt-2 flex flex-wrap gap-1.5 items-center">
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mr-1">คำค้นด่วน:</span>
+                        <span
+                            class="text-[9px] font-black text-slate-400 uppercase tracking-widest mr-1">คำค้นด่วน:</span>
                         <button type="button" onclick="setQuickIncidentTitle('ผู้เข้าพักลืมคีย์การ์ดไว้ในห้อง')"
-                            class="px-2 py-0.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 text-slate-600 hover:text-amber-600 rounded-lg text-[10px] font-bold transition-all">🔑 ลืมคีย์การ์ด</button>
+                            class="px-2 py-0.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 text-slate-600 hover:text-amber-600 rounded-lg text-[10px] font-bold transition-all">🔑
+                            ลืมคีย์การ์ด</button>
                         <button type="button" onclick="setQuickIncidentTitle('มีเสียงดังรบกวนช่วงกลางคืน')"
-                            class="px-2 py-0.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 text-slate-600 hover:text-amber-600 rounded-lg text-[10px] font-bold transition-all">🔊 เสียงดัง</button>
+                            class="px-2 py-0.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 text-slate-600 hover:text-amber-600 rounded-lg text-[10px] font-bold transition-all">🔊
+                            เสียงดัง</button>
                         <button type="button" onclick="setQuickIncidentTitle('ข้อร้องเรียนบริการความสะอาด')"
-                            class="px-2 py-0.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 text-slate-600 hover:text-amber-600 rounded-lg text-[10px] font-bold transition-all">🧹 ความสะอาด</button>
+                            class="px-2 py-0.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 text-slate-600 hover:text-amber-600 rounded-lg text-[10px] font-bold transition-all">🧹
+                            ความสะอาด</button>
                         <button type="button" onclick="setQuickIncidentTitle('ตรวจพบรอยขีดข่วนบนเฟอร์นิเจอร์')"
-                            class="px-2 py-0.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 text-slate-600 hover:text-amber-600 rounded-lg text-[10px] font-bold transition-all">🛋️ รอยขีดข่วน</button>
+                            class="px-2 py-0.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 text-slate-600 hover:text-amber-600 rounded-lg text-[10px] font-bold transition-all">🛋️
+                            รอยขีดข่วน</button>
                     </div>
                 </div>
 
@@ -666,7 +608,8 @@
 
                 <div>
                     <label class="form-label">รายละเอียดเพิ่มเติม</label>
-                    <textarea id="incidentDetail" rows="3" class="form-input bg-white" placeholder="ระบุรายละเอียดเพิ่มเติม (ถ้ามี)..."></textarea>
+                    <textarea id="incidentDetail" rows="3" class="form-input bg-white"
+                        placeholder="ระบุรายละเอียดเพิ่มเติม (ถ้ามี)..."></textarea>
                 </div>
 
                 <div class="pt-2 flex gap-3">

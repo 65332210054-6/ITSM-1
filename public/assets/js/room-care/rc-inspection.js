@@ -317,6 +317,7 @@ async function handleInspectionFormSubmit(e) {
         selectedRoom = (roomsDB[branchId] || []).find(r => r.id === selectedRoom.id) || selectedRoom;
         closeInspectionModal();
         openRoomDetails(selectedRoom.id);
+        if (typeof renderDashboard === 'function') renderDashboard();
         Swal.close();
         notify.success('บันทึกผลการเช็คห้องพักสำเร็จ!');
     } catch (err) {

@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Render Header and Sidebar using core ui object in app.js
     const settings = await ui.getSystemSettings();
     if (window.location.pathname.includes('room-care-logs')) {
-        ui.renderHeader('บันทึกการทำงาน (Logs)', false, { parent: 'ระบบบำรุงรักษาห้องพัก', url: '/room-care.html' });
+        ui.renderHeader('ข้อมูล', false, { parent: 'ระบบบำรุงรักษาห้องพัก', url: '/room-care.html' });
     } else {
         ui.renderHeader('ระบบบำรุงรักษาห้องพัก', false);
     }
@@ -49,42 +49,54 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Populate extensible category dropdowns and bind event listeners
     renderCategoryOptions();
 
-    document.getElementById('repairCategory').addEventListener('change', (event) => {
-        if (event.target.value === 'ADD_NEW_SYSTEM') {
-            addNewSystem('repairCategory');
-        }
-    });
+    if (document.getElementById('repairCategory')) {
+        document.getElementById('repairCategory').addEventListener('change', (event) => {
+            if (event.target.value === 'ADD_NEW_SYSTEM') {
+                addNewSystem('repairCategory');
+            }
+        });
+    }
 
-    document.getElementById('editTicketCategory').addEventListener('change', (event) => {
-        if (event.target.value === 'ADD_NEW_SYSTEM') {
-            addNewSystem('editTicketCategory');
-        }
-    });
+    if (document.getElementById('editTicketCategory')) {
+        document.getElementById('editTicketCategory').addEventListener('change', (event) => {
+            if (event.target.value === 'ADD_NEW_SYSTEM') {
+                addNewSystem('editTicketCategory');
+            }
+        });
+    }
 
     // Bind assignee ADD_NEW_TECHNICIAN events
-    document.getElementById('repairAssignee').addEventListener('change', (event) => {
-        if (event.target.value === 'ADD_NEW_TECHNICIAN') {
-            addNewTechnician('repairAssignee');
-        }
-    });
+    if (document.getElementById('repairAssignee')) {
+        document.getElementById('repairAssignee').addEventListener('change', (event) => {
+            if (event.target.value === 'ADD_NEW_TECHNICIAN') {
+                addNewTechnician('repairAssignee');
+            }
+        });
+    }
 
-    document.getElementById('editTicketAssignee').addEventListener('change', (event) => {
-        if (event.target.value === 'ADD_NEW_TECHNICIAN') {
-            addNewTechnician('editTicketAssignee');
-        }
-    });
+    if (document.getElementById('editTicketAssignee')) {
+        document.getElementById('editTicketAssignee').addEventListener('change', (event) => {
+            if (event.target.value === 'ADD_NEW_TECHNICIAN') {
+                addNewTechnician('editTicketAssignee');
+            }
+        });
+    }
 
     // Bind room type ADD_NEW_TYPE events
-    document.getElementById('floorFormRoomType').addEventListener('change', (event) => {
-        if (event.target.value === 'ADD_NEW_TYPE') {
-            addNewRoomType('floorFormRoomType');
-        }
-    });
-    document.getElementById('roomFormType').addEventListener('change', (event) => {
-        if (event.target.value === 'ADD_NEW_TYPE') {
-            addNewRoomType('roomFormType');
-        }
-    });
+    if (document.getElementById('floorFormRoomType')) {
+        document.getElementById('floorFormRoomType').addEventListener('change', (event) => {
+            if (event.target.value === 'ADD_NEW_TYPE') {
+                addNewRoomType('floorFormRoomType');
+            }
+        });
+    }
+    if (document.getElementById('roomFormType')) {
+        document.getElementById('roomFormType').addEventListener('change', (event) => {
+            if (event.target.value === 'ADD_NEW_TYPE') {
+                addNewRoomType('roomFormType');
+            }
+        });
+    }
 
     // Bind form submissions via named handler functions
     if (document.getElementById('inspectionForm')) document.getElementById('inspectionForm').addEventListener('submit', handleInspectionFormSubmit);
@@ -95,6 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (document.getElementById('roomForm')) document.getElementById('roomForm').addEventListener('submit', handleRoomFormSubmit);
 
     renderDashboard();
-    renderLogsPanel();
+    if (document.getElementById('logsContainer')) renderLogsPanel();
+    if (document.getElementById('filterBranchSelect')) initLogsPage();
     updateActionButtonsVisibility();
 });

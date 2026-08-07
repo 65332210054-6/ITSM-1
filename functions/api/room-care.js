@@ -158,6 +158,81 @@ export async function onRequest(context) {
         return ok(incidents);
       }
 
+      // GET /api/room-care?action=repair_history
+      /*if (action === 'repair_history') {
+        const branchId = url.searchParams.get('branch_id');
+        if (!branchId) return err('branch_id is required');
+
+        const roomNumber = url.searchParams.get('room_number') || '';
+        const category = url.searchParams.get('category') || '';
+        const startDate = url.searchParams.get('start_date') || '';
+        const endDate = url.searchParams.get('end_date') || '';
+
+        const rows = await sql`
+          SELECT t.*, r.number as room_number, b.name as branch_name
+          FROM rc_tickets t
+          LEFT JOIN rc_rooms r ON t.room_id = r.id
+          LEFT JOIN branches b ON t.branch_id = b.id
+          WHERE t.branch_id = ${branchId}
+            AND (${roomNumber === ''} OR r.number ILIKE ${'%' + roomNumber + '%'})
+            AND (${category === ''} OR t.category = ${category})
+            AND (${startDate === ''} OR t.created_at >= ${startDate ? startDate + 'T00:00:00' : '1970-01-01T00:00:00'})
+            AND (${endDate === ''} OR t.created_at <= ${endDate ? endDate + 'T23:59:59' : '2099-12-31T23:59:59'})
+          ORDER BY t.created_at DESC
+        `;
+        return ok(rows);
+      }*/
+      // GET /api/room-care?action=repair_history   code แก้ไขจาก Gemini
+      if (action === 'repair_history') {
+        const branchId = url.searchParams.get('branch_id');
+        if (!branchId) return err('branch_id is required');
+
+        const roomNumber = url.searchParams.get('room_number') || '';
+        const category = url.searchParams.get('category') || '';
+        const startDate = url.searchParams.get('start_date') || '';
+        const endDate = url.searchParams.get('end_date') || '';
+
+        const rows = await sql`
+          SELECT t.*, r.number as room_number, b.name as branch_name
+          FROM rc_tickets t
+          LEFT JOIN rc_rooms r ON t.room_id = r.id
+          LEFT JOIN branches b ON t.branch_id = b.id
+          WHERE t.branch_id = ${branchId}
+            -- แก้ไขการเปรียบเทียบค่าว่าง ให้ SQL เข้าใจง่ายขึ้น
+            AND (${roomNumber} = '' OR r.number ILIKE ${'%' + roomNumber + '%'})
+            AND (${category} = '' OR t.category = ${category})
+            AND (${startDate} = '' OR t.created_at >= ${startDate ? startDate + 'T00:00:00' : '1970-01-01T00:00:00'})
+            AND (${endDate} = '' OR t.created_at <= ${endDate ? endDate + 'T23:59:59' : '2099-12-31T23:59:59'})
+            -- เพิ่มเงื่อนไขนี้ ถ้าต้องการเฉพาะรายการที่เป็น History แล้วจริงๆ
+            -- AND t.is_history = true 
+          ORDER BY t.created_at DESC
+        `;
+        return ok(rows);
+      }
+
+      // GET /api/room-care?action=incidents_history
+      if (action === 'incidents_history') {
+        const branchId = url.searchParams.get('branch_id');
+        if (!branchId) return err('branch_id is required');
+
+        const roomNumber = url.searchParams.get('room_number') || '';
+        const startDate = url.searchParams.get('start_date') || '';
+        const endDate = url.searchParams.get('end_date') || '';
+
+        const rows = await sql`
+          SELECT inc.*, r.number as room_number, b.name as branch_name
+          FROM rc_incidents inc
+          LEFT JOIN rc_rooms r ON inc.room_id = r.id
+          LEFT JOIN branches b ON inc.branch_id = b.id
+          WHERE inc.branch_id = ${branchId}
+            AND (${roomNumber === ''} OR r.number ILIKE ${'%' + roomNumber + '%'})
+            AND (${startDate === ''} OR inc.created_at >= ${startDate ? startDate + 'T00:00:00' : '1970-01-01T00:00:00'})
+            AND (${endDate === ''} OR inc.created_at <= ${endDate ? endDate + 'T23:59:59' : '2099-12-31T23:59:59'})
+          ORDER BY inc.created_at DESC
+        `;
+        return ok(rows);
+      }
+
       // GET /api/room-care?action=rooms&branch_id=...
       if (action === 'rooms') {
         const branchId = url.searchParams.get('branch_id');
@@ -544,6 +619,33 @@ export async function onRequest(context) {
         await sql`DELETE FROM rc_rooms WHERE branch_id = ${branchId}`;
         await sql`DELETE FROM rc_logs WHERE branch_id = ${branchId}`;
         return ok({ message: 'Branch room care data deleted' });
+      }
+
+      // DELETE ticket (repair history record)
+      if (action === 'delete_ticket') {
+        const ticketId = url.searchParams.get('ticket_id');
+        if (!ticketId) return err('ticket_id is required');
+        // Get ticket info for logging
+        const ticketRes = await sql`SELECT t.*, r.number as room_number FROM rc_tickets t LEFT JOIN rc_rooms r ON t.room_id = r.id WHERE t.id = ${ticketId}`;
+        if (ticketRes.length === 0) return err('Ticket not found', 404);
+        const t = ticketRes[0];
+        await sql`DELETE FROM rc_tickets WHERE id = ${ticketId}`;
+        // Log deletion
+        await sql`INSERT INTO rc_logs (branch_id, user_name, action, detail) VALUES (${t.branch_id || null}, ${userSession.name}, 'ลบประวัติการซ่อม', ${'ลบประวัติการซ่อม ' + (t.ticket_no || ticketId) + ' ห้อง ' + (t.room_number || '-') + ': ' + (t.desc || '-')})`;
+        return ok({ message: 'Ticket deleted' });
+      }
+
+      // DELETE incident
+      if (action === 'delete_incident') {
+        const incidentId = url.searchParams.get('incident_id');
+        if (!incidentId) return err('incident_id is required');
+        const incRes = await sql`SELECT inc.*, r.number as room_number FROM rc_incidents inc LEFT JOIN rc_rooms r ON inc.room_id = r.id WHERE inc.id = ${incidentId}`;
+        if (incRes.length === 0) return err('Incident not found', 404);
+        const inc = incRes[0];
+        await sql`DELETE FROM rc_incidents WHERE id = ${incidentId}`;
+        // Log deletion
+        await sql`INSERT INTO rc_logs (branch_id, user_name, action, detail) VALUES (${inc.branch_id || null}, ${userSession.name}, 'ลบบันทึกเหตุการณ์', ${'ลบบันทึกเหตุการณ์: ' + (inc.title || incidentId) + ' ห้อง ' + (inc.room_number || '-')})`;
+        return ok({ message: 'Incident deleted' });
       }
 
       return err('Unknown action', 400);

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบำรุงรักษาห้องพัก | ITSM Admin</title>
+    <title>ข้อมูลระบบบำรุงรักษาห้องพัก | ITSM Admin</title>
     <script>
         if (!localStorage.getItem('token')) {
             window.location.replace('/login.html');
@@ -12,6 +12,7 @@
     </script>
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.454.0/lucide.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
@@ -26,786 +27,201 @@
     <div class="flex-1 flex flex-col overflow-hidden">
         <div id="header-container"></div>
 
-        <main class="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-10 bg-slate-50/50">
-            <div class="max-w-7xl mx-auto space-y-8">
+        <main class="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-8 bg-slate-50/50">
+            <div class="max-w-7xl mx-auto space-y-6">
 
                 <!-- RoomCare Banner Header -->
                 <div
-                    class="bg-gradient-to-r from-emerald-600 to-teal-500 rounded-3xl shadow-xl shadow-emerald-600/10 p-6 sm:p-10 text-white relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    class="bg-gradient-to-r from-emerald-600 via-teal-600 to-teal-500 rounded-3xl shadow-xl shadow-emerald-600/10 p-6 sm:p-8 text-white relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div class="relative z-10 space-y-2">
                         <div
                             class="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-md border border-white/20 rounded-full text-xs font-black uppercase tracking-widest text-emerald-50">
-                            <i data-lucide="hotel" class="w-3.5 h-3.5"></i> Pilot Module
+                            <i data-lucide="database" class="w-3.5 h-3.5"></i> Room Care Data Center
                         </div>
-                        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">ระบบบำรุงรักษาห้องพัก
-                        </h2>
-                        <p class="text-emerald-50/90 text-sm font-medium">จัดการเช็คสภาพระบบ
-                            และจัดเก็บประวัติการซ่อมบำรุงในโรงแรมแต่ละสาขา</p>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">ข้อมูลระบบบำรุงรักษาห้องพัก</h2>
+                        <p class="text-emerald-50/90 text-sm font-medium">ค้นหาและตรวจสอบประวัติการซ่อมแซม
+                            และบันทึกเหตุการณ์ของห้องพักในแต่ละสาขา</p>
                     </div>
                     <div class="flex flex-wrap items-center gap-3 relative z-10">
                         <button onclick="location.reload()"
                             class="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/25 rounded-2xl text-xs font-black tracking-wider uppercase transition-all active:scale-95 flex items-center gap-2 text-white cursor-pointer"
-                            title="รีโหลดข้อมูลจากฐานข้อมูล">
-                            <i data-lucide="refresh-cw" class="w-4 h-4"></i> รีโหลดข้อมูล
+                            title="รีโหลดข้อมูล">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i> รีโหลด
                         </button>
                     </div>
                     <div class="absolute -right-16 -bottom-16 w-60 h-60 bg-white/10 rounded-full blur-3xl"></div>
                 </div>
 
-                <!-- Main Grid Layout: Controls & Room View on Left, Logs Panel on Right -->
-                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-
-                    <!-- Rooms & Controls Area (Col Span 3) - Hidden in logs view -->
-                    <div class="hidden lg:col-span-3 space-y-6">
-
-                        <!-- Control Toolbar -->
-                        <div
-                            class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col xl:flex-row gap-5 items-end xl:items-center justify-between">
-                            <div class="flex flex-col sm:flex-row gap-3 items-end w-full xl:w-auto">
-                                <div class="w-full sm:w-60">
-                                    <label class="label-xs ml-1">เลือกสาขาโรงแรม</label>
-                                    <select id="branchSelect" onchange="branchChanged()">
-                                        <!-- Will populate dynamically -->
-                                    </select>
-                                </div>
-                                <div class="w-full sm:w-48">
-                                    <label class="label-xs ml-1">ค้นหาหมายเลขห้อง</label>
-                                    <input type="text" id="searchRoomInput" oninput="renderDashboard()"
-                                        placeholder="ระบุเลขห้อง..."
-                                        class="w-full text-xs rounded-2xl border border-slate-200 py-2.5 px-4 bg-white h-[48px] focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all">
-                                </div>
-                                <div class="flex gap-2 w-full sm:w-auto shrink-0">
-                                    <button onclick="addNewBranch()"
-                                        class="flex-1 sm:flex-initial px-4 py-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-100 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer h-12"
-                                        title="เพิ่มสาขาใหม่">
-                                        <i data-lucide="plus" class="w-4 h-4"></i> เพิ่มสาขา
-                                    </button>
-                                    <button id="deleteBranchBtn" onclick="deleteCurrentBranch()"
-                                        class="flex-1 sm:flex-initial px-4 py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer h-12"
-                                        title="ลบสาขานี้">
-                                        <i data-lucide="trash-2" class="w-4 h-4"></i> ลบสาขา
-                                    </button>
-                                    <button onclick="openFloorModal()"
-                                        class="flex-1 sm:flex-initial px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/10 active:scale-95 cursor-pointer h-12"
-                                        title="เพิ่มชั้นใหม่">
-                                        <i data-lucide="layers" class="w-4 h-4"></i> เพิ่มชั้น
-                                    </button>
-                                </div>
+                <!-- Filtering Panel Card (ระบบกรองข้อมูลที่ต้องการ) -->
+                <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-100 shadow-sm space-y-6">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                        <div class="flex items-center gap-2.5">
+                            <div
+                                class="w-9 h-9 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-bold">
+                                <i data-lucide="filter" class="w-5 h-5"></i>
                             </div>
-                            <!-- Stats Badges inside ToolBar -->
-                            <div class="flex flex-wrap gap-2 justify-end w-full xl:w-auto">
-                                <button onclick="showStatusRoomsModal('All')"
-                                    class="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold border border-slate-200 transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm"
-                                    title="คลิกเพื่อดูห้องทั้งหมด">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> ทั้งหมด: <span
-                                        id="statTotalRooms" class="font-extrabold text-slate-900">0</span> ห้อง
-                                </button>
-                                <button onclick="showStatusRoomsModal('Available')"
-                                    class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100/70 text-emerald-600 rounded-xl text-xs font-bold border border-emerald-100 transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm"
-                                    title="คลิกเพื่อดูห้องปกติ">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ปกติ: <span
-                                        id="statAvailableRooms" class="font-extrabold">0</span> ห้อง
-                                </button>
-                                <button onclick="showStatusRoomsModal('Needs Repair')"
-                                    class="px-3 py-1.5 bg-red-50 hover:bg-red-100/70 text-red-600 rounded-xl text-xs font-bold border border-red-100 transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm"
-                                    title="คลิกเพื่อดูห้องรอการแก้ไข">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> รอการแก้ไข: <span
-                                        id="statNeedsRepairRooms" class="font-extrabold">0</span> ห้อง
-                                </button>
-                                <button onclick="showStatusRoomsModal('Closed')"
-                                    class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200/70 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-sm"
-                                    title="คลิกเพื่อดูห้องปิดปรับปรุง">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span> ปิดปรับปรุง: <span
-                                        id="statClosedRooms" class="font-extrabold">0</span> ห้อง
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Rooms Floor Container (Dynamically Rendered) -->
-                        <div id="floorsContainer" class="space-y-6">
-                            <!-- Injected by JavaScript -->
-                        </div>
-
-                    </div>
-
-                    <!-- Logs Panel (Col Span 4 in logs view) -->
-                    <div class="lg:col-span-4 space-y-6">
-                        <div
-                            class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col min-h-[600px] h-[750px]">
-                            <div class="flex items-center justify-between pb-4 border-b border-slate-50">
-                                <div class="flex items-center gap-2">
-                                    <div
-                                        class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center shrink-0">
-                                        <i data-lucide="file-clock" class="w-4.5 h-4.5"></i>
-                                    </div>
-                                    <h3 class="font-bold text-slate-800 text-sm">ประวัติการบันทึก (Action Logs)</h3>
-                                </div>
-                                <div class="flex items-center gap-1.5">
-                                    <button onclick="toggleLogFilters()"
-                                        class="text-slate-400 hover:text-indigo-600 p-1.5 hover:bg-slate-50 rounded-xl transition-all cursor-pointer border-0 bg-transparent outline-none"
-                                        title="กรองประวัติการบันทึก">
-                                        <i data-lucide="filter" class="w-4.5 h-4.5"></i>
-                                    </button>
-                                    <span id="logBadgeCount"
-                                        class="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-black">0</span>
-                                </div>
-                            </div>
-
-                            <!-- Logs Filtering Area (Hidden by default) -->
-                            <div id="logFiltersArea"
-                                class="hidden p-3 bg-slate-50 border-b border-slate-100 space-y-2 text-xs">
-                                <div>
-                                    <input type="text" id="searchLogText" placeholder="ค้นหาประวัติ..."
-                                        class="w-full text-xs rounded-xl border-slate-200 py-1.5 px-3 bg-white"
-                                        oninput="applyLogFilters()">
-                                </div>
-                                <div class="grid grid-cols-2 gap-1.5">
-                                    <select id="filterLogAction"
-                                        class="w-full text-xs rounded-xl border-slate-200 py-1.5 px-2 bg-white"
-                                        onchange="applyLogFilters()">
-                                        <option value="All">ทุกกิจกรรม</option>
-                                        <option value="ตรวจเช็คระบบ">ตรวจเช็คระบบ</option>
-                                        <option value="เปิดแจ้งซ่อม">เปิดแจ้งซ่อม</option>
-                                        <option value="เริ่มซ่อม">เริ่มซ่อม</option>
-                                        <option value="แก้ไขใบงาน">แก้ไขใบงาน</option>
-                                        <option value="ซ่อมสำเร็จ">ซ่อมสำเร็จ</option>
-                                        <option value="เพิ่มสาขา">เพิ่มสาขา</option>
-                                        <option value="เพิ่มห้องพัก">เพิ่มห้องพัก</option>
-                                        <option value="แก้ไขห้องพัก">แก้ไขห้องพัก</option>
-                                        <option value="ลบห้องพัก">ลบห้องพัก</option>
-                                        <option value="เพิ่มระบบใหม่">เพิ่มระบบใหม่</option>
-                                    </select>
-                                    <button onclick="resetLogFilters()"
-                                        class="w-full py-1.5 px-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition-all cursor-pointer text-center text-xs border-0 outline-none">
-                                        รีเซ็ต
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Logs Feed -->
-                            <div id="logsContainer" class="flex-1 overflow-y-auto py-4 space-y-3 logs-scrollbar">
-                                <!-- Logs will be injected here -->
-                                <div class="py-10 text-center text-slate-400 text-xs font-medium space-y-2">
-                                    <i data-lucide="database-backup" class="w-8 h-8 text-slate-300 mx-auto"></i>
-                                    <p>ยังไม่มีประวัติการบันทึกข้อมูล</p>
-                                </div>
+                            <div>
+                                <h3 class="font-extrabold text-slate-800 text-base">ระบบกรองข้อมูลที่ต้องการ</h3>
+                                <p class="text-slate-400 text-xs font-medium">
+                                    เลือกประเภทข้อมูลที่ต้องการสืบค้นและเงื่อนไขเพิ่มเติม</p>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Filter Controls Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
+
+                        <!-- Col 1: Data Type Selection -->
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-extrabold text-slate-700 ml-1 flex items-center gap-1">
+                                <i data-lucide="layers" class="w-3.5 h-3.5 text-indigo-500"></i> เลือกประเภทข้อมูล
+                            </label>
+                            <select id="filterDataType" onchange="onDataTypeChange()"
+                                class="form-input font-extrabold text-indigo-950 bg-indigo-50/50 border-indigo-200 cursor-pointer">
+                                <option value="repair">🔧 ประวัติการซ่อม</option>
+                                <option value="incident">📋 บันทึกเหตุการณ์</option>
+                            </select>
+                        </div>
+
+                        <!-- Col 2: Branch Selection (REQUIRED) -->
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-extrabold text-slate-700 ml-1 flex items-center gap-1">
+                                <i data-lucide="building" class="w-3.5 h-3.5 text-emerald-500"></i> เลือกสาขา <span
+                                    class="text-rose-500 font-extrabold">* (ต้องเลือก)</span>
+                            </label>
+                            <select id="filterBranchSelect" onchange="executeFilterSearch()"
+                                class="form-input font-medium text-slate-800 cursor-pointer">
+                                <option value="">-- กรุณาเลือกสาขา --</option>
+                                <option value="c7c07dc8-9e4d-4d2a-acf5-2b9f274168ce">สำนักงานใหญ่สาขา</option>
+                                <option value="8e0147c3-6a02-4a61-9006-5ece5a00f060">สาขา Olive 101/1</option>
+
+                            </select>
+                        </div>
+
+                        <!-- Col 3: Room Number -->
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-bold text-slate-700 ml-1 flex items-center gap-1">
+                                <i data-lucide="door-closed" class="w-3.5 h-3.5 text-slate-400"></i> เลขห้อง
+                            </label>
+                            <input type="text" id="filterRoomNumber" placeholder="ระบุเลขห้อง..."
+                                onkeyup="if(event.key==='Enter') executeFilterSearch()"
+                                class="w-full text-xs rounded-2xl border border-slate-200 py-3 px-3.5 bg-white h-[46px] focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all">
+                        </div>
+
+                        <!-- Col 4: Keyword Search -->
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-bold text-slate-700 ml-1 flex items-center gap-1">
+                                <i data-lucide="search" class="w-3.5 h-3.5 text-indigo-500"></i> คำค้นหา
+                            </label>
+                            <input type="text" id="filterKeyword" placeholder="พิมพ์คำค้นหา (เลขใบงาน, อาการ, ช่าง...)..."
+                                onkeyup="if(event.key==='Enter') executeFilterSearch()"
+                                class="w-full text-xs rounded-2xl border border-slate-200 py-3 px-3.5 bg-white h-[46px] focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all">
+                        </div>
+
+                        <!-- Col 5: System Selection (Shown for repair history only) -->
+                        <div id="filterSystemWrapper" class="space-y-1.5">
+                            <label class="text-xs font-bold text-slate-700 ml-1 flex items-center gap-1">
+                                <i data-lucide="wrench" class="w-3.5 h-3.5 text-amber-500"></i> ระบบ
+                            </label>
+                            <select id="filterSystemSelect"
+                                class="form-input font-medium text-slate-800 cursor-pointer">
+                                <option value="">ทุกระบบ</option>
+                                <option value="Electrical">ระบบไฟฟ้า (Electrical)</option>
+                                <option value="AC">ระบบปรับอากาศ (AC)</option>
+                                <option value="Plumbing">ระบบประปา (Plumbing)</option>
+                                <option value="Furniture">เฟอร์นิเจอร์ (Furniture)</option>
+                                <option value="Appliances">เครื่องใช้ไฟฟ้า (Appliances)</option>
+                            </select>
+                        </div>
+
+                        <!-- Col 6: Date Range -->
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-bold text-slate-700 ml-1 flex items-center gap-1">
+                                <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i> ช่วงวันที่
+                            </label>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <input type="date" id="filterStartDate" title="วันที่เริ่มต้น"
+                                    class="w-full text-[11px] rounded-2xl border border-slate-200 py-2 px-2 bg-white h-[46px] focus:outline-none focus:border-indigo-600">
+                                <input type="date" id="filterEndDate" title="วันที่สิ้นสุด"
+                                    class="w-full text-[11px] rounded-2xl border border-slate-200 py-2 px-2 bg-white h-[46px] focus:outline-none focus:border-indigo-600">
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Filter Action Buttons -->
+                    <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-50">
+                        <div id="filterBranchWarning"
+                            class="hidden text-amber-700 bg-amber-50 border border-amber-200 px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2">
+                            <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600 shrink-0"></i>
+                            <span>กรุณาเลือก <b>"สาขา"</b> ก่อนดำเนินการค้นหาข้อมูล</span>
+                        </div>
+                        <div class="flex items-center gap-2.5 ml-auto">
+                            <button onclick="resetDataFilters()" class="btn-secondary gap-2 text-sm">
+                                <i data-lucide="rotate-ccw" class="w-4 h-4"></i> ล้างค่า
+                            </button>
+                            <button onclick="executeFilterSearch()" class="btn-primary gap-2 text-sm">
+                                <i data-lucide="search" class="w-4 h-4"></i> ค้นหาข้อมูล
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Display Container -->
+                <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 space-y-4">
+                    <div
+                        class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <h3 id="resultTitle" class="font-extrabold text-slate-800 text-base">ประวัติการซ่อม</h3>
+                            <span id="resultCountBadge"
+                                class="text-xs bg-indigo-50 text-indigo-700 border border-indigo-100 px-3 py-1 rounded-full font-black">
+                                0 รายการ
+                            </span>
+                        </div>
+                        <div id="repairStatsSummary"
+                            class="hidden flex items-center gap-3 text-xs font-medium text-slate-500">
+                            <span
+                                class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-1 rounded-xl font-bold">
+                                💰 ค่าใช้จ่ายรวม: <span id="totalRepairCost">0</span> ฿
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Table Container -->
+                    <div id="dataTableContainer" class="overflow-x-auto min-h-[350px]">
+                        <!-- Dynamic Table will be rendered by JS -->
+                    </div>
                 </div>
 
             </div>
         </main>
     </div>
 
-    <!-- Action Log Detail Modal -->
-    <div id="logDetailModal" class="modal-overlay hidden" style="z-index: 100;">
-        <div class="modal-content max-w-md animate-in fade-in zoom-in duration-200">
+    <!-- Data Detail Modal -->
+    <div id="dataDetailModal" class="modal-overlay hidden" style="z-index: 100;">
+        <div class="modal-content max-w-xl animate-in fade-in zoom-in duration-200">
             <div
-                class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10 rounded-t-3xl">
                 <div class="flex items-center gap-2">
-                    <span id="logDetailActionBadge"
-                        class="text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">ประเภท</span>
-                    <h3 class="text-base font-black text-slate-800 tracking-tight">รายละเอียดบันทึก</h3>
-                </div>
-                <button onclick="closeLogDetailModal()" class="btn-icon text-slate-400 rounded-xl">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-
-            <div class="p-8 space-y-6">
-                <!-- Log detail content -->
-                <div class="bg-slate-50 border border-slate-100 p-5 rounded-2xl space-y-4">
-                    <div class="space-y-1">
-                        <span
-                            class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">รายละเอียดกิจกรรม</span>
-                        <p id="logDetailText" class="text-sm font-bold text-slate-700 leading-relaxed">
-                            ข้อความรายละเอียดบันทึกการทำงาน...</p>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4 pt-3 border-t border-slate-200/50">
-                        <div>
-                            <span
-                                class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">ผู้ดำเนินการ</span>
-                            <span id="logDetailUser" class="text-xs font-bold text-slate-600">วิชัย บำรุงดี</span>
-                        </div>
-                        <div>
-                            <span
-                                class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">วัน-เวลาบันทึก</span>
-                            <span id="logDetailTime" class="text-xs font-bold text-slate-600">25/05/2026 13:20:00</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex justify-end pt-2">
-                    <button onclick="closeLogDetailModal()" class="btn-primary w-full sm:w-auto">ปิดหน้าต่าง</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Room Status List Modal -->
-    <div id="statusRoomsModal" class="modal-overlay hidden" style="z-index: 100;">
-        <div class="modal-content max-w-lg animate-in fade-in zoom-in duration-200">
-            <div
-                class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
-                <div class="flex items-center gap-3">
                     <div
-                        class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shrink-0">
-                        <i data-lucide="hotel" class="w-5 h-5"></i>
+                        class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center font-bold">
+                        <i data-lucide="file-text" class="w-4.5 h-4.5"></i>
                     </div>
-                    <div>
-                        <h3 class="text-base font-black text-slate-800 tracking-tight" id="statusRoomsModalTitle">
-                            รายละเอียดห้องพัก</h3>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider"
-                            id="statusRoomsModalSub">แสดงรายการห้องพักตามสถานะที่เลือก</p>
-                    </div>
+                    <h3 id="detailModalTitle" class="text-base font-extrabold text-slate-800">รายละเอียดข้อมูล</h3>
                 </div>
-                <button onclick="closeStatusRoomsModal()" class="btn-icon text-slate-400 rounded-xl">
-                    <i data-lucide="x" class="w-6 h-6"></i>
+                <button onclick="closeDataDetailModal()"
+                    class="btn-icon text-slate-400 hover:text-slate-600 rounded-xl">
+                    <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-
-            <div class="p-8 space-y-4 max-h-[500px] overflow-y-auto logs-scrollbar" id="statusRoomsList">
-                <!-- Injected dynamically -->
+            <div id="detailModalBody" class="p-6 space-y-4">
+                <!-- Injected via JavaScript -->
             </div>
         </div>
     </div>
 
-    <!-- Room Details Drawer/Modal (Inspection History & Repair Trigger) -->
-    <div id="roomDetailsModal" class="modal-overlay hidden">
-        <div class="modal-content max-w-6xl animate-in fade-in zoom-in duration-200">
-            <div
-                class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
-                <div class="flex items-center gap-3">
-                    <span id="detailRoomBadge"
-                        class="w-11 h-11 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black text-base">301</span>
-                    <div>
-                        <h3 class="text-lg font-black text-slate-800 tracking-tight" id="detailRoomTitle">ห้อง 301 -
-                            Deluxe</h3>
-                        <p class="text-xs text-slate-400 font-bold uppercase tracking-wider" id="detailBranchTitle">สาขา
-                            กรุงเทพฯ (สุขุมวิท)</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-1">
-                    <button onclick="editCurrentRoom()" class="btn-icon text-indigo-600 hover:bg-indigo-50 rounded-xl"
-                        title="แก้ไขข้อมูลห้องพัก">
-                        <i data-lucide="pencil" class="w-5 h-5"></i>
-                    </button>
-                    <button onclick="deleteCurrentRoom()" class="btn-icon text-rose-500 hover:bg-rose-50 rounded-xl"
-                        title="ลบห้องพักนี้">
-                        <i data-lucide="trash-2" class="w-5 h-5"></i>
-                    </button>
-                    <button onclick="closeRoomDetailsModal()" class="btn-icon text-slate-400 rounded-xl">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="p-8 space-y-6">
-                <!-- Status Row -->
-                <div class="flex flex-col gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-bold text-slate-500">สถานะปัจจุบัน:</span>
-                        <div class="flex items-center gap-2">
-                            <span id="detailStatusBadge" class="status-badge status-success text-xs">ปกติ</span>
-                            <button onclick="openChangeStatusModal()"
-                                class="px-2.5 py-1 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-slate-500 hover:text-indigo-600 rounded-lg text-[10px] font-bold transition-all active:scale-95 cursor-pointer flex items-center gap-1"
-                                title="เปลี่ยนสถานะห้องพัก">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                </svg>
-                                แก้ไขสถานะ
-                            </button>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between pt-2.5 border-t border-slate-200/60">
-                        <span class="text-xs font-bold text-slate-500">สถานะการใช้งาน:</span>
-                        <label class="inline-flex items-center gap-2 cursor-pointer select-none">
-                            <input type="checkbox" id="detailUsageCheckbox" onchange="toggleRoomUsage()"
-                                class="w-4.5 h-4.5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer">
-                            <span id="detailUsageText" class="text-xs font-bold text-slate-700">ว่าง</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Last Checked Card -->
-                <div class="bg-indigo-50/30 border border-indigo-100 p-5 rounded-2xl space-y-3">
-                    <div class="flex justify-between items-center text-sm">
-                        <span class="font-extrabold text-indigo-900 flex items-center gap-1.5">
-                            <i data-lucide="shield-check" class="w-4.5 h-4.5 text-indigo-600"></i> สภาพล่าสุดภายในห้อง
-                        </span>
-                        <span class="text-xs text-indigo-400 font-medium" id="lastCheckDate">ตรวจเมื่อ:
-                            25/05/2026</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 text-xs" id="lastInspectionSummary">
-                        <!-- Checklist summary items injected here -->
-                    </div>
-                </div>
-
-                <!-- Actions Row -->
-                <div class="grid grid-cols-2 gap-3 pt-2">
-                    <button onclick="openInspectionModal()"
-                        class="btn-secondary text-indigo-600 hover:text-indigo-700 bg-indigo-50 border-indigo-100 hover:bg-indigo-100">
-                        <i data-lucide="check-square" class="w-4 h-4"></i> ตรวจเช็คระบบใหม่
-                    </button>
-                    <button onclick="openRepairModal()" class="btn-primary">
-                        <i data-lucide="wrench" class="w-4 h-4"></i> บันทึกงานซ่อมใหม่
-                    </button>
-                </div>
-
-                <!-- Active Repairs History -->
-                <div class="space-y-3">
-                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">
-                        ใบงานซ่อมบำรุงที่กำลังดำเนินการ</h4>
-                    <div id="repairHistoryList" class="space-y-2">
-                        <!-- History injected here -->
-                    </div>
-                </div>
-
-                <!-- Past Repairs History with Filters -->
-                <div class="space-y-3 border-t border-slate-100 pt-4">
-                    <div class="flex items-center justify-between">
-                        <!-- Tab Buttons -->
-                        <div class="flex items-center gap-4">
-                            <button type="button" id="tabBtnRepairs" onclick="switchHistoryTab('repairs')"
-                                class="pb-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition-all cursor-pointer bg-transparent outline-none">
-                                <i data-lucide="wrench" class="w-3.5 h-3.5 inline-block mr-1"></i>งานซ่อม
-                            </button>
-                            <button type="button" id="tabBtnIncidents" onclick="switchHistoryTab('incidents')"
-                                class="pb-2 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-all cursor-pointer bg-transparent outline-none">
-                                <i data-lucide="alert-circle" class="w-3.5 h-3.5 inline-block mr-1"></i>เหตุการณ์
-                            </button>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <button type="button" onclick="downloadRepairHistoryCSV()"
-                                class="text-sm font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-1.5 cursor-pointer bg-transparent border-0 outline-none"
-                                title="ดาวน์โหลดประวัติเป็น CSV">
-                                <i data-lucide="download" class="w-4 h-4"></i> ดาวน์โหลด
-                            </button>
-                            <button type="button" id="toggleFilterBtn" onclick="toggleRepairFilters()"
-                                class="text-sm font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 cursor-pointer bg-transparent border-0 outline-none">
-                                <i data-lucide="filter" class="w-4 h-4"></i> กรองข้อมูล
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Repairs Tab Area -->
-                    <div id="repairsHistoryArea">
-                        <!-- Filters Grid (Hidden by default) -->
-                        <div id="repairFiltersArea"
-                            class="hidden p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-3 text-sm mb-3">
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label
-                                        class="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">ระบบที่ต้องการกรอง</label>
-                                    <select id="filterRepairCategory"
-                                        class="w-full text-sm rounded-xl border-slate-200 py-1.5 px-2 bg-white"
-                                        onchange="applyRepairFilters()">
-                                        <option value="All">ทุกระบบ</option>
-                                        <option value="Electrical">ระบบไฟฟ้า (Electrical)</option>
-                                        <option value="AC">ระบบปรับอากาศ (AC)</option>
-                                        <option value="Plumbing">ระบบประปา/สุขภัณฑ์ (Plumbing)</option>
-                                        <option value="Furniture">เฟอร์นิเจอร์ (Furniture)</option>
-                                        <option value="Appliances">เครื่องใช้ไฟฟ้า (Appliances)</option>
-                                        <option value="Other">อื่นๆ (Other)</option>
-                                    </select>
-                                </div>
-                                <div class="grid grid-cols-2 gap-1.5">
-                                    <div>
-                                        <label
-                                            class="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">วันที่เริ่มต้น</label>
-                                        <input type="date" id="filterRepairStart"
-                                            class="w-full text-sm rounded-2xl border border-slate-200 py-2.5 px-4 bg-white h-[48px] focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
-                                            onchange="applyRepairFilters()">
-                                    </div>
-                                    <div>
-                                        <label
-                                            class="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">วันที่สิ้นสุด</label>
-                                        <input type="date" id="filterRepairEnd"
-                                            class="w-full text-sm rounded-2xl border border-slate-200 py-2.5 px-4 bg-white h-[48px] focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
-                                            onchange="applyRepairFilters()">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="flex justify-end gap-1.5 pt-1">
-                                <button type="button" onclick="resetRepairFilters()"
-                                    class="px-3.5 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 bg-slate-200/50 hover:bg-slate-200 rounded-lg cursor-pointer transition-all">รีเซ็ตตัวกรอง</button>
-                            </div>
-                        </div>
-
-                        <div id="pastRepairsList" class="space-y-2 max-h-[220px] overflow-y-auto logs-scrollbar">
-                            <!-- Historical items injected here -->
-                        </div>
-                    </div>
-
-                    <!-- Incidents Tab Area (Hidden by default) -->
-                    <div id="incidentsHistoryArea" class="hidden">
-                        <div id="pastIncidentsList" class="space-y-2 max-h-[220px] overflow-y-auto logs-scrollbar">
-                            <!-- Incident items injected here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 1. Systems Inspection Checklist Modal (ตรวจเช็คระบบภายในห้อง) -->
-    <div id="inspectionModal" class="modal-overlay hidden" style="z-index: 110;">
-        <div class="modal-content max-w-lg animate-in fade-in zoom-in duration-200">
-            <div
-                class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
-                <div>
-                    <h3 class="text-base font-black text-slate-800 tracking-tight">ตรวจประเมินระบบภายในห้อง <span
-                            id="inspectRoomLabel" class="text-indigo-600">301</span></h3>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                        เช็คสภาพอุปกรณ์และสิ่งอำนวยความสะดวกในโรงแรม</p>
-                </div>
-                <div class="flex items-center gap-1">
-                    <button onclick="addNewInspectionSystem()"
-                        class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-[10px] font-black border border-indigo-100 transition-all active:scale-95 cursor-pointer flex items-center gap-1"
-                        title="เพิ่มระบบตรวจเช็คใหม่">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg> เพิ่มระบบ
-                    </button>
-                    <button onclick="closeInspectionModal()" class="btn-icon">
-                        <i data-lucide="x" class="w-6 h-6"></i>
-                    </button>
-                </div>
-            </div>
-
-            <form id="inspectionForm" class="p-8 space-y-6">
-                <!-- Checklist items -->
-                <div class="space-y-5" id="inspectionChecklistItems">
-                    <!-- Injected dynamically by JavaScript -->
-                </div>
-
-                <!-- Auto-Create Ticket Option -->
-                <div class="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-start gap-3">
-                    <input type="checkbox" id="inspectAutoCreateRepair" checked
-                        class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 mt-0.5">
-                    <div>
-                        <label for="inspectAutoCreateRepair"
-                            class="text-xs font-black text-amber-900 block leading-tight">สร้างใบงานซ่อมโดยอัตโนมัติ</label>
-                        <span class="text-[10px] text-amber-700/80 font-medium">หากตรวจพบว่าอุปกรณ์ใดชำรุด
-                            ระบบจะเปิดบันทึกแจ้งซ่อมที่ห้องดังกล่าวในระบบทันที</span>
-                    </div>
-                </div>
-
-                <div class="pt-2 flex gap-3">
-                    <button type="button" onclick="closeInspectionModal()" class="flex-1 btn-cancel">ยกเลิก</button>
-                    <button type="submit"
-                        class="flex-1 btn-primary bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/10">
-                        <i data-lucide="save" class="w-5 h-5"></i> บันทึกผลการตรวจ
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- 2. New Maintenance Record Form Modal (แบบฟอร์มบันทึกการซ่อม) -->
-    <div id="repairModal" class="modal-overlay hidden" style="z-index: 120;">
-        <div class="modal-content max-w-lg animate-in fade-in zoom-in duration-200">
-            <div
-                class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
-                <div>
-                    <h3 class="text-base font-black text-slate-800 tracking-tight">บันทึกแจ้งซ่อมแซมห้อง <span
-                            id="repairRoomLabel" class="text-indigo-600">301</span></h3>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                        บันทึกรายการซ่อมเพื่อมอบหมายงานให้ช่างวิศวกรรมบำรุงรักษา</p>
-                </div>
-                <button onclick="closeRepairModal()" class="btn-icon">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-
-            <form id="repairForm" class="p-8 space-y-5">
-                <div>
-                    <label class="form-label">หมวดหมู่อุปกรณ์ที่เสียหาย <span class="text-red-500">*</span></label>
-                    <select id="repairCategory" required>
-                        <option value="Electrical">ระบบไฟฟ้า (Electrical)</option>
-                        <option value="AC">ระบบปรับอากาศ (AC)</option>
-                        <option value="Plumbing">ระบบประปาและสุขภัณฑ์ (Plumbing)</option>
-                        <option value="Furniture">เฟอร์นิเจอร์และขอบประตู (Furniture)</option>
-                        <option value="Appliances">เครื่องใช้ไฟฟ้าและโทรทัศน์ (Appliances)</option>
-                        <option value="Other">อื่นๆ (Other)</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="form-label">รายละเอียดปัญหา / อาการที่พบ <span class="text-red-500">*</span></label>
-                    <input type="text" id="repairDescription" required class="form-input"
-                        placeholder="ตัวอย่างเช่น แอร์ห้องพักมีเสียงดังและไม่เย็น...">
-
-                    <!-- Pre-populated Quick Tags -->
-                    <div class="mt-2 flex flex-wrap gap-1.5 items-center">
-                        <span
-                            class="text-[9px] font-black text-slate-400 uppercase tracking-widest mr-1">ปัญหายอดฮิต:</span>
-                        <button type="button" onclick="setQuickDescription('แอร์ไม่เย็นและมีแต่ลม')"
-                            class="px-2 py-0.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-slate-600 hover:text-indigo-600 rounded-lg text-[10px] font-bold transition-all">❄
-                            แอร์ไม่เย็น</button>
-                        <button type="button" onclick="setQuickDescription('ไฟห้องพักกระพริบและเปิดบางจุดไม่ติด')"
-                            class="px-2 py-0.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-slate-600 hover:text-indigo-600 rounded-lg text-[10px] font-bold transition-all">💡
-                            ไฟเสีย</button>
-                        <button type="button" onclick="setQuickDescription('น้ำในชักโครกไหลช้าและส้วมตัน')"
-                            class="px-2 py-0.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-slate-600 hover:text-indigo-600 rounded-lg text-[10px] font-bold transition-all">🚿
-                            ชักโครกตัน</button>
-                        <button type="button" onclick="setQuickDescription('รีโมทโทรทัศน์ถ่านหมดและจอลาย')"
-                            class="px-2 py-0.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-slate-600 hover:text-indigo-600 rounded-lg text-[10px] font-bold transition-all">📺
-                            ทีวีพัง</button>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="form-label">ความสำคัญ <span class="text-red-500">*</span></label>
-                        <select id="repairPriority" required>
-                            <option value="" disabled selected>-- ยังไม่ระบุ --</option>
-                            <option value="Low">ต่ำ (Low)</option>
-                            <option value="Medium">ปานกลาง (Medium)</option>
-                            <option value="High">สูง (High)</option>
-                            <option value="Critical">วิกฤต (Critical)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label">ช่างซ่อมบำรุงที่รับผิดชอบ</label>
-                        <select id="repairAssignee">
-                            <option value="" selected>-- ยังไม่ระบุช่าง --</option>
-                            <option value="สมชาย วิศวกรรม">สมชาย วิศวกรรม</option>
-                            <option value="วิชัย บำรุงดี">วิชัย บำรุงดี</option>
-                            <option value="เกรียงไกร ช่างไฟ">เกรียงไกร ช่างไฟ</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="form-label">ประมาณการค่าใช้จ่าย (บาท)</label>
-                    <input type="number" id="repairCost" class="form-input bg-white" placeholder="0.00" min="0"
-                        value="0">
-                </div>
-
-                <div class="pt-2 flex gap-3">
-                    <button type="button" onclick="closeRepairModal()" class="flex-1 btn-cancel">ยกเลิก</button>
-                    <button type="submit" class="flex-1 btn-primary">
-                        <i data-lucide="wrench" class="w-5 h-5"></i> บันทึกใบงานซ่อม
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- 2.5. Edit Maintenance Record Form Modal (แบบฟอร์มแก้ไขใบแจ้งซ่อม) -->
-    <div id="editTicketModal" class="modal-overlay hidden" style="z-index: 120;">
-        <div class="modal-content max-w-lg animate-in fade-in zoom-in duration-200">
-            <div
-                class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
-                <div>
-                    <h3 class="text-base font-black text-slate-800 tracking-tight">แก้ไขใบแจ้งซ่อมแซมห้อง <span
-                            id="editTicketRoomLabel" class="text-indigo-600">301</span></h3>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                        แก้ไขข้อมูลใบงานซ่อมบำรุงที่เปิดไว้แล้ว</p>
-                </div>
-                <button onclick="closeEditTicketModal()" class="btn-icon">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-
-            <form id="editTicketForm" class="p-8 space-y-5">
-                <input type="hidden" id="editTicketRoomId" value="">
-                <input type="hidden" id="editTicketId" value="">
-
-                <div>
-                    <label class="form-label">หมวดหมู่อุปกรณ์ที่เสียหาย <span class="text-red-500">*</span></label>
-                    <select id="editTicketCategory" required>
-                        <!-- Options will be populated dynamically -->
-                    </select>
-                </div>
-
-                <div>
-                    <label class="form-label">รายละเอียดปัญหา / อาการที่พบ <span class="text-red-500">*</span></label>
-                    <input type="text" id="editTicketDescription" required class="form-input"
-                        placeholder="ตัวอย่างเช่น แอร์ห้องพักมีเสียงดังและไม่เย็น...">
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="form-label">ความสำคัญ <span class="text-red-500">*</span></label>
-                        <select id="editTicketPriority" required>
-                            <option value="Low">ต่ำ (Low)</option>
-                            <option value="Medium">ปานกลาง (Medium)</option>
-                            <option value="High">สูง (High)</option>
-                            <option value="Critical">วิกฤต (Critical)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label">ช่างซ่อมบำรุงที่รับผิดชอบ</label>
-                        <select id="editTicketAssignee">
-                            <option value="">-- ไม่ระบุช่าง (ยืนยันเข้าตรวจ) --</option>
-                            <option value="สมชาย วิศวกรรม">สมชาย วิศวกรรม</option>
-                            <option value="วิชัย บำรุงดี">วิชัย บำรุงดี</option>
-                            <option value="เกรียงไกร ช่างไฟ">เกรียงไกร ช่างไฟ</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="form-label">ประมาณการค่าใช้จ่าย (บาท)</label>
-                    <input type="number" id="editTicketCost" class="form-input bg-white" placeholder="0.00" min="0"
-                        value="0">
-                </div>
-
-                <div class="pt-2 flex gap-3">
-                    <button type="button" onclick="closeEditTicketModal()" class="flex-1 btn-cancel">ยกเลิก</button>
-                    <button type="submit" class="flex-1 btn-primary">
-                        <i data-lucide="save" class="w-5 h-5"></i> บันทึกการแก้ไข
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- 3. Add Floor Modal (แบบฟอร์มเพิ่มชั้น) -->
-    <div id="floorModal" class="modal-overlay hidden" style="z-index: 120;">
-        <div class="modal-content max-w-md animate-in fade-in zoom-in duration-200">
-            <div
-                class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
-                <div>
-                    <h3 class="text-base font-black text-slate-800 tracking-tight">เพิ่มชั้นใหม่</h3>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                        ระบบจะสร้างห้องพักทั้งหมดในชั้นให้อัตโนมัติ</p>
-                </div>
-                <button onclick="closeFloorModal()" class="btn-icon">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-
-            <form id="floorForm" class="p-8 space-y-5">
-                <!-- Branch auto display -->
-                <div class="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center gap-3">
-                    <div
-                        class="w-9 h-9 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center shrink-0">
-                        <i data-lucide="hotel" class="w-4.5 h-4.5"></i>
-                    </div>
-                    <div>
-                        <p class="text-[10px] font-black text-indigo-400 uppercase tracking-widest">สาขาโรงแรมที่เลือก
-                        </p>
-                        <p class="text-sm font-black text-indigo-800" id="floorModalBranchName">สาขา สุขุมวิท</p>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="form-label">หมายเลขชั้น <span class="text-red-500">*</span></label>
-                        <input type="number" id="floorFormNumber" required class="form-input bg-white"
-                            placeholder="เช่น 3" min="1" max="99">
-                    </div>
-                    <div>
-                        <label class="form-label">จำนวนห้องในชั้น <span class="text-red-500">*</span></label>
-                        <input type="number" id="floorFormRoomCount" required class="form-input bg-white"
-                            placeholder="เช่น 15" min="1" max="100">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="form-label">ประเภทห้องพัก (เริ่มต้น)</label>
-                    <select id="floorFormRoomType">
-                        <option value="Standard">Standard</option>
-                        <option value="Deluxe">Deluxe</option>
-                        <option value="Suite">Suite</option>
-                        <option value="Penthouse">Penthouse</option>
-                        <option value="ADD_NEW_TYPE" class="text-indigo-600 font-bold">+ เพิ่มประเภทใหม่...</option>
-                    </select>
-                </div>
-
-                <div
-                    class="p-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-xs text-slate-500 font-medium leading-relaxed">
-                    <span class="font-black text-slate-600">ตัวอย่าง:</span> กรอกชั้น <strong>3</strong> จำนวน
-                    <strong>15</strong> ห้อง → ระบบจะสร้างห้อง <strong>301, 302, ... 315</strong> ให้อัตโนมัติ
-                </div>
-
-                <div class="pt-2 flex gap-3">
-                    <button type="button" onclick="closeFloorModal()" class="flex-1 btn-cancel">ยกเลิก</button>
-                    <button type="submit" class="flex-1 btn-primary">
-                        <i data-lucide="layers" class="w-5 h-5"></i> สร้างชั้นและห้องพัก
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- 3b. Add Single Room Modal (เพิ่มห้องพักในชั้น) -->
-    <div id="roomModal" class="modal-overlay hidden" style="z-index: 120;">
-        <div class="modal-content max-w-md animate-in fade-in zoom-in duration-200">
-            <div
-                class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
-                <div>
-                    <h3 class="text-base font-black text-slate-800 tracking-tight" id="roomModalTitle">เพิ่มห้องพักใหม่
-                    </h3>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">ระบุหมายเลขห้อง
-                        และประเภทห้องพัก</p>
-                </div>
-                <button onclick="closeRoomModal()" class="btn-icon">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-
-            <form id="roomForm" class="p-8 space-y-5">
-                <input type="hidden" id="roomFormMode" value="create"> <!-- 'create' or 'edit' -->
-                <input type="hidden" id="editRoomId" value="">
-                <input type="hidden" id="roomFormFloorFixed" value="">
-
-                <!-- Branch auto display -->
-                <div class="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center gap-3">
-                    <div
-                        class="w-9 h-9 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center shrink-0">
-                        <i data-lucide="hotel" class="w-4.5 h-4.5"></i>
-                    </div>
-                    <div>
-                        <p class="text-[10px] font-black text-indigo-400 uppercase tracking-widest">สาขา / ชั้น</p>
-                        <p class="text-sm font-black text-indigo-800" id="roomModalBranchFloor">สาขา สุขุมวิท • ชั้น 3
-                        </p>
-                    </div>
-                </div>
-
-                <input type="hidden" id="roomFormBranch" value="">
-                <input type="hidden" id="roomFormFloor" value="">
-
-                <div>
-                    <label class="form-label">หมายเลขห้อง (เช่น 205) <span class="text-red-500">*</span></label>
-                    <input type="text" id="roomFormNumber" required class="form-input bg-white" placeholder="เช่น 205">
-                </div>
-
-                <div>
-                    <label class="form-label">ประเภทห้องพัก <span class="text-red-500">*</span></label>
-                    <select id="roomFormType" required>
-                        <option value="Standard">Standard</option>
-                        <option value="Deluxe">Deluxe</option>
-                        <option value="Suite">Suite</option>
-                        <option value="Penthouse">Penthouse</option>
-                        <option value="ADD_NEW_TYPE" class="text-indigo-600 font-bold">+ เพิ่มประเภทใหม่...</option>
-                    </select>
-                </div>
-
-                <div class="pt-2 flex gap-3">
-                    <button type="button" onclick="closeRoomModal()" class="flex-1 btn-cancel">ยกเลิก</button>
-                    <button type="submit" class="flex-1 btn-primary">
-                        <i data-lucide="save" class="w-5 h-5"></i> บันทึกข้อมูล
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Scripts -->
     <script src="/assets/js/app.js"></script>
-    <!-- RoomCare Modular JS — loaded in dependency order -->
     <script src="/assets/js/room-care/rc-data.js"></script>
     <script src="/assets/js/room-care/rc-assignees.js"></script>
     <script src="/assets/js/room-care/rc-core.js"></script>
@@ -819,7 +235,6 @@
     <script src="/assets/js/room-care/rc-branch.js"></script>
     <script src="/assets/js/room-care/rc-room-ops.js"></script>
     <script src="/assets/js/room-care/rc-init.js"></script>
-    <!-- End RoomCare Modular JS -->
 </body>
 
 </html>

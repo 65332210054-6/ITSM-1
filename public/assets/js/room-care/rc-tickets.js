@@ -71,6 +71,7 @@ async function handleRepairFormSubmit(e) {
 
         closeRepairModal();
         openRoomDetails(selectedRoom.id);
+        if (typeof renderDashboard === 'function') renderDashboard();
         Swal.close();
         notify.success('สร้างบันทึกใบแจ้งซ่อมห้องพักสำเร็จ!');
     } catch (err) {
@@ -83,10 +84,24 @@ async function handleRepairFormSubmit(e) {
 // Interactive states: Start/Finish Jobs
 async function startRepairJob(roomId, ticketId) {
     const branchId = document.getElementById('branchSelect').value;
+
+    Swal.fire({
+        title: 'กำลังเริ่มงานซ่อม...',
+        text: 'กำลังเปลี่ยนสถานะใบงานเป็นกำลังซ่อมบำรุง...',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        customClass: { popup: 'rounded-3xl border-0 shadow-2xl' },
+        didOpen: () => { Swal.showLoading(); }
+    });
+
     try {
         const r = (roomsDB[branchId] || []).find(room => room.id === roomId);
         const t = r?.activeTickets?.find(ticket => ticket.id === ticketId);
-        if (!r || !t) return;
+        if (!r || !t) {
+            Swal.close();
+            return;
+        }
 
         await rcFetch('/api/room-care?action=start_ticket', {
             method: 'PUT',
@@ -97,10 +112,13 @@ async function startRepairJob(roomId, ticketId) {
         await loadBranchRooms(branchId);
         selectedRoom = (roomsDB[branchId] || []).find(room => room.id === roomId) || selectedRoom;
         openRoomDetails(roomId);
+        if (typeof renderDashboard === 'function') renderDashboard();
+        Swal.close();
         notify.toast('เปลี่ยนสถานะใบงานเป็น: กำลังซ่อมบำรุง', 'info');
     } catch (err) {
+        Swal.close();
         console.error('startRepairJob:', err);
-        notify.error('เกิดข้อผิดพลาด');
+        notify.error('เกิดข้อผิดพลาดในการเริ่มงานซ่อม');
     }
 }
 
@@ -111,6 +129,16 @@ async function finishRepairJob(roomId, ticketId, closeNotes = 'ไม่มี�
         const t = r?.activeTickets?.find(ticket => ticket.id === ticketId);
         if (!r || !t) return;
 
+        Swal.fire({
+            title: 'กำลังปิดงานซ่อม...',
+            text: `กำลังบันทึกการปิดงานซ่อมห้อง ${r.number}...`,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            customClass: { popup: 'rounded-3xl border-0 shadow-2xl' },
+            didOpen: () => { Swal.showLoading(); }
+        });
+
         await rcFetch('/api/room-care?action=finish_ticket', {
             method: 'PUT',
             body: JSON.stringify({ ticket_id: ticketId, room_id: roomId, close_notes: closeNotes })
@@ -120,8 +148,11 @@ async function finishRepairJob(roomId, ticketId, closeNotes = 'ไม่มี�
         await loadBranchRooms(branchId);
         selectedRoom = (roomsDB[branchId] || []).find(room => room.id === roomId) || selectedRoom;
         openRoomDetails(roomId);
+        if (typeof renderDashboard === 'function') renderDashboard();
+        Swal.close();
         notify.success('บันทึกการปิดงานซ่อมแซมเสร็จสิ้น!');
     } catch (err) {
+        Swal.close();
         console.error('finishRepairJob:', err);
         notify.error('เกิดข้อผิดพลาด');
     }
@@ -218,6 +249,16 @@ async function handleEditTicketFormSubmit(e) {
     let cost = parseFloat(document.getElementById('editTicketCost').value);
     if (isNaN(cost) || cost < 0) cost = 0;
 
+    Swal.fire({
+        title: 'กำลังบันทึกการแก้ไข...',
+        text: 'กำลังอัปเดตข้อมูลใบงานซ่อมแซม...',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        customClass: { popup: 'rounded-3xl border-0 shadow-2xl' },
+        didOpen: () => { Swal.showLoading(); }
+    });
+
     try {
         await rcFetch('/api/room-care?action=update_ticket', {
             method: 'PUT',
@@ -230,8 +271,11 @@ async function handleEditTicketFormSubmit(e) {
         selectedRoom = (roomsDB[branchId] || []).find(room => room.id === roomId) || selectedRoom;
         closeEditTicketModal();
         openRoomDetails(roomId);
+        if (typeof renderDashboard === 'function') renderDashboard();
+        Swal.close();
         notify.success('แก้ไขข้อมูลใบงานซ่อมแซมสำเร็จ!');
     } catch (err) {
+        Swal.close();
         console.error('handleEditTicketFormSubmit:', err);
         notify.error('เกิดข้อผิดพลาดในการแก้ไขใบงาน');
     }
@@ -308,6 +352,8 @@ async function addNewSystem(selectId) {
         confirmButtonText: 'บันทึก',
         cancelButtonText: 'ยกเลิก',
         confirmButtonColor: '#4f46e5',
+        showLoaderOnConfirm: true,
+        allowOutsideClick: () => !Swal.isLoading(),
         inputValidator: (value) => {
             if (!value) {
                 return 'กรุณากรอกชื่อระบบ!';
@@ -316,24 +362,35 @@ async function addNewSystem(selectId) {
             if (systemsList.some(s => s.toLowerCase() === cleanVal.toLowerCase())) {
                 return 'ระบบนี้มีอยู่แล้วในระบบ!';
             }
-        }
-    }).then(async (res) => {
-        if (res.isConfirmed) {
-            const newSys = res.value.trim();
-            systemsList.push(newSys);
-            await saveSystemsList();
-            renderCategoryOptions();
+        },
+        preConfirm: async (value) => {
+            const cancelBtn = Swal.getCancelButton();
+            if (cancelBtn) cancelBtn.style.display = 'none';
+            Swal.showLoading();
+            try {
+                const newSys = value.trim();
+                systemsList.push(newSys);
+                await saveSystemsList();
+                renderCategoryOptions();
 
-            // Select the newly added system
-            if (selectId === 'repairCategory' && choiceCategory) {
-                choiceCategory.setChoiceByValue(newSys);
-            } else if (selectId === 'editTicketCategory' && choiceEditCategory) {
-                choiceEditCategory.setChoiceByValue(newSys);
+                // Select the newly added system
+                if (selectId === 'repairCategory' && choiceCategory) {
+                    choiceCategory.setChoiceByValue(newSys);
+                } else if (selectId === 'editTicketCategory' && choiceEditCategory) {
+                    choiceEditCategory.setChoiceByValue(newSys);
+                }
+
+                await addActionLog('เพิ่มระบบใหม่', `เพิ่มระบบอุปกรณ์ใหม่ในระบบซ่อมบำรุง: ${newSys}`);
+                notify.success(`เพิ่มระบบ ${newSys} เรียบร้อยแล้ว`);
+                return true;
+            } catch (err) {
+                console.error('addNewSystem error:', err);
+                notify.error('เกิดข้อผิดพลาดในการบันทึกระบบใหม่');
+                return false;
             }
-
-            await addActionLog('เพิ่มระบบใหม่', `เพิ่มระบบอุปกรณ์ใหม่ในระบบซ่อมบำรุง: ${newSys}`);
-            notify.success(`เพิ่มระบบ ${newSys} เรียบร้อยแล้ว`);
-        } else {
+        }
+    }).then((res) => {
+        if (!res.isConfirmed) {
             // Reset selection to default (first item) if cancelled
             if (selectId === 'repairCategory' && choiceCategory) {
                 choiceCategory.setChoiceByValue(systemsList[0]);
@@ -416,6 +473,7 @@ async function handleIncidentFormSubmit(e) {
 
         closeIncidentModal();
         openRoomDetails(selectedRoom.id);
+        if (typeof renderDashboard === 'function') renderDashboard();
         Swal.close();
         notify.success('บันทึกเหตุการณ์สำเร็จ!');
     } catch (err) {

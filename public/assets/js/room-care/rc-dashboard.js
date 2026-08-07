@@ -3,7 +3,9 @@
 // ============================================================
 
 function renderDashboard() {
-    const branchId = document.getElementById('branchSelect').value;
+    const branchEl = document.getElementById('branchSelect');
+    if (!branchEl) return;
+    const branchId = branchEl.value;
     const rooms = roomsDB[branchId] || [];
 
     // Calculate stats

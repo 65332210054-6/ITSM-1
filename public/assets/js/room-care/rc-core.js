@@ -197,7 +197,7 @@ async function addActionLog(action, text) {
         // Reload logs
         const updatedLogs = await rcFetch(`/api/room-care?action=logs${branchId ? '&branch_id=' + branchId : ''}`);
         logsDB = (Array.isArray(updatedLogs) ? updatedLogs : []).map(mapLogFromApi);
-        renderLogsPanel();
+        if (document.getElementById('logsContainer')) renderLogsPanel();
     } catch (err) {
         console.error('addActionLog failed:', err);
     }
@@ -287,19 +287,30 @@ function addNewRoomType(selectId) {
         confirmButtonColor: '#4f46e5',
         confirmButtonText: 'บันทึก',
         cancelButtonText: 'ยกเลิก',
+        showLoaderOnConfirm: true,
+        allowOutsideClick: () => !Swal.isLoading(),
         inputValidator: (value) => {
             if (!value) return 'กรุณากรอกชื่อประเภทห้อง!';
             if (roomTypesList.some(t => t.toLowerCase() === value.trim().toLowerCase())) return 'ประเภทนี้มีอยู่แล้ว!';
-        }
-    }).then(async res => {
-        if (res.isConfirmed) {
-            const newType = res.value.trim();
-            roomTypesList.push(newType);
-            await saveRoomTypesList();
-            rebuildRoomTypeSelects();
-            if (selectId === 'floorFormRoomType' && choiceFloorRoomType) choiceFloorRoomType.setChoiceByValue(newType);
-            else if (selectId === 'roomFormType' && choiceFormType) choiceFormType.setChoiceByValue(newType);
-            notify.success(`เพิ่มประเภทห้อง "${newType}" สำเร็จ!`);
+        },
+        preConfirm: async (value) => {
+            const cancelBtn = Swal.getCancelButton();
+            if (cancelBtn) cancelBtn.style.display = 'none';
+            Swal.showLoading();
+            try {
+                const newType = value.trim();
+                roomTypesList.push(newType);
+                await saveRoomTypesList();
+                rebuildRoomTypeSelects();
+                if (selectId === 'floorFormRoomType' && choiceFloorRoomType) choiceFloorRoomType.setChoiceByValue(newType);
+                else if (selectId === 'roomFormType' && choiceFormType) choiceFormType.setChoiceByValue(newType);
+                notify.success(`เพิ่มประเภทห้อง "${newType}" สำเร็จ!`);
+                return true;
+            } catch (err) {
+                console.error('addNewRoomType error:', err);
+                notify.error('เกิดข้อผิดพลาดในการบันทึกประเภทห้องใหม่');
+                return false;
+            }
         }
     });
 }
@@ -342,19 +353,30 @@ function addNewTechnician(selectId) {
         confirmButtonColor: '#4f46e5',
         confirmButtonText: 'บันทึก',
         cancelButtonText: 'ยกเลิก',
+        showLoaderOnConfirm: true,
+        allowOutsideClick: () => !Swal.isLoading(),
         inputValidator: (value) => {
             if (!value) return 'กรุณากรอกชื่อช่าง!';
             if (assigneesList.some(a => a.toLowerCase() === value.trim().toLowerCase())) return 'ชื่อนี้มีอยู่แล้ว!';
-        }
-    }).then(async res => {
-        if (res.isConfirmed) {
-            const newTech = res.value.trim();
-            assigneesList.push(newTech);
-            await saveAssigneesList();
-            rebuildAssigneeSelects();
-            if (selectId === 'repairAssignee' && choiceAssignee) choiceAssignee.setChoiceByValue(newTech);
-            else if (selectId === 'editTicketAssignee' && choiceEditAssignee) choiceEditAssignee.setChoiceByValue(newTech);
-            notify.success(`เพิ่มช่าง "${newTech}" สำเร็จ!`);
+        },
+        preConfirm: async (value) => {
+            const cancelBtn = Swal.getCancelButton();
+            if (cancelBtn) cancelBtn.style.display = 'none';
+            Swal.showLoading();
+            try {
+                const newTech = value.trim();
+                assigneesList.push(newTech);
+                await saveAssigneesList();
+                rebuildAssigneeSelects();
+                if (selectId === 'repairAssignee' && choiceAssignee) choiceAssignee.setChoiceByValue(newTech);
+                else if (selectId === 'editTicketAssignee' && choiceEditAssignee) choiceEditAssignee.setChoiceByValue(newTech);
+                notify.success(`เพิ่มช่าง "${newTech}" สำเร็จ!`);
+                return true;
+            } catch (err) {
+                console.error('addNewTechnician error:', err);
+                notify.error('เกิดข้อผิดพลาดในการบันทึกชื่อช่างใหม่');
+                return false;
+            }
         }
     });
 }
