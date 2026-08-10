@@ -409,7 +409,7 @@ export async function onRequest(context) {
         const seq = (todayCount[0]?.count || 0) + 1;
         const roomRes = await sql`SELECT number FROM rc_rooms WHERE id = ${room_id}`;
         const roomNum = roomRes[0]?.number || '000';
-        const ticketNo = `${String(seq).padStart(3, '0')}-${roomNum}RC-${todayStr}`;
+        const ticketNo = `${todayStr}-${roomNum}-${String(seq).padStart(3, '0')}`;
 
         const ticketStatus = assignee ? 'Repairing' : 'Needs Repair';
 
