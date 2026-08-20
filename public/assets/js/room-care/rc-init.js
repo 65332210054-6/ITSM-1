@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (window.location.pathname.includes('room-care-logs')) {
         ui.renderHeader('ข้อมูล', false, { parent: 'ระบบบำรุงรักษาห้องพัก', url: '/room-care.html' });
     } else {
-        ui.renderHeader('ระบบบำรุงรักษาห้องพัก', false);
+        ui.renderHeader('การจัดการห้องพัก', false, { parent: 'ระบบบำรุงรักษาห้องพัก', url: '/room-care.html' });
     }
     ui.renderSidebar('sidebar-container', settings);
 

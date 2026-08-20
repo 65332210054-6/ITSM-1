@@ -159,30 +159,6 @@ export async function onRequest(context) {
       }
 
       // GET /api/room-care?action=repair_history
-      /*if (action === 'repair_history') {
-        const branchId = url.searchParams.get('branch_id');
-        if (!branchId) return err('branch_id is required');
-
-        const roomNumber = url.searchParams.get('room_number') || '';
-        const category = url.searchParams.get('category') || '';
-        const startDate = url.searchParams.get('start_date') || '';
-        const endDate = url.searchParams.get('end_date') || '';
-
-        const rows = await sql`
-          SELECT t.*, r.number as room_number, b.name as branch_name
-          FROM rc_tickets t
-          LEFT JOIN rc_rooms r ON t.room_id = r.id
-          LEFT JOIN branches b ON t.branch_id = b.id
-          WHERE t.branch_id = ${branchId}
-            AND (${roomNumber === ''} OR r.number ILIKE ${'%' + roomNumber + '%'})
-            AND (${category === ''} OR t.category = ${category})
-            AND (${startDate === ''} OR t.created_at >= ${startDate ? startDate + 'T00:00:00' : '1970-01-01T00:00:00'})
-            AND (${endDate === ''} OR t.created_at <= ${endDate ? endDate + 'T23:59:59' : '2099-12-31T23:59:59'})
-          ORDER BY t.created_at DESC
-        `;
-        return ok(rows);
-      }*/
-      // GET /api/room-care?action=repair_history   code แก้ไขจาก Gemini
       if (action === 'repair_history') {
         const branchId = url.searchParams.get('branch_id');
         if (!branchId) return err('branch_id is required');
@@ -225,9 +201,9 @@ export async function onRequest(context) {
           LEFT JOIN rc_rooms r ON inc.room_id = r.id
           LEFT JOIN branches b ON inc.branch_id = b.id
           WHERE inc.branch_id = ${branchId}
-            AND (${roomNumber === ''} OR r.number ILIKE ${'%' + roomNumber + '%'})
-            AND (${startDate === ''} OR inc.created_at >= ${startDate ? startDate + 'T00:00:00' : '1970-01-01T00:00:00'})
-            AND (${endDate === ''} OR inc.created_at <= ${endDate ? endDate + 'T23:59:59' : '2099-12-31T23:59:59'})
+            AND (${roomNumber} = '' OR r.number ILIKE ${'%' + roomNumber + '%'})
+            AND (${startDate} = '' OR inc.created_at >= ${startDate ? startDate + 'T00:00:00' : '1970-01-01T00:00:00'})
+            AND (${endDate} = '' OR inc.created_at <= ${endDate ? endDate + 'T23:59:59' : '2099-12-31T23:59:59'})
           ORDER BY inc.created_at DESC
         `;
         return ok(rows);
@@ -310,6 +286,11 @@ export async function onRequest(context) {
     // POST Endpoints (Create)
     // ════════════════════════════════════════════════════════════
     if (method === 'POST') {
+      const accessCheck = await checkModuleAccess(context, 'room_care', 'create');
+      if (!accessCheck) {
+        return err('Forbidden: คุณไม่มีสิทธิ์ในการสร้าง/เพิ่มข้อมูล', 403);
+      }
+
       let body;
       try { body = await request.json(); } catch { return err('Invalid JSON body'); }
 
@@ -453,6 +434,11 @@ export async function onRequest(context) {
     // PUT Endpoints (Update)
     // ════════════════════════════════════════════════════════════
     if (method === 'PUT') {
+      const accessCheck = await checkModuleAccess(context, 'room_care', 'edit');
+      if (!accessCheck) {
+        return err('Forbidden: คุณไม่มีสิทธิ์ในการแก้ไขข้อมูล', 403);
+      }
+
       let body;
       try { body = await request.json(); } catch { return err('Invalid JSON body'); }
 

@@ -650,6 +650,12 @@ function downloadRepairHistoryCSV() {
 }
 
 async function toggleRoomUsage() {
+    if (!checkRoomCareAccess('edit')) {
+        notify.error('คุณไม่มีสิทธิ์ในการแก้ไขสถานะใช้งานห้องพัก');
+        const checkbox = document.getElementById('detailUsageCheckbox');
+        if (checkbox) checkbox.checked = !checkbox.checked;
+        return;
+    }
     if (!selectedRoom) return;
     const checkbox = document.getElementById('detailUsageCheckbox');
     const usageText = document.getElementById('detailUsageText');

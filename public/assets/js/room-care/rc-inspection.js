@@ -91,6 +91,10 @@ function renderInspectionChecklist() {
 // ==========================================
 function deleteInspectionSystem(sysName, event) {
     if (event) event.stopPropagation();
+    if (!checkRoomCareAccess('delete')) {
+        notify.error('คุณไม่มีสิทธิ์ในการลบระบบ');
+        return;
+    }
 
     Swal.fire({
         title: `ยืนยันการลบระบบ ${sysName}?`,
@@ -187,6 +191,10 @@ function setSystemStatus(systemKey, status) {
 // Add New Inspection System (in inspection modal)
 // ==========================================
 function addNewInspectionSystem() {
+    if (!checkRoomCareAccess('create')) {
+        notify.error('คุณไม่มีสิทธิ์ในการเพิ่มระบบ');
+        return;
+    }
     Swal.fire({
         title: 'เพิ่มระบบตรวจเช็คใหม่',
         text: 'ระบุชื่อระบบหรืออุปกรณ์ที่ต้องการตรวจเช็ค (ภาษาอังกฤษ เช่น CCTV, Network, Safe, Minibar)',

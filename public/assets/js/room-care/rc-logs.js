@@ -234,20 +234,21 @@ function renderDataTable(data) {
         }
 
         let tableHtml = `
-            <table class="w-full text-left text-xs border-collapse">
-                <thead>
-                    <tr class="bg-slate-50/80 text-slate-500 border-b border-slate-100 font-extrabold uppercase tracking-wider text-[11px]">
-                        <th class="py-3 px-4">เลขใบงาน / วันที่</th>
-                        <th class="py-3 px-4">สาขา</th>
-                        <th class="py-3 px-4">ห้อง</th>
-                        <th class="py-3 px-4">ระบบ</th>
-                        <th class="py-3 px-4" style="width:18%">รายละเอียดงานซ่อม</th>
-                        <th class="py-3 px-4">ช่าง / ผู้ปิดงาน</th>
-                        <th class="py-3 px-4 text-center" style="width:130px; white-space:nowrap">สถานะ</th>
-                        <th class="py-3 px-4 text-right">จัดการ</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-slate-700">
+            <div class="overflow-x-auto border border-slate-100 rounded-2xl">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50/80 text-slate-500 border-b border-slate-100 font-extrabold uppercase tracking-wider text-[11px]">
+                            <th class="py-3 px-4 min-w-[150px] whitespace-nowrap">เลขใบงาน / วันที่</th>
+                            <th class="py-3 px-4 min-w-[140px] whitespace-nowrap">สาขา</th>
+                            <th class="py-3 px-4 min-w-[100px] whitespace-nowrap">ห้อง</th>
+                            <th class="py-3 px-4 min-w-[130px] whitespace-nowrap">ระบบ</th>
+                            <th class="py-3 px-4 min-w-[220px] whitespace-nowrap">รายละเอียดงานซ่อม</th>
+                            <th class="py-3 px-4 min-w-[140px] whitespace-nowrap">ช่าง / ผู้ปิดงาน</th>
+                            <th class="py-3 px-4 text-center min-w-[120px] whitespace-nowrap">สถานะ</th>
+                            <th class="py-3 px-4 text-center min-w-[130px] whitespace-nowrap">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
         `;
 
         const canDelete = checkRoomCareAccess('delete');
@@ -255,7 +256,10 @@ function renderDataTable(data) {
         data.forEach((item, index) => {
             const catDetails = typeof getCategoryDetails === 'function' ? getCategoryDetails(item.category) : { name: item.category, thai: item.category, color: 'text-slate-600', icon: 'wrench' };
             const formattedDate = item.created_at ? new Date(item.created_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
-            
+
+            const rawDesc = item.desc || '-';
+            const displayDesc = rawDesc.length > 30 ? rawDesc.substring(0, 30) + '...' : rawDesc;
+
             let statusBadge = `<span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-600">${item.status}</span>`;
             if (item.status === 'Needs Repair' || item.status === 'รอการแก้ไข') {
                 statusBadge = `<span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-50 text-rose-600 border border-rose-100">รอการแก้ไข</span>`;
@@ -267,33 +271,33 @@ function renderDataTable(data) {
 
             tableHtml += `
                 <tr class="hover:bg-slate-50/70 transition-colors">
-                    <td class="py-3.5 px-4">
+                    <td class="py-3.5 px-4 whitespace-nowrap">
                         <div class="font-extrabold text-slate-800">${item.ticket_no || item.id || '-'}</div>
                         <div class="text-[10px] text-slate-400 font-medium">${formattedDate}</div>
                     </td>
-                    <td class="py-3.5 px-4 font-bold text-slate-700">${item.branch_name || item.branch_id || '-'}</td>
-                    <td class="py-3.5 px-4">
+                    <td class="py-3.5 px-4 font-bold text-slate-700 whitespace-nowrap">${item.branch_name || item.branch_id || '-'}</td>
+                    <td class="py-3.5 px-4 whitespace-nowrap">
                         <span class="px-2.5 py-1 bg-slate-100 text-slate-800 rounded-lg font-black text-xs">
                             ${item.room_number || '-'}
                         </span>
                     </td>
-                    <td class="py-3.5 px-4">
+                    <td class="py-3.5 px-4 whitespace-nowrap">
                         <span class="inline-flex items-center gap-1 font-bold ${catDetails.color}">
                             <i data-lucide="${catDetails.icon}" class="w-3.5 h-3.5"></i> ${catDetails.thai || item.category}
                         </span>
                     </td>
-                    <td class="py-3.5 px-4 max-w-xs truncate" title="${item.desc || ''}">
-                        <div class="font-medium text-slate-800">${item.desc || '-'}</div>
-                        ${item.cost > 0 ? `<div class="text-[10px] text-emerald-600 font-bold">ค่าซ่อม: ${parseFloat(item.cost).toLocaleString('th-TH')} ฿</div>` : ''}
+                    <td class="py-3.5 px-4 min-w-[220px] whitespace-nowrap" title="${rawDesc}">
+                        <span class="font-medium text-slate-800">${displayDesc}</span>
+                        ${item.cost > 0 ? `<span class="ml-1.5 text-[10px] text-emerald-600 font-bold">(ค่าซ่อม: ${parseFloat(item.cost).toLocaleString('th-TH')} ฿)</span>` : ''}
                     </td>
-                    <td class="py-3.5 px-4 text-xs">
+                    <td class="py-3.5 px-4 text-xs whitespace-nowrap">
                         <div class="font-bold text-slate-700">${item.assignee || item.closed_by || '-'}</div>
                     </td>
-                    <td class="py-3.5 px-4 text-center">
+                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
                         ${statusBadge}
                     </td>
-                    <td class="py-3.5 px-4 text-right">
-                        <div class="flex items-center justify-end gap-1.5">
+                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                        <div class="flex items-center justify-center gap-1.5">
                             <button onclick="openDataDetailModal(${index})" class="px-3 py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 rounded-xl text-xs font-bold transition-all cursor-pointer">
                                 รายละเอียด
                             </button>
@@ -304,33 +308,37 @@ function renderDataTable(data) {
             `;
         });
 
-        tableHtml += `</tbody></table>`;
+        tableHtml += `</tbody></table></div>`;
         container.innerHTML = tableHtml;
     } else {
         // Incident History
         statsSummary?.classList.add('hidden');
 
         let tableHtml = `
-            <table class="w-full text-left text-xs border-collapse">
-                <thead>
-                    <tr class="bg-slate-50/80 text-slate-500 border-b border-slate-100 font-extrabold uppercase tracking-wider text-[11px]">
-                        <th class="py-3 px-4">วันที่ / เวลา</th>
-                        <th class="py-3 px-4">สาขา</th>
-                        <th class="py-3 px-4">ห้อง</th>
-                        <th class="py-3 px-4">หัวข้อเหตุการณ์</th>
-                        <th class="py-3 px-4">รายละเอียด</th>
-                        <th class="py-3 px-4">ความรุนแรง</th>
-                        <th class="py-3 px-4">ผู้บันทึก</th>
-                        <th class="py-3 px-4 text-right">จัดการ</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-slate-700">
+            <div class="overflow-x-auto border border-slate-100 rounded-2xl">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50/80 text-slate-500 border-b border-slate-100 font-extrabold uppercase tracking-wider text-[11px]">
+                            <th class="py-3 px-4 min-w-[145px] whitespace-nowrap">วันที่ / เวลา</th>
+                            <th class="py-3 px-4 min-w-[140px] whitespace-nowrap">สาขา</th>
+                            <th class="py-3 px-4 min-w-[110px] whitespace-nowrap">ห้อง</th>
+                            <th class="py-3 px-4 min-w-[160px]">หัวข้อเหตุการณ์</th>
+                            <th class="py-3 px-4 min-w-[200px] whitespace-nowrap">รายละเอียด</th>
+                            <th class="py-3 px-4 min-w-[120px] whitespace-nowrap">ความรุนแรง</th>
+                            <th class="py-3 px-4 min-w-[140px] whitespace-nowrap">ผู้บันทึก</th>
+                            <th class="py-3 px-4 text-center min-w-[130px] whitespace-nowrap">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
         `;
 
         const canDelete = checkRoomCareAccess('delete');
 
         data.forEach((item, index) => {
             const formattedDate = item.created_at ? new Date(item.created_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+
+            const rawDetail = item.detail || '-';
+            const displayDetail = rawDetail.length > 30 ? rawDetail.substring(0, 30) + '...' : rawDetail;
 
             let severityBadge = `<span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200">ปกติ</span>`;
             if (item.severity === 'High' || item.severity === 'วิกฤต') {
@@ -341,11 +349,11 @@ function renderDataTable(data) {
 
             tableHtml += `
                 <tr class="hover:bg-slate-50/70 transition-colors">
-                    <td class="py-3.5 px-4 font-medium text-slate-500">
+                    <td class="py-3.5 px-4 font-medium text-slate-500 whitespace-nowrap">
                         ${formattedDate}
                     </td>
-                    <td class="py-3.5 px-4 font-bold text-slate-700">${item.branch_name || item.branch_id || '-'}</td>
-                    <td class="py-3.5 px-4">
+                    <td class="py-3.5 px-4 font-bold text-slate-700 whitespace-nowrap">${item.branch_name || item.branch_id || '-'}</td>
+                    <td class="py-3.5 px-4 whitespace-nowrap">
                         <span class="px-2.5 py-1 bg-slate-100 text-slate-800 rounded-lg font-black text-xs">
                             ${item.room_number || '-'}
                         </span>
@@ -353,17 +361,17 @@ function renderDataTable(data) {
                     <td class="py-3.5 px-4 font-extrabold text-slate-800 max-w-xs truncate" title="${item.title || ''}">
                         ${item.title || '-'}
                     </td>
-                    <td class="py-3.5 px-4 max-w-xs truncate text-slate-600" title="${item.detail || ''}">
-                        ${item.detail || '-'}
+                    <td class="py-3.5 px-4 min-w-[200px] whitespace-nowrap text-slate-600" title="${rawDetail}">
+                        <span class="font-medium text-slate-700">${displayDetail}</span>
                     </td>
-                    <td class="py-3.5 px-4">
+                    <td class="py-3.5 px-4 whitespace-nowrap">
                         ${severityBadge}
                     </td>
-                    <td class="py-3.5 px-4 font-bold text-slate-700">
+                    <td class="py-3.5 px-4 font-bold text-slate-700 whitespace-nowrap">
                         ${item.reporter || '-'}
                     </td>
-                    <td class="py-3.5 px-4 text-right">
-                        <div class="flex items-center justify-end gap-1.5">
+                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                        <div class="flex items-center justify-center gap-1.5">
                             <button onclick="openDataDetailModal(${index})" class="px-3 py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 rounded-xl text-xs font-bold transition-all cursor-pointer">
                                 รายละเอียด
                             </button>
@@ -374,7 +382,7 @@ function renderDataTable(data) {
             `;
         });
 
-        tableHtml += `</tbody></table>`;
+        tableHtml += `</tbody></table></div>`;
         container.innerHTML = tableHtml;
     }
 
@@ -470,7 +478,7 @@ function openDataDetailModal(index) {
                         <span class="font-black text-indigo-600 text-sm">${item.room_number || 'ไม่ระบุ'}</span>
                     </div>
                     <div>
-                        <span class="text-slate-400 font-bold block mb-1">ระดับความรุนแรง</span>
+                        <span class="text-slate-400 font-bold block mb-1">สถานะ</span>
                         <span class="font-extrabold text-amber-600">${item.severity || 'Normal'}</span>
                     </div>
                     <div>
@@ -511,11 +519,11 @@ function renderLogsPanel() {
         initLogsPage();
     }
 }
-function toggleLogFilters() {}
-function applyLogFilters() {}
-function resetLogFilters() {}
-function openLogDetailModal() {}
-function closeLogDetailModal() {}
+function toggleLogFilters() { }
+function applyLogFilters() { }
+function resetLogFilters() { }
+function openLogDetailModal() { }
+function closeLogDetailModal() { }
 
 // ============================================================
 // deleteHistoryRecord — ลบประวัติย้อนหลังตามสิทธิ์

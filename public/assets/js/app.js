@@ -172,7 +172,7 @@ const ui = {
             path: '/room-care.html', 
             desc: 'ตรวจเช็คระบบภายในห้องและบันทึกงานซ่อมบำรุงโรงแรม',
             submodules: [
-                { name: 'ระบบบำรุงรักษาห้องพัก', path: '/room-care.html' },
+                { name: 'การจัดการห้องพัก', path: '/room-care.html' },
                 { name: 'ข้อมูล', path: '/room-care-logs.html' }
             ]
         }
@@ -373,13 +373,46 @@ const ui = {
         const container = document.getElementById('header-container');
         if (!container) return;
 
-        // Auto-detect breadcrumb if not provided and it's a detail page
         let activeBreadcrumb = breadcrumb;
-        if (!activeBreadcrumb && showBack) {
-            if (window.location.pathname.includes('ticket-detail')) {
-                activeBreadcrumb = { parent: 'ระบบแจ้งซ่อม', url: '/tickets.html' };
-            } else if (window.location.pathname.includes('asset-detail')) {
-                activeBreadcrumb = { parent: 'จัดการทรัพย์สิน', url: '/assets.html' };
+        const path = window.location.pathname;
+        const normPath = path.replace(/\/$/, '').replace(/\.html$/, '') || '/';
+
+        if (!activeBreadcrumb && ui.modules) {
+            // 1. Auto-detect detail pages (e.g. ticket-detail, asset-detail)
+            if (showBack || normPath.includes('-detail')) {
+                const baseModuleKey = normPath.split('-detail')[0].split('/').pop();
+                const matchedModule = ui.modules.find(m => m.id === baseModuleKey || m.path.includes(baseModuleKey));
+                if (matchedModule) {
+                    activeBreadcrumb = { parent: matchedModule.name, url: matchedModule.path };
+                }
+            }
+
+            // 2. Auto-detect submodules for any module in central registry
+            if (!activeBreadcrumb) {
+                for (const m of ui.modules) {
+                    if (m.submodules && m.submodules.length > 0) {
+                        const matchedSub = m.submodules.find(sub => {
+                            const subNorm = sub.path.replace(/\/$/, '').replace(/\.html$/, '') || '/';
+                            return normPath === subNorm;
+                        });
+                        if (matchedSub) {
+                            activeBreadcrumb = { parent: m.name, url: m.path };
+                            title = matchedSub.name;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // 3. Fallback title lookup from main modules registry if generic
+            if (!activeBreadcrumb && (!title || title === 'ITSM Admin')) {
+                const matchedMain = ui.modules.find(m => {
+                    const mNorm = m.path.replace(/\/$/, '').replace(/\.html$/, '') || '/';
+                    return normPath === mNorm;
+                });
+                if (matchedMain) {
+                    title = matchedMain.name;
+                }
             }
         }
 

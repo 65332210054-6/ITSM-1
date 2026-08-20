@@ -42,8 +42,13 @@
 
 ## 3. การปรับปรุงประสิทธิภาพและความเสถียร (Maintenance & Cleanup)
 
-- [ ] **Cleanup**: ลบไฟล์ชั่วคราวในโฟลเดอร์ `scratch/` ที่ไม่ใช้แล้ว (เช่น `fix_borrows.mjs`, `debug_users.mjs`)
-- [ ] **Regression Testing**: ทดสอบวงจรการยืม-คืน (Borrow Lifecycle) แบบครบวงจรอีกครั้ง
+- [x] **Cleanup**: ลบไฟล์ชั่วคราวในโฟลเดอร์ `scratch/` ที่ไม่ใช้แล้ว (`check_all_tables.js`, `check_branches.mjs`, `check_tickets.mjs`, `test_api_response.mjs`, `update_tickets_format.mjs`)
+- [x] **Cleanup**: ลบ commented code เก่าออกจาก `functions/api/room-care.js` (repair_history block เก่า)
+- [x] **Cleanup**: แก้ไข `incidents_history` filter pattern ให้ consistent กับ `repair_history`
+- [x] **Cleanup**: ทำความสะอาด `rc-assignees.js` (stub file — replaced with documentation comment)
+- [ ] **Bug Fix**: `finish_ticket` API reset `details` แบบ hardcode เมื่อปิด Ticket ทั้งหมด → ทำให้ Custom ระบบ (CCTV ฯลฯ) หาย
+- [ ] **Bug Fix**: `add_room` / `add_floor` API ใส่ `details` เป็น hardcode 5 ระบบ → ควร dynamic จาก `rc_settings`
+- [ ] **Regression Testing**: ทดสอบวงจรการซ่อม-ปิดงาน (Ticket Lifecycle) แบบครบวงจรอีกครั้ง
 - [ ] **Security Audit**: ตรวจสอบการเช็คสิทธิ์ (RBAC) ในทุก API Endpoints ให้แน่ใจว่า Visitor ไม่สามารถแก้ไขข้อมูลได้
 
 ---
@@ -51,7 +56,9 @@
 ## 4. สถานะปัจจุบัน (Current Status)
 - ✅ **Core Modules**: ทุกโมดูลหลักเสร็จสมบูรณ์ (Users, Assets, IPAM, Consumables, etc.)
 - ✅ **Infrastructure**: Cloudflare Pages + Neon PostgreSQL (Stable)
-- ⏳ **Next Action**: ตั้งค่า Automated Cron Trigger สำหรับรายงานรายวัน และทำความสะอาดระบบ (Cleanup)
+- ✅ **Room Care Module**: ระบบบำรุงรักษาห้องพักเสร็จสมบูรณ์ (Branch, Room, Ticket, Inspection, Incident, Logs)
+- ✅ **Maintenance Cleanup**: ลบ scratch files, ทำความสะอาด codebase เสร็จสิ้น
+- ⏳ **Next Action**: แก้ Bug fix (hardcode details ใน room-care API), เพิ่ม Export Room Care ใน Reports, พัฒนา Dashboard KPI
 
 ---
-*อัปเดตล่าสุดเมื่อ: 22 เมษายน 2026*
+*อัปเดตล่าสุดเมื่อ: 13 สิงหาคม 2569*

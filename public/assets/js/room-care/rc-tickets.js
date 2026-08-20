@@ -83,6 +83,10 @@ async function handleRepairFormSubmit(e) {
 
 // Interactive states: Start/Finish Jobs
 async function startRepairJob(roomId, ticketId) {
+    if (!checkRoomCareAccess('edit')) {
+        notify.error('คุณไม่มีสิทธิ์ในการเริ่มงานซ่อม');
+        return;
+    }
     const branchId = document.getElementById('branchSelect').value;
 
     Swal.fire({
@@ -343,6 +347,15 @@ function renderCategoryOptions() {
 }
 
 async function addNewSystem(selectId) {
+    if (!checkRoomCareAccess('create')) {
+        notify.error('คุณไม่มีสิทธิ์ในการเพิ่มระบบ');
+        if (selectId === 'repairCategory' && choiceCategory) {
+            choiceCategory.setChoiceByValue(systemsList[0] || 'Electrical');
+        } else if (selectId === 'editTicketCategory' && choiceEditCategory) {
+            choiceEditCategory.setChoiceByValue(systemsList[0] || 'Electrical');
+        }
+        return;
+    }
     Swal.fire({
         title: 'เพิ่มระบบการซ่อมบำรุงใหม่',
         text: 'กรุณากรอกชื่อระบบหรืออุปกรณ์ที่ต้องการเพิ่ม (ภาษาอังกฤษ เช่น Light, CCTV, Network)',

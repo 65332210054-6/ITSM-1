@@ -278,6 +278,15 @@ function rebuildRoomTypeSelects() {
 }
 
 function addNewRoomType(selectId) {
+    if (!checkRoomCareAccess('create')) {
+        notify.error('คุณไม่มีสิทธิ์ในการเพิ่มประเภทห้องพัก');
+        if (selectId === 'floorFormRoomType' && choiceFloorRoomType) {
+            choiceFloorRoomType.setChoiceByValue(roomTypesList[0] || 'Standard');
+        } else if (selectId === 'roomFormType' && choiceFormType) {
+            choiceFormType.setChoiceByValue(roomTypesList[0] || 'Standard');
+        }
+        return;
+    }
     Swal.fire({
         title: 'เพิ่มประเภทห้องพักใหม่',
         text: 'กรอกชื่อประเภทห้องพัก เช่น Family, Accessible',
@@ -344,6 +353,15 @@ function rebuildAssigneeSelects() {
 }
 
 function addNewTechnician(selectId) {
+    if (!checkRoomCareAccess('create')) {
+        notify.error('คุณไม่มีสิทธิ์ในการเพิ่มรายชื่อช่าง');
+        if (selectId === 'repairAssignee' && choiceAssignee) {
+            choiceAssignee.setChoiceByValue('');
+        } else if (selectId === 'editTicketAssignee' && choiceEditAssignee) {
+            choiceEditAssignee.setChoiceByValue('');
+        }
+        return;
+    }
     Swal.fire({
         title: 'เพิ่มช่างเทคนิคใหม่',
         text: 'กรอกชื่อช่างเทคนิค',

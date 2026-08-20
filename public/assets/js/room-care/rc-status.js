@@ -106,6 +106,10 @@ function viewRoomFromStatusList(roomId) {
 // Change Room Status Modal
 // ==========================================
 function openChangeStatusModal() {
+    if (!checkRoomCareAccess('edit')) {
+        notify.error('คุณไม่มีสิทธิ์ในการเปลี่ยนสถานะห้องพัก');
+        return;
+    }
     if (!selectedRoom) return;
     const currentStatus = selectedRoom.status;
     const statusLabels = {

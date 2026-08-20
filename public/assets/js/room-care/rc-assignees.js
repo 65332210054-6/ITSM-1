@@ -1,12 +1,17 @@
 // ============================================================
-// rc-assignees.js — Assignees, Room Types & Systems management
-// NOTE: Core functions (saveSystemsList, initSystemsList, etc.) 
-// are now defined in rc-core.js which handles API persistence.
-// This file retains UI-only helpers for the assignee select UI.
+// rc-assignees.js — (Stub / Legacy File)
 // ============================================================
-
-// --- Mock Repair History Generator (kept for legacy reference, not used in production) ---
-// This function is intentionally a no-op stub. Repair history comes from the real database.
-function generateMockRepairs(roomNumber, count = 0) {
-    return [];
-}
+// NOTE: All assignee, room type, and systems management logic
+// has been migrated to rc-core.js which handles API persistence
+// via /api/room-care?action=settings and update_settings.
+//
+// Functions available in rc-core.js:
+//   - initSystemsList()        — load systems from DB
+//   - saveSystemsList()        — persist systems to DB
+//   - initAssigneesList()      — init assignee dropdowns
+//   - rebuildAssigneeSelects() — rebuild Choices.js selects
+//   - addNewTechnician()       — add new technician via Swal
+//   - initRoomTypesList()      — init room type dropdowns
+//   - rebuildRoomTypeSelects() — rebuild room type Choices.js
+//   - addNewRoomType()         — add new room type via Swal
+// ============================================================
